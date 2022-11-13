@@ -11,7 +11,7 @@
 
 using namespace std::ranges;
 using namespace std::string_literals;
-struct Empty {};
+struct Empty{};
 
 
 // SourceView //
@@ -100,10 +100,10 @@ struct Match {
 template<forward_range TSource, typename TValue>
 using MaybeMatch = std::optional<Match<TSource, TValue>>;
 
-inline constexpr auto fail = std::nullopt;
+inline const auto fail = std::nullopt;
 
 template<typename T>
-inline constexpr auto fail_as = static_cast<T>(std::nullopt);
+inline const auto fail_as = static_cast<T>(std::nullopt);
 
 template<forward_range TSource, typename TValue>
 inline MaybeMatch<TSource, TValue> match(
@@ -127,11 +127,21 @@ public:
 		parseFn{ parseFn }, children{ children } {}
 
 	auto parse(auto src) {
-		return parseFn(SourceView(src), children, Empty{});
+		if constexpr(std::is_same_v<decltype(src), const char*>){
+			return parseFn(SourceView(std::string(src)), children, Empty{});
+		}
+		else{
+			return parseFn(SourceView(src), children, Empty{});
+		}
 	}
 
 	auto parse(auto src, auto ctx) {
-		return parseFn(SourceView(src), children, ctx);
+		if constexpr(std::is_same_v<decltype(src), const char*>){
+			return parseFn(SourceView(std::string(src)), children, ctx);
+		}
+		else{
+			return parseFn(SourceView(src), children, ctx);
+		}
 	}
 
 	template<forward_range TSource>
@@ -191,47 +201,42 @@ auto makeSequence(TFirst firstChild, TRest... otherChildren) {
 
 // Choice //
 
-template<typename TFirst, typename... TRest>
-auto makeChoice(TFirst firstChild, TRest... otherChildren) {
+template<typename... TChildren>
+auto makeChoice(TChildren... children) {
 
-	if constexpr (sizeof...(TRest) == 0) {
-		return firstChild;
-	}
-	else {
-		auto combinedRest = makeChoice(otherChildren...);
+	auto parseFn = []<forward_range TSource>(
+		SourceView<TSource> src,
+		auto children,
+		auto ctx
+		) {
+		using variant_type = std::variant<decltype(std::declval<TChildren>().parse(src, ctx))...>;
 
-		auto parseFn = []<forward_range TSource>(
-			SourceView<TSource> src,
-			auto children,
-			auto ctx
-			) {
-			using variant_type = std::variant<
-				decltype(std::get<0>(children).parse(src, ctx)->value),
-				decltype(std::get<1>(children).parse(src, ctx)->value)
-			>;
-			using return_type = decltype(match(src, std::declval<variant_type>()));
+		using return_type = decltype(match(src, std::declval<variant_type>()));
 
-			auto result1 = std::get<0>(children).parse(src, ctx);
-			if (result1.has_value()) {
-				return match(
-					result1->next,
-					variant_type{ std::in_place_index<0>, result1->value }
-				);
+		// https://stackoverflow.com/a/40873505/3825996
+		auto tryOneByOne = [&]<size_t I = 0>(const auto& self) {
+			if constexpr (I >= sizeof...(TChildren)) {
+				return fail_as<return_type>;
 			}
-
-			auto result2 = std::get<1>(children).parse(result1->next, ctx);
-			if (result2.has_value()) {
-				return match(
-					result2->next,
-					variant_type{ std::in_place_index<1>, result2->value }
-				);
+			else {
+				auto result = std::get<I>(children).parse(src, ctx);
+				if (result.has_value()) {
+					return match(
+						result->next,
+						variant_type{ std::in_place_index<I>, result->value }
+					);
+				}
+				else {
+					// https://stackoverflow.com/a/66182481/3825996
+					return self.template operator() < I + 1 > (self);
+				}
 			}
-
-			return fail_as<return_type>;
 		};
 
-		return Parser(parseFn, std::make_tuple(firstChild, combinedRest));
-	}
+		return tryOneByOne(tryOneByOne);
+	};
+
+	return Parser(parseFn, std::make_tuple(children...));
 }
 
 
@@ -246,7 +251,7 @@ auto makeRepetition(T child, size_t min, size_t max) {
 		auto ctx
 		) {
 
-		using return_element_type = decltype(std::get<0>(children).parse(src, ctx));
+		using return_element_type = decltype(std::get<0>(children).parse(src, ctx)->value);
 		std::deque<return_element_type> results{};
 
 		auto next = src;
@@ -355,7 +360,7 @@ auto makePredicate(T child, F fn) {
 		) {
 		auto result = std::get<0>(children).parse(src, ctx);
 
-		return (result.has_value() && fn(result->value)) ? result : fail;
+		return fn(result) ? result : fail;
 	};
 
 	return Parser(parseFn, std::make_tuple(child));
@@ -412,23 +417,76 @@ auto operator<= (Parser<F, TChildren> parser, P predicate) {
 
 // main //
 
+#include <cassert>
+#include <iostream>
+
 int main() {
 
-	auto a = "a"_L;
-	auto b = "b"_L;
+	auto abc = "abc"_L;
+	auto def = "def"_L;
+	auto ghi = "ghi"_L;
 
-	auto ab = a > b;
-	auto a_b = a | b;
+	auto lit = abc;
+	assert(lit.parse("abcd"s)->value.as<std::string>() == "abc");
+	assert(lit.parse("abX"s) == fail);
 
-	auto anda = &a;
-	auto nota = !a;
-	auto opta = ~a;
-	auto zoma = *a;
-	auto ooma = +a;
+	auto seq = abc > def;
+	assert(std::get<0>(seq.parse("abcdef"s)->value).as<std::string>() == "abc");
+	assert(std::get<1>(seq.parse("abcdef"s)->value).as<std::string>() == "def");
+	assert(seq.parse("abcdeX"s) == fail);
 
-	auto act = a >= [](auto mm){return mm;};
-	auto pred = a <= [](auto mm){return true;};
+	auto cho = abc | def;
+	assert(cho.parse("abc"s)->value.index() == 0);
+	assert(cho.parse("def"s)->value.index() == 1);
+	assert(cho.parse("XXX"s) == fail);
 
+	auto cho3 = makeChoice(abc, def, ghi);
+	assert(cho3.parse("abc"s)->value.index() == 0);
+	assert(cho3.parse("def"s)->value.index() == 1);
+	assert(cho3.parse("ghi"s)->value.index() == 2);
+	assert(cho3.parse("XXX"s) == fail);
+
+	auto pla = &abc;
+	assert(pla.parse("abc"s).has_value());
+	assert(pla.parse("XXX"s) == fail);
+
+	auto nla = !abc;
+	assert(nla.parse("abc"s) == fail);
+	assert(nla.parse("XXX"s).has_value());
+
+	auto opt = ~abc > def;
+	assert(opt.parse("abcdef"s).has_value());
+	assert(opt.parse("def"s).has_value());
+	assert(opt.parse("XXX"s) == fail);
+
+	auto zom = *abc > def;
+	assert(zom.parse("abcabcdef"s).has_value());
+	assert(std::get<0>(zom.parse("abcabcdef"s)->value).size() == 2);
+	assert(zom.parse("abcdef"s).has_value());
+	assert(zom.parse("def"s).has_value());
+	assert(zom.parse("XXX"s) == fail);
+
+	auto oom = +abc > def;
+	assert(oom.parse("abcabcdef"s).has_value());
+	assert(oom.parse("abcdef"s).has_value());
+	assert(oom.parse("def"s) == fail);
+	assert(oom.parse("XXX"s) == fail);
+
+	auto act = abc >= [](auto val) {return 123;};
+	assert(act.parse("abc"s)->value == 123);
+
+	auto prd1 = abc <= [](auto val) {
+		assert(val->value.template as<std::string>() == "abc");
+		return true;
+	};
+	assert(prd1.parse("abc"s)->value.as<std::string>() == "abc");
+	
+	auto prd0 = abc <= [](auto val) {
+		assert(val == fail);
+		return false;
+	};
+	assert(prd0.parse("XXX"s) == fail);
+	
 	return 0;
 }
 
