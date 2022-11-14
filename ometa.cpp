@@ -11,7 +11,7 @@
 
 using namespace std::ranges;
 using namespace std::string_literals;
-struct Empty{};
+struct Empty {};
 
 
 // SourceView //
@@ -127,19 +127,19 @@ public:
 		parseFn{ parseFn }, children{ children } {}
 
 	auto parse(auto src) {
-		if constexpr(std::is_same_v<decltype(src), const char*>){
+		if constexpr (std::is_same_v<decltype(src), const char*>) {
 			return parseFn(SourceView(std::string(src)), children, Empty{});
 		}
-		else{
+		else {
 			return parseFn(SourceView(src), children, Empty{});
 		}
 	}
 
 	auto parse(auto src, auto ctx) {
-		if constexpr(std::is_same_v<decltype(src), const char*>){
+		if constexpr (std::is_same_v<decltype(src), const char*>) {
 			return parseFn(SourceView(std::string(src)), children, ctx);
 		}
-		else{
+		else {
 			return parseFn(SourceView(src), children, ctx);
 		}
 	}
@@ -209,12 +209,12 @@ auto makeChoice(TChildren... children) {
 		auto children,
 		auto ctx
 		) {
-		using variant_type = std::variant<decltype(std::declval<TChildren>().parse(src, ctx))...>;
+		using variant_type = std::variant<decltype(std::declval<TChildren>().parse(src, ctx)->value)...>;
 
 		using return_type = decltype(match(src, std::declval<variant_type>()));
 
 		// https://stackoverflow.com/a/40873505/3825996
-		auto tryOneByOne = [&]<size_t I = 0>(const auto& self) {
+		auto tryOneByOne = [&]<size_t I = 0>(const auto & self) {
 			if constexpr (I >= sizeof...(TChildren)) {
 				return fail_as<return_type>;
 			}
@@ -472,7 +472,10 @@ int main() {
 	assert(oom.parse("def"s) == fail);
 	assert(oom.parse("XXX"s) == fail);
 
-	auto act = abc >= [](auto val) {return 123;};
+	auto act = abc >= [](auto val) {
+		assert(val.template as<std::string>() == "abc");
+		return 123;
+	};
 	assert(act.parse("abc"s)->value == 123);
 
 	auto prd1 = abc <= [](auto val) {
@@ -480,13 +483,15 @@ int main() {
 		return true;
 	};
 	assert(prd1.parse("abc"s)->value.as<std::string>() == "abc");
-	
+
 	auto prd0 = abc <= [](auto val) {
 		assert(val == fail);
 		return false;
 	};
 	assert(prd0.parse("XXX"s) == fail);
-	
+
+	std::cout << "done!\n";
+
 	return 0;
 }
 
