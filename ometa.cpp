@@ -32,7 +32,7 @@ public:
 	auto end() const { return m_end; }
 	void shift() { ++m_begin; }
 	template<typename T>
-	T as() {
+	T copyInto() {
 		T result;
 		for (const auto& item : *this) {
 			result.push_back(item);
@@ -463,13 +463,13 @@ int main() {
 	auto ghi = "ghi"_L;
 
 	auto lit = abc;
-	assert(lit.parse("abcd"s)->value.as<std::string>() == "abc");
+	assert(lit.parse("abcd"s)->value.copyInto<std::string>() == "abc");
 	assert(lit.parse("abX"s) == fail);
 
 	auto seq = abc > def > ghi;
-	assert(std::get<0>(seq.parse("abcdefghi"s)->value).as<std::string>() == "abc");
-	assert(std::get<1>(seq.parse("abcdefghi"s)->value).as<std::string>() == "def");
-	assert(std::get<2>(seq.parse("abcdefghi"s)->value).as<std::string>() == "ghi");
+	assert(std::get<0>(seq.parse("abcdefghi"s)->value).copyInto<std::string>() == "abc");
+	assert(std::get<1>(seq.parse("abcdefghi"s)->value).copyInto<std::string>() == "def");
+	assert(std::get<2>(seq.parse("abcdefghi"s)->value).copyInto<std::string>() == "ghi");
 
 	assert(seq.parse("abcdefghX"s) == fail);
 
@@ -515,7 +515,7 @@ int main() {
 		assert(val->value.template as<std::string>() == "abc");
 		return true;
 	};
-	assert(prd1.parse("abc"s)->value.as<std::string>() == "abc");
+	assert(prd1.parse("abc"s)->value.copyInto<std::string>() == "abc");
 
 	auto prd0 = abc <= [](auto val) {
 		assert(val == fail);
