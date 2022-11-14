@@ -118,6 +118,7 @@ inline MaybeMatch<TSource, TValue> match(
 
 template <typename F, typename TChildren = std::tuple<>>
 class Parser {
+protected:
 	F parseFn;
 public:
 
@@ -378,8 +379,14 @@ auto operator> (Parser<F1, TChildren1> parser1, Parser<F2, TChildren2> parser2) 
 // a | b | c with the parsing result being
 // variant<ValA, ValB, ValC> instead of
 // variant<variant<ValA, ValB>, ValC>
+
+#include <iostream>
+
 template <typename F, typename TChildren = std::tuple<>>
-class PartialChoice : public Parser<F, TChildren> {};
+class PartialChoice : public Parser<F, TChildren> {
+	public: PartialChoice(Parser<F, TChildren>&& other):
+		Parser<F, TChildren>(std::move(other)){};
+};
 
 template <typename F1, typename TChildren1, typename F2, typename TChildren2>
 auto operator| (Parser<F1, TChildren1> parser1, Parser<F2, TChildren2> parser2) {
@@ -453,16 +460,11 @@ int main() {
 	assert(std::get<1>(seq.parse("abcdef"s)->value).as<std::string>() == "def");
 	assert(seq.parse("abcdeX"s) == fail);
 
-	auto cho = abc | def;
+	auto cho = abc | def | ghi;
 	assert(cho.parse("abc"s)->value.index() == 0);
 	assert(cho.parse("def"s)->value.index() == 1);
+	assert(cho.parse("ghi"s)->value.index() == 2);
 	assert(cho.parse("XXX"s) == fail);
-
-	auto cho3 = abc | def | ghi;
-	assert(cho3.parse("abc"s)->value.index() == 0);
-	assert(cho3.parse("def"s)->value.index() == 1);
-	assert(cho3.parse("ghi"s)->value.index() == 2);
-	assert(cho3.parse("XXX"s) == fail);
 
 	auto pla = &abc;
 	assert(pla.parse("abc"s).has_value());
