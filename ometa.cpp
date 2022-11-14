@@ -374,9 +374,27 @@ auto operator> (Parser<F1, TChildren1> parser1, Parser<F2, TChildren2> parser2) 
 	return makeSequence(parser1, parser2);
 }
 
+// the PartialChoice wrapper allows chains like
+// a | b | c with the parsing result being
+// variant<ValA, ValB, ValC> instead of
+// variant<variant<ValA, ValB>, ValC>
+template <typename F, typename TChildren = std::tuple<>>
+class PartialChoice : public Parser<F, TChildren> {};
+
 template <typename F1, typename TChildren1, typename F2, typename TChildren2>
 auto operator| (Parser<F1, TChildren1> parser1, Parser<F2, TChildren2> parser2) {
-	return makeChoice(parser1, parser2);
+	return PartialChoice{ makeChoice(parser1, parser2) };
+}
+
+template <typename F1, typename TChildren1, typename F2, typename TChildren2>
+auto operator| (PartialChoice<F1, TChildren1> parser1, Parser<F2, TChildren2> parser2) {
+	auto allChildren = std::tuple_cat(parser1.children, std::make_tuple(parser2));
+	return PartialChoice{
+		std::apply([](auto &&... args) {
+			// https://stackoverflow.com/a/37100646/3825996
+			return makeChoice(args...);
+		}, allChildren)
+	};
 }
 
 template <typename F, typename TChildren>
@@ -440,7 +458,7 @@ int main() {
 	assert(cho.parse("def"s)->value.index() == 1);
 	assert(cho.parse("XXX"s) == fail);
 
-	auto cho3 = makeChoice(abc, def, ghi);
+	auto cho3 = abc | def | ghi;
 	assert(cho3.parse("abc"s)->value.index() == 0);
 	assert(cho3.parse("def"s)->value.index() == 1);
 	assert(cho3.parse("ghi"s)->value.index() == 2);
