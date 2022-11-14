@@ -506,13 +506,13 @@ int main() {
 	assert(oom.parse("XXX"s) == fail);
 
 	auto act = abc >= [](auto val) {
-		assert(val.template as<std::string>() == "abc");
+		assert(val.template copyInto<std::string>() == "abc");
 		return 123;
 	};
 	assert(act.parse("abc"s)->value == 123);
 
 	auto prd1 = abc <= [](auto val) {
-		assert(val->value.template as<std::string>() == "abc");
+		assert(val->value.template copyInto<std::string>() == "abc");
 		return true;
 	};
 	assert(prd1.parse("abc"s)->value.copyInto<std::string>() == "abc");
