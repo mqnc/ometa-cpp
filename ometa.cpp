@@ -158,45 +158,40 @@ public:
 
 // Sequence //
 
-template<typename TFirst, typename... TRest>
-auto makeSequence(TFirst firstChild, TRest... otherChildren) {
+template<typename... TChildren>
+auto makeSequence(TChildren... children) {
 
-	if constexpr (sizeof...(TRest) == 0) {
-		return firstChild;
-	}
-	else {
-		auto combinedRest = makeSequence(otherChildren...);
+	auto parseFn = []<forward_range TSource>(
+		SourceView<TSource> src,
+		auto children,
+		auto ctx
+		) {
+		using tuple_type = std::tuple<decltype(std::declval<TChildren>().parse(src, ctx)->value)...>;
 
-		auto parseFn = []<forward_range TSource>(
-			SourceView<TSource> src,
-			auto children,
-			auto ctx
-			) {
-			using tuple_type = std::tuple<
-				decltype(std::get<0>(children).parse(src, ctx)->value),
-				decltype(std::get<1>(children).parse(src, ctx)->value)
-			>;
-			using return_type = decltype(match(src, std::declval<tuple_type>()));
+		tuple_type values; // srew RAII
+		auto next = src;
+		bool success = true;
 
-			auto result1 = std::get<0>(children).parse(src, ctx);
-			if (not result1.has_value()) {
-				return fail_as<return_type>;
+		auto recursiveSteps = [&]<size_t I = 0>(const auto & self){
+			if constexpr (I < sizeof...(TChildren)) {
+				auto result = std::get<I>(children).parse(next, ctx);
+				if(result.has_value()){
+					std::get<I>(values) = result->value;
+					next = result->next;
+					self.template operator() < I + 1 > (self);
+				}
+				else{
+					success = false;
+				}
 			}
-
-			auto result2 = std::get<1>(children).parse(result1->next, ctx);
-			if (not result2.has_value()) {
-				return fail_as<return_type>;
-			}
-
-			return match(
-				result2->next,
-				std::make_tuple(result1->value, result2->value)
-			);
-
 		};
 
-		return Parser(parseFn, std::make_tuple(firstChild, combinedRest));
-	}
+		recursiveSteps(recursiveSteps);
+		
+		return success? match(next, values) : fail;
+	};
+
+	return Parser(parseFn, std::make_tuple(children...));
 }
 
 
@@ -214,8 +209,7 @@ auto makeChoice(TChildren... children) {
 
 		using return_type = decltype(match(src, std::declval<variant_type>()));
 
-		// https://stackoverflow.com/a/40873505/3825996
-		auto tryOneByOne = [&]<size_t I = 0>(const auto & self) {
+		auto recursiveTest = [&]<size_t I = 0>(const auto & self) {
 			if constexpr (I >= sizeof...(TChildren)) {
 				return fail_as<return_type>;
 			}
@@ -228,13 +222,12 @@ auto makeChoice(TChildren... children) {
 					);
 				}
 				else {
-					// https://stackoverflow.com/a/66182481/3825996
 					return self.template operator() < I + 1 > (self);
 				}
 			}
 		};
 
-		return tryOneByOne(tryOneByOne);
+		return recursiveTest(recursiveTest);
 	};
 
 	return Parser(parseFn, std::make_tuple(children...));
@@ -370,22 +363,40 @@ auto makePredicate(T child, F fn) {
 
 // Syntactic Sugar //
 
+// the PartialSequence wrapper allows chains like
+// a > b > c with the parsing result being
+// tuple<ValA, ValB, ValC> instead of
+// tuple<tuple<ValA, ValB>, ValC>
+template <typename F, typename TChildren = std::tuple<>>
+class PartialSequence : public Parser<F, TChildren> {
+public: PartialSequence(Parser<F, TChildren>&& other) :
+	Parser<F, TChildren>(std::move(other)) {};
+};
+
 template <typename F1, typename TChildren1, typename F2, typename TChildren2>
 auto operator> (Parser<F1, TChildren1> parser1, Parser<F2, TChildren2> parser2) {
-	return makeSequence(parser1, parser2);
+	return PartialSequence{ makeSequence(parser1, parser2) };
+}
+
+template <typename F1, typename TChildren1, typename F2, typename TChildren2>
+auto operator> (PartialSequence<F1, TChildren1> parser1, Parser<F2, TChildren2> parser2) {
+	auto allChildren = std::tuple_cat(parser1.children, std::make_tuple(parser2));
+	return PartialSequence{
+		std::apply([](auto &&... args) {
+			// https://stackoverflow.com/a/37100646/3825996
+			return makeSequence(args...);
+		}, allChildren)
+	};
 }
 
 // the PartialChoice wrapper allows chains like
 // a | b | c with the parsing result being
 // variant<ValA, ValB, ValC> instead of
 // variant<variant<ValA, ValB>, ValC>
-
-#include <iostream>
-
 template <typename F, typename TChildren = std::tuple<>>
 class PartialChoice : public Parser<F, TChildren> {
-	public: PartialChoice(Parser<F, TChildren>&& other):
-		Parser<F, TChildren>(std::move(other)){};
+public: PartialChoice(Parser<F, TChildren>&& other) :
+	Parser<F, TChildren>(std::move(other)) {};
 };
 
 template <typename F1, typename TChildren1, typename F2, typename TChildren2>
@@ -455,10 +466,12 @@ int main() {
 	assert(lit.parse("abcd"s)->value.as<std::string>() == "abc");
 	assert(lit.parse("abX"s) == fail);
 
-	auto seq = abc > def;
-	assert(std::get<0>(seq.parse("abcdef"s)->value).as<std::string>() == "abc");
-	assert(std::get<1>(seq.parse("abcdef"s)->value).as<std::string>() == "def");
-	assert(seq.parse("abcdeX"s) == fail);
+	auto seq = abc > def > ghi;
+	assert(std::get<0>(seq.parse("abcdefghi"s)->value).as<std::string>() == "abc");
+	assert(std::get<1>(seq.parse("abcdefghi"s)->value).as<std::string>() == "def");
+	assert(std::get<2>(seq.parse("abcdefghi"s)->value).as<std::string>() == "ghi");
+
+	assert(seq.parse("abcdefghX"s) == fail);
 
 	auto cho = abc | def | ghi;
 	assert(cho.parse("abc"s)->value.index() == 0);
