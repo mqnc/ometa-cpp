@@ -27,7 +27,7 @@ auto makeLiteral(auto compare) {
 		}() : fail;
 	};
 
-	return Parser(parseFn, std::make_tuple());
+	return Parser(parseFn);
 }
 
 auto makeLiteral(const char* compare){

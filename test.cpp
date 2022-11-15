@@ -7,6 +7,8 @@
 using std::get;
 
 int main() {
+	assert(ANY.parse("1"));
+	assert(not ANY.parse(""));
 
 	auto abc = "abc"_L;
 	auto def = "def"_L;

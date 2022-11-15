@@ -1,6 +1,7 @@
 #pragma once
 
 #include "parser.h"
+#include "any.h"
 #include "literal.h"
 #include "repetition.h"
 #include "lookahead.h"

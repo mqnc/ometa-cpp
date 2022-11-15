@@ -25,7 +25,7 @@ public:
 
 	auto end() const { return m_end; }
 
-	void shift() { ++m_begin; }
+	auto next() { return SourceView(++m_begin, m_end); }
 
 	template<typename T>
 	T copyInto() const {

@@ -18,12 +18,12 @@ public:
 	Parser(F parseFn, TChildren children = std::tuple<>{}) :
 		parseFn{ parseFn }, children{ children } {}
 
-	auto parse(auto src) {
+	auto parse(const auto& src) {
 		return parseFn(SourceView(src), children, Empty{});
 	}
 
-	auto parse(auto src, auto ctx) {
-		return parseFn(SourceView(std::string(src)), children, ctx);
+	auto parse(const auto& src, auto ctx) {
+		return parseFn(SourceView(src), children, ctx);
 	}
 
 	template<forward_range TSource>
