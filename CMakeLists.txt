@@ -1,11 +1,5 @@
 cmake_minimum_required(VERSION 3.0)
-project(CppSnippets)
+project(ometacpp)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_COMPILER g++-11)
-
-file(GLOB sources *.cpp)
-foreach (sourcefile ${sources})
-	get_filename_component(target ${sourcefile} NAME_WLE)
-	add_executable(${target} ${sourcefile})
-	target_compile_definitions(${target} PUBLIC TESTS_SNIPPET)
-endforeach (sourcefile ${sources})
+add_executable(test test.cpp)

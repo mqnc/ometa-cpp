@@ -1,0 +1,34 @@
+#pragma once
+
+#include <string>
+#include <algorithm>
+
+#include "parser.h"
+
+using namespace std::string_literals;
+
+auto makeLiteral(auto compare) {
+
+	auto parseFn = [compare]<forward_range TSource>(
+		SourceView<TSource> src,
+		auto children,
+		auto ctx
+		) {
+		(void)children;
+		(void)ctx;
+
+		auto equalUntil = std::ranges::mismatch(src, compare);
+
+		return equalUntil.in2 == compare.end() ? [&] {
+			auto next = SourceView<TSource>(equalUntil.in1, src.end());
+			auto matched = SourceView<TSource>(src.begin(), equalUntil.in1);
+			return match(next, matched);
+		}() : fail;
+	};
+
+	return Parser(parseFn, std::make_tuple());
+}
+
+auto operator""_L(const char* compare, size_t size) {
+	return makeLiteral<std::string>(std::string(compare, size));
+}
