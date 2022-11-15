@@ -1,6 +1,8 @@
 #pragma once
 
 #include <tuple>
+#include <string>
+
 #include "empty.h"
 #include "sourceview.h"
 #include "match.h"
