@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <string_view>
 #include <algorithm>
 
 #include "parser.h"
@@ -27,6 +28,10 @@ auto makeLiteral(auto compare) {
 	};
 
 	return Parser(parseFn, std::make_tuple());
+}
+
+auto makeLiteral(const char* compare){
+	return makeLiteral(std::string_view(compare));
 }
 
 auto operator""_L(const char* compare, size_t size) {

@@ -1,6 +1,8 @@
 #pragma once
 
 #include <ranges>
+#include <string_view>
+#include <algorithm>
 
 using std::ranges::forward_range;
 
@@ -26,15 +28,25 @@ public:
 	void shift() { ++m_begin; }
 
 	template<typename T>
-	T copyInto() {
+	T copyInto() const {
 		T result;
 		for (const auto& item : *this) {
 			result.push_back(item);
 		}
 		return result;
 	}
+
+	bool operator==(const auto& other) const {
+		return std::ranges::equal(*this, other);
+	}
+
+	bool operator==(const char* other) const {
+		return operator==(std::string_view(other));
+	}
 	
 private:
 	iterator_type m_begin;
 	sentinel_type m_end;
 };
+
+SourceView(const char*) -> SourceView<std::string_view>;

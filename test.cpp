@@ -4,6 +4,8 @@
 #include <cassert>
 #include <iostream>
 
+using std::get;
+
 int main() {
 
 	auto abc = "abc"_L;
@@ -11,65 +13,65 @@ int main() {
 	auto ghi = "ghi"_L;
 
 	auto lit = abc;
-	assert(lit.parse("abcd"s)->value.copyInto<std::string>() == "abc");
-	assert(lit.parse("abX"s) == fail);
+	assert(lit.parse("abcd")->value == "abc");
+	assert(not lit.parse("abX"));
 
 	auto seq = abc > def > ghi;
-	assert(std::get<0>(seq.parse("abcdefghi"s)->value).copyInto<std::string>() == "abc");
-	assert(std::get<1>(seq.parse("abcdefghi"s)->value).copyInto<std::string>() == "def");
-	assert(std::get<2>(seq.parse("abcdefghi"s)->value).copyInto<std::string>() == "ghi");
+	assert(get<0>(seq.parse("abcdefghi")->value) == "abc");
+	assert(get<1>(seq.parse("abcdefghi")->value) == "def");
+	assert(get<2>(seq.parse("abcdefghi")->value) == "ghi");
 
-	assert(seq.parse("abcdefghX"s) == fail);
+	assert(not seq.parse("abcdefghX"));
 
 	auto cho = abc | def | ghi;
-	assert(cho.parse("abc"s)->value.index() == 0);
-	assert(cho.parse("def"s)->value.index() == 1);
-	assert(cho.parse("ghi"s)->value.index() == 2);
-	assert(cho.parse("XXX"s) == fail);
+	assert(cho.parse("abc")->value.index() == 0);
+	assert(cho.parse("def")->value.index() == 1);
+	assert(cho.parse("ghi")->value.index() == 2);
+	assert(not cho.parse("XXX"));
 
 	auto pla = &abc;
-	assert(pla.parse("abc"s).has_value());
-	assert(pla.parse("XXX"s) == fail);
+	assert(pla.parse("abc"));
+	assert(not pla.parse("XXX"));
 
 	auto nla = !abc;
-	assert(nla.parse("abc"s) == fail);
-	assert(nla.parse("XXX"s).has_value());
+	assert(not nla.parse("abc"));
+	assert(nla.parse("XXX"));
 
 	auto opt = ~abc > def;
-	assert(opt.parse("abcdef"s).has_value());
-	assert(opt.parse("def"s).has_value());
-	assert(opt.parse("XXX"s) == fail);
+	assert(opt.parse("abcdef"));
+	assert(opt.parse("def"));
+	assert(not opt.parse("XXX"));
 
 	auto zom = *abc > def;
-	assert(zom.parse("abcabcdef"s).has_value());
-	assert(std::get<0>(zom.parse("abcabcdef"s)->value).size() == 2);
-	assert(zom.parse("abcdef"s).has_value());
-	assert(zom.parse("def"s).has_value());
-	assert(zom.parse("XXX"s) == fail);
+	assert(zom.parse("abcabcdef"));
+	assert(get<0>(zom.parse("abcabcdef")->value).size() == 2);
+	assert(zom.parse("abcdef"));
+	assert(zom.parse("def"));
+	assert(not zom.parse("XXX"));
 
 	auto oom = +abc > def;
-	assert(oom.parse("abcabcdef"s).has_value());
-	assert(oom.parse("abcdef"s).has_value());
-	assert(oom.parse("def"s) == fail);
-	assert(oom.parse("XXX"s) == fail);
+	assert(oom.parse("abcabcdef"));
+	assert(oom.parse("abcdef"));
+	assert(not oom.parse("def"));
+	assert(not oom.parse("XXX"));
 
 	auto act = abc >= [](auto val) {
-		assert(val.template copyInto<std::string>() == "abc");
+		assert(val == "abc");
 		return 123;
 	};
-	assert(act.parse("abc"s)->value == 123);
+	assert(act.parse("abc")->value == 123);
 
 	auto prd1 = abc <= [](auto val) {
-		assert(val->value.template copyInto<std::string>() == "abc");
+		assert(val->value == "abc");
 		return true;
 	};
-	assert(prd1.parse("abc"s)->value.copyInto<std::string>() == "abc");
+	assert(prd1.parse("abc")->value == "abc");
 
 	auto prd0 = abc <= [](auto val) {
-		assert(val == fail);
+		assert(not val);
 		return false;
 	};
-	assert(prd0.parse("XXX"s) == fail);
+	assert(not prd0.parse("XXX"));
 
 	std::cout << "done!\n";
 

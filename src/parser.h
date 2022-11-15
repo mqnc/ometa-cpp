@@ -19,21 +19,11 @@ public:
 		parseFn{ parseFn }, children{ children } {}
 
 	auto parse(auto src) {
-		if constexpr (std::is_same_v<decltype(src), const char*>) {
-			return parseFn(SourceView(std::string(src)), children, Empty{});
-		}
-		else {
-			return parseFn(SourceView(src), children, Empty{});
-		}
+		return parseFn(SourceView(src), children, Empty{});
 	}
 
 	auto parse(auto src, auto ctx) {
-		if constexpr (std::is_same_v<decltype(src), const char*>) {
-			return parseFn(SourceView(std::string(src)), children, ctx);
-		}
-		else {
-			return parseFn(SourceView(src), children, ctx);
-		}
+		return parseFn(SourceView(std::string(src)), children, ctx);
 	}
 
 	template<forward_range TSource>
