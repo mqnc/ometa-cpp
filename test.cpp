@@ -53,23 +53,23 @@ int main() {
 	assert(oom.parse("def"s) == fail);
 	assert(oom.parse("XXX"s) == fail);
 
-	// auto act = abc >= [](auto val) {
-	// 	assert(val.template copyInto<std::string>() == "abc");
-	// 	return 123;
-	// };
-	// assert(act.parse("abc"s)->value == 123);
+	auto act = abc >= [](auto val) {
+		assert(val.template copyInto<std::string>() == "abc");
+		return 123;
+	};
+	assert(act.parse("abc"s)->value == 123);
 
-	// auto prd1 = abc <= [](auto val) {
-	// 	assert(val->value.template copyInto<std::string>() == "abc");
-	// 	return true;
-	// };
-	// assert(prd1.parse("abc"s)->value.copyInto<std::string>() == "abc");
+	auto prd1 = abc <= [](auto val) {
+		assert(val->value.template copyInto<std::string>() == "abc");
+		return true;
+	};
+	assert(prd1.parse("abc"s)->value.copyInto<std::string>() == "abc");
 
-	// auto prd0 = abc <= [](auto val) {
-	// 	assert(val == fail);
-	// 	return false;
-	// };
-	// assert(prd0.parse("XXX"s) == fail);
+	auto prd0 = abc <= [](auto val) {
+		assert(val == fail);
+		return false;
+	};
+	assert(prd0.parse("XXX"s) == fail);
 
 	std::cout << "done!\n";
 

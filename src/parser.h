@@ -42,6 +42,6 @@ public:
 	}
 
 	//template <typename TSource>
-	//using TValue = decltype(std::declval<Parser>().parse(std::declval<TSource>()));
+	//using TValue = decltype(std::declval<Parser<F, TChildren>>().parse(std::declval<TSource>()));
 
 };
