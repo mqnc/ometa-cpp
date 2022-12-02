@@ -307,7 +307,7 @@ auto makeLookAhead(T child, Polarity polarity) {
 			auto result = std::get<0>(child).parse(src);
 
 			if (result.has_value() == (polarity == positive)) {
-				return match(src, Empty{});
+				return match(src, empty);
 			}
 			else {
 				return fail;

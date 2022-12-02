@@ -63,7 +63,7 @@ class Context {
 
 public:
 
-	Context() :outer{ Empty{} }, value{ Empty{} } {}
+	Context() :outer{ empty }, value{ empty } {}
 
 	template<typename NewTag, typename TNewValue>
 	auto add(TNewValue nv) {
@@ -131,7 +131,7 @@ public:
 		parseFn{ parseFn }, children{ children } {}
 
 	auto parse(auto src) {
-		return parseFn(SourceView(src), children, Empty{});
+		return parseFn(SourceView(src), children, empty);
 	}
 
 	auto parse(auto src, auto ctx) {
@@ -139,7 +139,7 @@ public:
 	}
 
 	auto parse(SourceView<auto> src) {
-		return parseFn(src, children, Empty{});
+		return parseFn(src, children, empty);
 	}
 
 	auto parse(SourceView<auto> src, auto ctx) {
@@ -297,7 +297,7 @@ auto makeLookAhead(T child, Polarity polarity) {
 			auto result = std::get<0>(children).parse(src);
 
 			return result.has_value() == (polarity == positive) ?
-				match(src, Empty{}) : fail;
+				match(src, empty) : fail;
 	};
 
 	return Parser(parseFn, std::make_tuple(child));

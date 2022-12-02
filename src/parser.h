@@ -6,6 +6,7 @@
 #include "empty.h"
 #include "sourceview.h"
 #include "match.h"
+#include "context.h"
 
 template <typename F, typename TChildren = std::tuple<>>
 class Parser {
@@ -18,11 +19,8 @@ public:
 	Parser(F parseFn, TChildren children = std::tuple<>{}) :
 		parseFn{ parseFn }, children{ children } {}
 
-	auto parse(const auto& src) {
-		return parseFn(SourceView(src), children, Empty{});
-	}
-
-	auto parse(const auto& src, auto ctx) {
+	template<typename TCtx = decltype(Context{})>
+	auto parse(const auto& src, TCtx ctx = Context{}) {
 		return parseFn(SourceView(src), children, ctx);
 	}
 
@@ -31,7 +29,7 @@ public:
 		return parseFn(src, children, ctx);
 	}
 
-	//template <typename TSource>
-	//using TValue = decltype(std::declval<Parser<F, TChildren>>().parse(std::declval<TSource>()));
+	// template <typename TSource>
+	// using TValue = decltype(std::declval<Parser<F, TChildren>>().parse(std::declval<TSource>()));
 
 };

@@ -12,9 +12,9 @@ auto makeChoice(TChildren... children) {
 		auto children,
 		auto ctx
 		) {
-		using variant_type = std::variant<decltype(std::declval<TChildren>().parse(src, ctx)->value)...>;
+		using variant_type = std::variant<typename decltype(std::declval<TChildren>().parse(src, ctx))::value_type...>;
 
-		using return_type = decltype(match(src, std::declval<variant_type>()));
+		using return_type = decltype(match(src, src, std::declval<variant_type>()));
 
 		auto recursiveTest = [&]<size_t I = 0>(const auto & self) {
 			if constexpr (I >= sizeof...(TChildren)) {
@@ -24,8 +24,9 @@ auto makeChoice(TChildren... children) {
 				auto result = std::get<I>(children).parse(src, ctx);
 				if (result.has_value()) {
 					return match(
+						result->capture,
 						result->next,
-						variant_type{ std::in_place_index<I>, result->value }
+						variant_type{ std::in_place_index<I>, result.value() }
 					);
 				}
 				else {

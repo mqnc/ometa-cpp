@@ -3,6 +3,7 @@
 #include <ranges>
 #include <string_view>
 #include <algorithm>
+#include <ostream>
 
 using std::ranges::forward_range;
 
@@ -50,3 +51,12 @@ private:
 };
 
 SourceView(const char*) -> SourceView<std::string_view>;
+
+template <forward_range TSource>
+std::ostream& operator<<(std::ostream& os, const SourceView<TSource> src)
+{
+	for (const auto& item : src) {
+		os << item;
+	}
+    return os;
+}

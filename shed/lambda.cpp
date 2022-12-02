@@ -63,7 +63,7 @@ class Context {
 
 public:
 
-	Context() :parent{ Empty{} }, value{ Empty{} } {}
+	Context() :parent{ empty }, value{ empty } {}
 
 	template<typename NewTag, typename TNewValue>
 	auto add(TNewValue nv) {
@@ -195,7 +195,7 @@ public:
 	}
 
 	MaybeMatch<source_type, value_type> parse(source_type src) {
-		return parseFn(src, children, Empty{});
+		return parseFn(src, children, empty);
 	}
 
 };
@@ -351,7 +351,7 @@ auto makeSequence(TFirst firstChild, TRest... otherChildren) {
 // 			auto result = std::get<0>(child).parse(src);
 
 // 			if (result.has_value() == (polarity == positive)) {
-// 				return match(src, Empty{});
+// 				return match(src, empty);
 // 			}
 // 			else {
 // 				return fail;

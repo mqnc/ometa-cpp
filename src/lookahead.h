@@ -16,7 +16,7 @@ auto makeLookAhead(T child, Polarity polarity) {
 		auto result = std::get<0>(children).parse(src, ctx);
 
 		return result.has_value() == (polarity == positive) ?
-			match(src, Empty{}) : fail;
+			match(src, src, empty) : fail;
 	};
 
 	return Parser(parseFn, std::make_tuple(child));

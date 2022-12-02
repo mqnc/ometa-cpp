@@ -13,8 +13,8 @@ auto makeRepetition(T child, size_t min, size_t max) {
 		auto ctx
 		) {
 
-		using return_element_type = decltype(std::get<0>(children).parse(src, ctx)->value);
-		std::deque<return_element_type> results{};
+		using return_element_type = typename decltype(std::get<0>(children).parse(src, ctx))::value_type;
+		std::deque<return_element_type> matches{};
 
 		auto next = src;
 
@@ -22,18 +22,18 @@ auto makeRepetition(T child, size_t min, size_t max) {
 			auto result = std::get<0>(children).parse(next, ctx);
 
 			if (result.has_value()) {
-				results.push_back(result->value);
+				matches.push_back(result.value());
 				next = result->next;
 			}
 			else if (i < min) {
-				return fail_as<decltype(match(next, results))>;
+				return fail_as<decltype(match(src, next, matches))>;
 			}
 			else {
 				break;
 			}
 		}
 
-		return match(next, results);
+		return match(src, next, matches);
 
 	};
 

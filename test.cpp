@@ -6,6 +6,34 @@
 
 using std::get;
 
+/*
+template<class TupType, size_t... I>
+void print(std::ostream& os, const TupType& tup, std::index_sequence<I...>){
+    os << "(";
+    (..., (os << (I == 0? "" : ", ") << std::get<I>(tup)));
+    os << ")";
+}
+
+template<class... T>
+std::ostream& operator<<(std::ostream& os, const std::tuple<T...>& tup){
+    print(os, tup, std::make_index_sequence<sizeof...(T)>());
+	return os;
+}
+
+template<class T>
+std::ostream& operator<<(std::ostream& os, const std::deque<T>& deq){
+    os << "[";
+    std::string sep = "";
+	for(const auto& el : deq){
+		os << sep << el;
+		sep = ", ";
+	}
+    os << "]";
+	return os;
+}
+*/
+
+
 int main() {
 	assert(ANY.parse("1"));
 	assert(not ANY.parse(""));
@@ -19,9 +47,10 @@ int main() {
 	assert(not lit.parse("abX"));
 
 	auto seq = abc > def > ghi;
-	assert(get<0>(seq.parse("abcdefghi")->value) == "abc");
-	assert(get<1>(seq.parse("abcdefghi")->value) == "def");
-	assert(get<2>(seq.parse("abcdefghi")->value) == "ghi");
+
+	assert(get<0>(seq.parse("abcdefghi")->value).value == "abc");
+	assert(get<1>(seq.parse("abcdefghi")->value).value == "def");
+	assert(get<2>(seq.parse("abcdefghi")->value).value == "ghi");
 
 	assert(not seq.parse("abcdefghX"));
 
@@ -46,7 +75,7 @@ int main() {
 
 	auto zom = *abc > def;
 	assert(zom.parse("abcabcdef"));
-	assert(get<0>(zom.parse("abcabcdef")->value).size() == 2);
+	assert(get<0>(zom.parse("abcabcdef")->value).value.size() == 2);
 	assert(zom.parse("abcdef"));
 	assert(zom.parse("def"));
 	assert(not zom.parse("XXX"));
@@ -75,7 +104,29 @@ int main() {
 	};
 	assert(not prd0.parse("XXX"));
 
-	std::cout << "done!\n";
 
+	Parser check(
+		[]<forward_range TSource>(
+			SourceView<TSource> src,
+			auto children,
+			auto ctx
+		) {
+			(void) src;
+			(void) children;
+
+			if constexpr(not ctx.is_empty()){
+				assert(ctx.GET(t0).value == "abc");
+				assert(get<1>(ctx.GET(ts).value[1].value).value == "abc");
+			}
+
+			return match(src, src, empty);
+		}
+	);
+
+	auto list = abc AS(t0) > *("+"_L > abc) AS(ts) > check;
+	list.parse("abc+abc+abc");
+
+
+	std::cout << "done!\n";
 	return 0;
 }

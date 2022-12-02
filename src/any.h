@@ -1,7 +1,6 @@
 
 #include "parser.h"
 
-
 auto makeAny() {
 
 	auto parseFn = []<forward_range TSource>(
@@ -12,7 +11,7 @@ auto makeAny() {
 		(void)children;
 		(void)ctx;
 
-        return src.begin() != src.end()? match(src.next(), Empty{}) : fail;
+        return src.begin() != src.end()? match(src, src.next(), empty) : fail;
 	};
 
 	return Parser(parseFn);

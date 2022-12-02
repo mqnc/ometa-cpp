@@ -13,7 +13,7 @@ auto makeAction(T child, F fn) {
 		auto result = std::get<0>(children).parse(src, ctx);
 
 		return result.has_value() ?
-			match(result->next, fn(result->value)) : fail;
+			match(src, result->next, fn(result->value)) : fail;
 	};
 
 	return Parser(parseFn, std::make_tuple(child));
