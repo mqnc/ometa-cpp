@@ -127,6 +127,25 @@ int main() {
 	list.parse("abc+abc+abc");
 
 
+	// Parser<std::function<
+	// 	Match<std::string, int>(
+	// 		SourceView<std::string>,
+	// 		std::tuple<>,
+	// 		decltype(Context{})
+	// 	)
+	// >> p;
+
+	auto parseFn = [](
+		SourceView<std::string> src,
+		std::tuple<>,
+		Context<>
+	) {
+        return match(src, src, empty);
+	};
+
+	//auto expression = Parser(parseFn);
+	//expression = "atomic"_L | "("_L > expression > ")"_L;
+
 	std::cout << "done!\n";
 	return 0;
 }
