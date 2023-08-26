@@ -1,24 +1,24 @@
 
 #include "parser.h"
 
-template<typename T, typename F>
+template <typename T, typename F>
 auto makePredicate(T child, F fn) {
 
-	auto parseFn = [fn]<forward_range TSource>(
-		SourceView<TSource> src,
-		auto children,
-		auto ctx
+	auto parseFn = [child, fn]<forward_range TSource>
+		(
+			SourceView<TSource> src,
+			auto ctx
 		) {
-		auto result = std::get<0>(children).parse(src, ctx);
+			auto result = child.parse(src, ctx);
 
-		return fn(result) ? result : fail;
-	};
+			return fn(result) ? result : fail;
+		};
 
-	return Parser(parseFn, std::make_tuple(child));
+	return Parser(parseFn);
 }
 
 
-template <typename F, typename TChildren, typename P>
-auto operator<= (Parser<F, TChildren> parser, P predicate) {
+template <typename F, typename P>
+auto operator<=(Parser<F> parser, P predicate) {
 	return makePredicate(parser, predicate);
 }

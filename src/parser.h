@@ -8,25 +8,22 @@
 #include "match.h"
 #include "context.h"
 
-template <typename F, typename TChildren = std::tuple<>>
+template <typename F>
 class Parser {
 protected:
 	F parseFn;
 public:
 
-	TChildren children;
+	Parser(F parseFn): parseFn {parseFn} {}
 
-	Parser(F parseFn, TChildren children = std::tuple<>{}) :
-		parseFn{ parseFn }, children{ children } {}
-
-	template<typename TCtx = decltype(Context{})>
-	auto parse(const auto& src, TCtx ctx = Context{}) {
-		return parseFn(SourceView(src), children, ctx);
+	template <typename TCtx = decltype(Context {})>
+	auto parse(const auto& src, TCtx ctx = Context {}) const {
+		return parseFn(SourceView(src), ctx);
 	}
 
-	template<forward_range TSource>
-	auto parse(SourceView<TSource> src, auto ctx) {
-		return parseFn(src, children, ctx);
+	template <forward_range TSource>
+	auto parse(SourceView<TSource> src, auto ctx) const {
+		return parseFn(src, ctx);
 	}
 
 	// template <typename TSource>

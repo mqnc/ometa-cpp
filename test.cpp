@@ -4,37 +4,40 @@
 #include <cassert>
 #include <iostream>
 
+#include <map>
+
 using std::get;
 
 /*
 template<class TupType, size_t... I>
 void print(std::ostream& os, const TupType& tup, std::index_sequence<I...>){
-    os << "(";
-    (..., (os << (I == 0? "" : ", ") << std::get<I>(tup)));
-    os << ")";
+	os << "(";
+	(..., (os << (I == 0? "" : ", ") << std::get<I>(tup)));
+	os << ")";
 }
 
 template<class... T>
 std::ostream& operator<<(std::ostream& os, const std::tuple<T...>& tup){
-    print(os, tup, std::make_index_sequence<sizeof...(T)>());
+	print(os, tup, std::make_index_sequence<sizeof...(T)>());
 	return os;
 }
 
 template<class T>
 std::ostream& operator<<(std::ostream& os, const std::deque<T>& deq){
-    os << "[";
-    std::string sep = "";
+	os << "[";
+	std::string sep = "";
 	for(const auto& el : deq){
 		os << sep << el;
 		sep = ", ";
 	}
-    os << "]";
+	os << "]";
 	return os;
 }
 */
 
 
 int main() {
+
 	assert(ANY.parse("1"));
 	assert(not ANY.parse(""));
 
@@ -108,13 +111,11 @@ int main() {
 	Parser check(
 		[]<forward_range TSource>(
 			SourceView<TSource> src,
-			auto children,
 			auto ctx
 		) {
 			(void) src;
-			(void) children;
 
-			if constexpr(not ctx.is_empty()){
+			if constexpr (not ctx.is_empty()) {
 				assert(ctx.GET(t0).value == "abc");
 				assert(get<1>(ctx.GET(ts).value[1].value).value == "abc");
 			}
@@ -127,24 +128,9 @@ int main() {
 	list.parse("abc+abc+abc");
 
 
-	// Parser<std::function<
-	// 	Match<std::string, int>(
-	// 		SourceView<std::string>,
-	// 		std::tuple<>,
-	// 		decltype(Context{})
-	// 	)
-	// >> p;
 
-	auto parseFn = [](
-		SourceView<std::string> src,
-		std::tuple<>,
-		Context<>
-	) {
-        return match(src, src, empty);
-	};
-
-	//auto expression = Parser(parseFn);
-	//expression = "atomic"_L | "("_L > expression > ")"_L;
+	// auto expression = Parser(parseFn);
+	// expression = "atomic"_L | "("_L > expression > ")"_L;
 
 	std::cout << "done!\n";
 	return 0;

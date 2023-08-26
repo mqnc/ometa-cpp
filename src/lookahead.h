@@ -4,30 +4,30 @@
 
 enum Polarity { positive, negative };
 
-template<typename T>
+template <typename T>
 auto makeLookAhead(T child, Polarity polarity) {
 
-	auto parseFn = [polarity]<forward_range TSource>(
-		SourceView<TSource> src,
-		auto children,
-		auto ctx
+	auto parseFn = [child, polarity]<forward_range TSource>
+		(
+			SourceView<TSource> src,
+			auto ctx
 		) {
 
-		auto result = std::get<0>(children).parse(src, ctx);
+			auto result = child.parse(src, ctx);
 
-		return result.has_value() == (polarity == positive) ?
-			match(src, src, empty) : fail;
-	};
+			return result.has_value() == (polarity == positive) ?
+				match(src, src, empty) : fail;
+		};
 
-	return Parser(parseFn, std::make_tuple(child));
+	return Parser(parseFn);
 }
 
 
-template <typename F, typename TChildren>
-auto operator& (Parser<F, TChildren> parser) {
+template <typename F>
+auto operator&(Parser<F> parser) {
 	return makeLookAhead(parser, positive);
 }
-template <typename F, typename TChildren>
-auto operator! (Parser<F, TChildren> parser) {
+template <typename F>
+auto operator!(Parser<F> parser) {
 	return makeLookAhead(parser, negative);
 }

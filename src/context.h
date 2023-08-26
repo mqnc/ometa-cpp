@@ -7,7 +7,7 @@
 
 #include <iostream>
 
-template<typename TRest = Empty, StringLiteral Tag = "", typename TValue = Empty>
+template <typename TRest = Empty, StringLiteral Tag = "", typename TValue = Empty>
 class Context {
 	const TRest rest;
 	const TValue value;
@@ -15,40 +15,40 @@ class Context {
 	Context(
 		const TRest rest,
 		const TValue value
-	) :rest{ rest }, value{ value } {}
+		): rest {rest}, value {value} {}
 
 public:
 
-	Context() :rest{ empty }, value{ empty } {}
+	Context(): rest {empty}, value {empty} {}
 
-	template<StringLiteral NewTag, typename TNewValue>
+	template <StringLiteral NewTag, typename TNewValue>
 	auto add(TNewValue nv) {
 		return Context<std::remove_reference_t<decltype(*this)>, NewTag, TNewValue>(*this, nv);
 	}
 
-	template<StringLiteral GetTag>
+	template <StringLiteral GetTag>
 	auto get(Binding<GetTag> bind) const {
 		if constexpr (GetTag == Tag) {
 			return value;
 		}
-		else if constexpr (not std::is_same_v<TRest, Empty>){
+		else if constexpr (not std::is_same_v<TRest, Empty>) {
 			return rest.template get(bind);
 		}
-		else{
+		else {
 			return empty;
 		}
 	}
 
 	void print() const {
 		std::cout << "\"" << Tag << "\"";
-		if constexpr(not std::is_same_v<TValue, Empty>){
+		if constexpr (not std::is_same_v<TValue, Empty>) {
 			std::cout << "=" << value;
 		}
 		std::cout << "  ";
-		if constexpr(not std::is_same_v<TRest, Empty>){
+		if constexpr (not std::is_same_v<TRest, Empty>) {
 			rest.print();
 		}
-		else{
+		else {
 			std::cout << "\n";
 		}
 	}
@@ -57,15 +57,15 @@ public:
 		return std::is_same_v<TValue, Empty> and std::is_same_v<TRest, Empty>;
 	}
 
-	template<typename, StringLiteral, typename>
+	template <typename, StringLiteral, typename>
 	friend class Context;
 };
 
 template <typename>
-struct is_context :public std::false_type {};
+struct is_context: public std::false_type {};
 template <typename T, StringLiteral U, typename V>
-struct is_context<Context<T, U, V>> :public std::true_type {};
-template<typename T>
+struct is_context<Context<T, U, V>>: public std::true_type {};
+template <typename T>
 concept context_type = is_context<T>::value;
 
 #define GET(NAME) get(binding<#NAME>)

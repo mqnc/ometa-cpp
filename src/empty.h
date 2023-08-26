@@ -3,9 +3,9 @@
 #include <ostream>
 
 struct Empty {
-    constexpr bool operator==(const Empty other) const{
-        return true;
-    }
+	constexpr bool operator==(const Empty other) const {
+		return true;
+	}
 };
 
 Empty empty;
@@ -13,5 +13,5 @@ Empty empty;
 std::ostream& operator<<(std::ostream& os, Empty)
 {
 	os << "(empty)";
-    return os;
+	return os;
 }

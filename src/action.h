@@ -1,25 +1,25 @@
 
 #include "parser.h"
 
-template<typename T, typename F>
+template <typename T, typename F>
 auto makeAction(T child, F fn) {
 
-	auto parseFn = [fn]<forward_range TSource>(
-		SourceView<TSource> src,
-		auto children,
-		auto ctx
+	auto parseFn = [child, fn]<forward_range TSource>
+		(
+			SourceView<TSource> src,
+			auto ctx
 		) {
 
-		auto result = std::get<0>(children).parse(src, ctx);
+			auto result = child.parse(src, ctx);
 
-		return result.has_value() ?
-			match(src, result->next, fn(result->value)) : fail;
-	};
+			return result.has_value() ?
+				match(src, result->next, fn(result->value)) : fail;
+		};
 
-	return Parser(parseFn, std::make_tuple(child));
+	return Parser(parseFn);
 }
 
-template <typename F, typename TChildren, typename A>
-auto operator>= (Parser<F, TChildren> parser, A action) {
+template <typename F, typename A>
+auto operator>=(Parser<F> parser, A action) {
 	return makeAction(parser, action);
 }
