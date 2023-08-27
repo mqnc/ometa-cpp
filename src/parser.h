@@ -2,6 +2,7 @@
 
 #include <tuple>
 #include <string>
+#include <functional>
 
 #include "empty.h"
 #include "sourceview.h"
@@ -10,9 +11,8 @@
 
 template <typename F>
 class Parser {
-protected:
-	F parseFn;
 public:
+	F parseFn;
 
 	Parser(F parseFn): parseFn {parseFn} {}
 
@@ -24,6 +24,11 @@ public:
 	template <forward_range TSource>
 	auto parse(SourceView<TSource> src, auto ctx) const {
 		return parseFn(src, ctx);
+	}
+
+	template <typename F2>
+	void operator=(const Parser<F2>& target) {
+		parseFn = target.parseFn;
 	}
 
 	// template <typename TSource>

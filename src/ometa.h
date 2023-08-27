@@ -11,3 +11,4 @@
 #include "binder.h"
 #include "predicate.h"
 #include "action.h"
+#include "recursion.h"

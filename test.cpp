@@ -3,6 +3,7 @@
 
 #include <cassert>
 #include <iostream>
+#include <sstream>
 
 #include <map>
 
@@ -109,10 +110,7 @@ int main() {
 
 
 	Parser check(
-		[]<forward_range TSource>(
-			SourceView<TSource> src,
-			auto ctx
-		) {
+		[](auto src, auto ctx) {
 			(void) src;
 
 			if constexpr (not ctx.is_empty()) {
@@ -127,10 +125,28 @@ int main() {
 	auto list = abc AS(t0) > *("+"_L > abc) AS(ts) > check;
 	list.parse("abc+abc+abc");
 
+	auto expression = makeDummy<std::string_view, std::string>();
 
+	expression = ("atom"_L | "("_L > REF(expression) > ")"_L) >= [](auto val) -> std::string {
+		std::stringstream ss;
+		switch (val.index()) {
+			case 0:
+				ss << get<0>(val).value;
+				break;
+			case 1: {
+				auto tuple = get<1>(val).value;
+				ss << get<2>(tuple).value
+				   << get<1>(tuple).value
+				   << get<0>(tuple).value;
+				break;
+			}
+		}
+		return ss.str();
+	};
 
-	// auto expression = Parser(parseFn);
-	// expression = "atomic"_L | "("_L > expression > ")"_L;
+	assert(expression.parse("atom")->value == "atom");
+	assert(expression.parse("(atom)")->value == ")atom(");
+	assert(expression.parse("((atom))")->value == "))atom((");
 
 	std::cout << "done!\n";
 	return 0;
