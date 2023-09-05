@@ -52,3 +52,15 @@ template <typename F>
 auto operator+(Parser<F> parser) {
 	return makeRepetition(parser, 1, (size_t) -1);
 }
+
+template <class T>
+std::ostream& operator<<(std::ostream& os, std::deque<T> const& vals) {
+	os << "[";
+	std::string sep = "";
+	for (auto val: vals) {
+		os << sep << val;
+		sep = ", ";
+	}
+	os << "]";
+	return os;
+}

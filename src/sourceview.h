@@ -29,12 +29,10 @@ public:
 	auto next() { return SourceView(++m_begin, m_end); }
 
 	template <typename T>
-	T copyInto() const {
-		T result;
+	void copyInto(T& buffer) const {
 		for (const auto& item: *this) {
-			result.push_back(item);
+			buffer.push_back(item);
 		}
-		return result;
 	}
 
 	bool operator==(const auto& other) const {

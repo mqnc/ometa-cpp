@@ -56,7 +56,7 @@ template <forward_range TSource, typename TValue, StringLiteral Tag>
 std::ostream& operator<<(std::ostream& os, const MaybeMatch<TSource, TValue, Tag> mmatch)
 {
 	if (mmatch) {
-		os << "*" << mmatch.value;
+		os << "*" << mmatch->value;
 	}
 	else {
 		os << "fail";

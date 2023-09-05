@@ -13,7 +13,7 @@ auto makeAction(T child, F fn) {
 			auto result = child.parse(src, ctx);
 
 			return result.has_value() ?
-				match(src, result->next, fn(result->value)) : fail;
+				match(src, result->next, fn(result)) : fail;
 		};
 
 	return Parser(parseFn);

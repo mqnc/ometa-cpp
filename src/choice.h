@@ -78,3 +78,12 @@ auto operator|(PartialChoice<F1, Ts...> parser1, Parser<F2> parser2) {
 		allChildren
 	};
 }
+
+
+
+template <class... Args>
+std::ostream& operator<<(std::ostream& os, std::variant<Args...> const& v) {
+	os << v.index() << "=";
+	std::visit([&os](const auto& var) { os << var; }, v);
+	return os;
+}

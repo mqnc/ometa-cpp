@@ -36,7 +36,6 @@ std::ostream& operator<<(std::ostream& os, const std::deque<T>& deq){
 }
 */
 
-
 int main() {
 
 	assert(ANY.parse("1"));
@@ -90,20 +89,20 @@ int main() {
 	assert(not oom.parse("def"));
 	assert(not oom.parse("XXX"));
 
-	auto act = abc >= [](auto val) {
-		assert(val == "abc");
+	auto act = abc >= [](auto matched) {
+		assert(matched->value == "abc");
 		return 123;
 	};
 	assert(act.parse("abc")->value == 123);
 
-	auto prd1 = abc <= [](auto val) {
-		assert(val->value == "abc");
+	auto prd1 = abc <= [](auto matched) {
+		assert(matched->value == "abc");
 		return true;
 	};
 	assert(prd1.parse("abc")->value == "abc");
 
-	auto prd0 = abc <= [](auto val) {
-		assert(not val);
+	auto prd0 = abc <= [](auto matched) {
+		assert(not matched);
 		return false;
 	};
 	assert(not prd0.parse("XXX"));
@@ -127,14 +126,14 @@ int main() {
 
 	auto expression = makeDummy<std::string_view, std::string>();
 
-	expression = ("atom"_L | "("_L > REF(expression) > ")"_L) >= [](auto val) -> std::string {
+	expression = ("atom"_L | "("_L > REF(expression) > ")"_L) >= [](auto matched) {
 		std::stringstream ss;
-		switch (val.index()) {
+		switch (matched->value.index()) {
 			case 0:
-				ss << get<0>(val).value;
+				ss << get<0>(matched->value).value;
 				break;
 			case 1: {
-				auto tuple = get<1>(val).value;
+				auto tuple = get<1>(matched->value).value;
 				ss << get<2>(tuple).value
 				   << get<1>(tuple).value
 				   << get<0>(tuple).value;

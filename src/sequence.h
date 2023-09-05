@@ -86,3 +86,20 @@ auto operator>(PartialSequence<F1, Ts...> parser1, Parser<F2> parser2) {
 		allChildren
 	};
 }
+
+
+template <class... Args>
+std::ostream& operator<<(std::ostream& os, std::tuple<Args...> const& t) {
+	os << "(";
+	bool first = true;
+	std::apply( [&os, &first](auto&&... args) {
+			auto print = [&](auto&& val) {
+				if (!first) { os << ","; }
+				(os << " " << val);
+				first = false;
+			};
+			(print(args), ...);
+		}, t);
+	os << " )";
+	return os;
+}
