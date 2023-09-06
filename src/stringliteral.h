@@ -4,7 +4,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <ostream>
-
+#include <string_view>
 
 template <size_t N>
 struct StringLiteral {
@@ -15,11 +15,11 @@ struct StringLiteral {
 
 	template <size_t N2>
 	constexpr bool operator==(const StringLiteral<N2>& other) const {
-		return std::strcmp(this->value, other.value) == 0;
+		return std::string_view(this->value) == other.value;
 	}
 
 	constexpr bool operator==(const char* other) const {
-		return std::strcmp(this->value, other) == 0;
+		return std::string_view(this->value) == other;
 	}
 };
 

@@ -1,4 +1,3 @@
-
 #include "src/ometa.h"
 
 #include <cassert>
@@ -8,7 +7,7 @@
 
 using std::get;
 
-int main() {
+int main(int argc, char *argv[]) {
 
 	auto sum = makeDummy<std::string_view, int>();
 
@@ -27,7 +26,7 @@ int main() {
 			case 0: return get<0>(matched->value).value;
 			case 1: return get<1>(get<1>(matched->value).value).value;
 		}
-		assert(false); // suppress compiler warning about no return
+		throw std::runtime_error("");
 	};
 
 	auto power = atomic > *("^"_L > atomic)
@@ -82,8 +81,12 @@ int main() {
 		return result;
 	};
 
-	std::cout << sum.parse("1+2-3") << "\n";
+	if(argc != 2){
+		std::cout << "usage: " << argv[0] << " 5+4*3^(2+1)\n";
+		return EXIT_FAILURE;
+	}
 
-	std::cout << "done!\n";
-	return 0;
+	std::cout << sum.parse(argv[1])->value << "\n";
+
+	return EXIT_SUCCESS;
 }
