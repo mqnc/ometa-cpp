@@ -1,3 +1,4 @@
+#pragma once
 
 #include "parser.h"
 
@@ -13,7 +14,8 @@ auto makeAction(T child, F fn) {
 			auto result = child.parse(src, ctx);
 
 			return result.has_value() ?
-				match(src, result->next, fn(result)) : fail;
+				match(fn(result), result->next)
+				: fail;
 		};
 
 	return Parser(parseFn);

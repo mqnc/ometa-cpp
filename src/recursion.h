@@ -4,8 +4,8 @@
 
 template <typename TSource, typename TValue, typename TContext = decltype(Context {})>
 auto makeDummy() {
-	return Parser<std::function<MaybeMatch<TSource, TValue>(SourceView<TSource>, TContext)>> {
-		[](SourceView<TSource> src, TContext ctx) -> MaybeMatch<TSource, TValue> {
+	return Parser<std::function<MaybeMatch<"", TValue, TSource>(SourceView<TSource>, TContext)>> {
+		[](SourceView<TSource> src, TContext ctx) -> MaybeMatch<"", TValue, TSource> {
 			throw std::runtime_error("forward-declared parser not initialized");
 		}
 	};

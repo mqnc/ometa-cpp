@@ -1,3 +1,5 @@
+#pragma once
+
 #include "parser.h"
 #include "stringliteral.h"
 
@@ -11,9 +13,9 @@ auto makeBinder(T child, Binding<Tag>) {
 		) {
 
 			auto result = child.parse(src, ctx);
-			return (result) ? std::make_optional(
-								  std::move(result)->template toTagged<Tag>()
-								  ) : fail;
+			return (result) ?
+				std::make_optional(tag<Tag>(std::move(*result)))
+				: fail;
 		};
 
 	return Parser(parseFn);

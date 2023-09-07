@@ -27,14 +27,15 @@ auto makeSequence(Ts... children) {
 					if (result.has_value()) {
 						std::get<I>(matches) = result.value();
 						next = result->next;
-						auto newCtx = []<forward_range TSrc, typename TVal, StringLiteral Tag>( Match<TSrc, TVal, Tag> match, auto ctx) {
-							if constexpr (Tag == StringLiteral("")) {
-								return ctx;
-							}
-							else {
-								return ctx.template add<Tag>(match);
-							}
-						}(result.value(), ctx);
+						auto newCtx = []<StringLiteral Tag, typename TVal, forward_range TSrc>
+							(Match<Tag, TVal, TSrc> match, auto ctx) {
+								if constexpr (Tag == StringLiteral("")) {
+									return ctx;
+								}
+								else {
+									return ctx.template add<Tag>(match);
+								}
+							}(result.value(), ctx);
 						self.template operator()<I + 1>(self, newCtx);
 					}
 					else {
@@ -45,7 +46,7 @@ auto makeSequence(Ts... children) {
 
 			recursiveSteps(recursiveSteps, ctx);
 
-			return success ? match(src, next, matches) : fail;
+			return success ? match(matches, next) : fail;
 		};
 
 	return Parser(parseFn);

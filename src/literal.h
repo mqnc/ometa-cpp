@@ -22,7 +22,7 @@ auto makeLiteral(auto compare) {
 			return equalUntil.in2 == compare.end() ? [&] {
 					auto next = SourceView<TSource>(equalUntil.in1, src.end());
 					auto matched = SourceView<TSource>(src.begin(), equalUntil.in1);
-					return match(src, next, matched);
+					return match(matched, next);
 				}() : fail;
 		};
 

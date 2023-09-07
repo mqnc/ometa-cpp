@@ -7,6 +7,7 @@
 #include "lookahead.h"
 #include "sequence.h"
 #include "choice.h"
+#include "capture.h"
 #include "context.h"
 #include "binder.h"
 #include "predicate.h"

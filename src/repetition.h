@@ -26,14 +26,14 @@ auto makeRepetition(T child, size_t min, size_t max) {
 					next = result->next;
 				}
 				else if (i < min) {
-					return fail_as<decltype(match(src, next, matches))>;
+					return fail_as<decltype(match(matches, next))>;
 				}
 				else {
 					break;
 				}
 			}
 
-			return match(src, next, matches);
+			return match(matches, next);
 
 		};
 

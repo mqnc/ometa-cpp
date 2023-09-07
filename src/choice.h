@@ -16,7 +16,7 @@ auto makeChoice(Ts... children) {
 			using variant_type = std::variant<
 				typename decltype(std::declval<Ts>().parse(src, ctx))::value_type...>;
 
-			using return_type = decltype(match(src, src, std::declval<variant_type>()));
+			using return_type = decltype(match(std::declval<variant_type>(), src));
 
 			auto recursiveTest = [&]<size_t I = 0>(const auto& self) {
 				if constexpr (I >= sizeof...(Ts)) {
@@ -26,9 +26,8 @@ auto makeChoice(Ts... children) {
 					auto result = std::get<I>(childrenTuple).parse(src, ctx);
 					if (result.has_value()) {
 						return match(
-							result->capture,
-							result->next,
-							variant_type {std::in_place_index<I>, result.value()}
+							variant_type {std::in_place_index<I>, result.value()},
+							result->next
 						);
 					}
 					else {

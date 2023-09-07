@@ -16,7 +16,7 @@ auto makeLookAhead(T child, Polarity polarity) {
 			auto result = child.parse(src, ctx);
 
 			return result.has_value() == (polarity == positive) ?
-				match(src, src, empty) : fail;
+				match(empty, src) : fail;
 		};
 
 	return Parser(parseFn);

@@ -89,6 +89,9 @@ int main() {
 	assert(not oom.parse("def"));
 	assert(not oom.parse("XXX"));
 
+	auto cap = CAP(oom);
+	assert(cap.parse("abcabcdef---")->value.match == "abcabcdef");
+
 	auto act = abc >= [](auto matched) {
 		assert(matched->value == "abc");
 		return 123;
@@ -117,7 +120,7 @@ int main() {
 				assert(get<1>(ctx.GET(ts).value[1].value).value == "abc");
 			}
 
-			return match(src, src, empty);
+			return match(empty, src);
 		}
 	);
 
