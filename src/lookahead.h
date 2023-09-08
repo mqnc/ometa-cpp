@@ -13,7 +13,7 @@ auto makeLookAhead(T child, Polarity polarity) {
 			auto ctx
 		) {
 
-			auto result = child.parse(src, ctx);
+			auto result = child.parseOn(src, ctx);
 
 			return result.has_value() == (polarity == positive) ?
 				match(empty, src) : fail;

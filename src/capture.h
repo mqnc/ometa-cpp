@@ -17,7 +17,7 @@ auto makeCapture(T child) {
 			auto ctx
 		) {
 
-			auto result = child.parse(src, ctx);
+			auto result = child.parseOn(src, ctx);
 
 			return result.has_value() ?
 				match(

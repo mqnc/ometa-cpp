@@ -19,7 +19,7 @@ auto makeReference(const Parser<F>& target) {
 			SourceView<TSource> src,
 			auto ctx
 		) {
-			return target.parse(src, ctx);
+			return target.parseOn(src, ctx);
 		};
 
 	return Parser(parseFn);

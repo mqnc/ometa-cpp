@@ -14,7 +14,7 @@ auto makeChoice(Ts... children) {
 			auto ctx
 		) {
 			using variant_type = std::variant<
-				typename decltype(std::declval<Ts>().parse(src, ctx))::value_type...>;
+				typename decltype(std::declval<Ts>().parseOn(src, ctx))::value_type...>;
 
 			using return_type = decltype(match(std::declval<variant_type>(), src));
 
@@ -23,7 +23,7 @@ auto makeChoice(Ts... children) {
 					return fail_as<return_type>;
 				}
 				else {
-					auto result = std::get<I>(childrenTuple).parse(src, ctx);
+					auto result = std::get<I>(childrenTuple).parseOn(src, ctx);
 					if (result.has_value()) {
 						return match(
 							variant_type {std::in_place_index<I>, result.value()},

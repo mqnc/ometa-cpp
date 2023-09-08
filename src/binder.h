@@ -12,7 +12,7 @@ auto makeBinder(T child, Binding<Tag>) {
 			auto ctx
 		) {
 
-			auto result = child.parse(src, ctx);
+			auto result = child.parseOn(src, ctx);
 			return (result) ?
 				std::make_optional(tag<Tag>(std::move(*result)))
 				: fail;

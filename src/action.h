@@ -11,10 +11,10 @@ auto makeAction(T child, F fn) {
 			auto ctx
 		) {
 
-			auto result = child.parse(src, ctx);
+			auto result = child.parseOn(src, ctx);
 
 			return result.has_value() ?
-				match(fn(result), result->next)
+				match(fn(result->value), result->next)
 				: fail;
 		};
 

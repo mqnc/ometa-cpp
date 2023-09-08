@@ -16,13 +16,19 @@ public:
 
 	Parser(F parseFn): parseFn {parseFn} {}
 
+	// to be called from the outside to start the parsing process
 	template <typename TCtx = decltype(Context {})>
 	auto parse(const auto& src, TCtx ctx = Context {}) const {
-		return parseFn(SourceView(src), ctx);
+		auto result = parseFn(SourceView(src), ctx);
+		// unwrap match, we don't need the .next member
+		return result ?
+			std::make_optional(result->value)
+			: fail;
 	}
 
+	// to be called internally by parent parsers
 	template <forward_range TSource>
-	auto parse(SourceView<TSource> src, auto ctx) const {
+	auto parseOn(SourceView<TSource> src, auto ctx) const {
 		return parseFn(src, ctx);
 	}
 

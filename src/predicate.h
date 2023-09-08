@@ -10,7 +10,7 @@ auto makePredicate(T child, F fn) {
 			SourceView<TSource> src,
 			auto ctx
 		) {
-			auto result = child.parse(src, ctx);
+			auto result = child.parseOn(src, ctx);
 
 			return fn(result) ? result : fail;
 		};

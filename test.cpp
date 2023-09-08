@@ -46,21 +46,21 @@ int main() {
 	auto ghi = "ghi"_L;
 
 	auto lit = abc;
-	assert(lit.parse("abcd")->value == "abc");
+	assert(*lit.parse("abcd") == "abc");
 	assert(not lit.parse("abX"));
 
 	auto seq = abc > def > ghi;
 
-	assert(get<0>(seq.parse("abcdefghi")->value).value == "abc");
-	assert(get<1>(seq.parse("abcdefghi")->value).value == "def");
-	assert(get<2>(seq.parse("abcdefghi")->value).value == "ghi");
+	assert(get<0>(*seq.parse("abcdefghi")).value == "abc");
+	assert(get<1>(*seq.parse("abcdefghi")).value == "def");
+	assert(get<2>(*seq.parse("abcdefghi")).value == "ghi");
 
 	assert(not seq.parse("abcdefghX"));
 
 	auto cho = abc | def | ghi;
-	assert(cho.parse("abc")->value.index() == 0);
-	assert(cho.parse("def")->value.index() == 1);
-	assert(cho.parse("ghi")->value.index() == 2);
+	assert(cho.parse("abc")->index() == 0);
+	assert(cho.parse("def")->index() == 1);
+	assert(cho.parse("ghi")->index() == 2);
 	assert(not cho.parse("XXX"));
 
 	auto pla = &abc;
@@ -78,7 +78,7 @@ int main() {
 
 	auto zom = *abc > def;
 	assert(zom.parse("abcabcdef"));
-	assert(get<0>(zom.parse("abcabcdef")->value).value.size() == 2);
+	assert(get<0>(*zom.parse("abcabcdef")).value.size() == 2);
 	assert(zom.parse("abcdef"));
 	assert(zom.parse("def"));
 	assert(not zom.parse("XXX"));
@@ -90,19 +90,19 @@ int main() {
 	assert(not oom.parse("XXX"));
 
 	auto cap = CAP(oom);
-	assert(cap.parse("abcabcdef---")->value.match == "abcabcdef");
+	assert(cap.parse("abcabcdef---")->match == "abcabcdef");
 
 	auto act = abc >= [](auto matched) {
-		assert(matched->value == "abc");
+		assert(matched == "abc");
 		return 123;
 	};
-	assert(act.parse("abc")->value == 123);
+	assert(*act.parse("abc") == 123);
 
 	auto prd1 = abc <= [](auto matched) {
 		assert(matched->value == "abc");
 		return true;
 	};
-	assert(prd1.parse("abc")->value == "abc");
+	assert(*prd1.parse("abc") == "abc");
 
 	auto prd0 = abc <= [](auto matched) {
 		assert(not matched);
@@ -131,12 +131,12 @@ int main() {
 
 	expression = ("atom"_L | "("_L > REF(expression) > ")"_L) >= [](auto matched) {
 		std::stringstream ss;
-		switch (matched->value.index()) {
+		switch (matched.index()) {
 			case 0:
-				ss << get<0>(matched->value).value;
+				ss << get<0>(matched).value;
 				break;
 			case 1: {
-				auto tuple = get<1>(matched->value).value;
+				auto tuple = get<1>(matched).value;
 				ss << get<2>(tuple).value
 				   << get<1>(tuple).value
 				   << get<0>(tuple).value;
@@ -146,9 +146,9 @@ int main() {
 		return ss.str();
 	};
 
-	assert(expression.parse("atom")->value == "atom");
-	assert(expression.parse("(atom)")->value == ")atom(");
-	assert(expression.parse("((atom))")->value == "))atom((");
+	assert(*expression.parse("atom") == "atom");
+	assert(*expression.parse("(atom)") == ")atom(");
+	assert(*expression.parse("((atom))") == "))atom((");
 
 	std::cout << "done!\n";
 	return 0;

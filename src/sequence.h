@@ -15,7 +15,7 @@ auto makeSequence(Ts... children) {
 			auto ctx
 		) {
 			using tuple_type = std::tuple<
-				typename decltype(std::declval<Ts>().parse(src, ctx))::value_type...>;
+				typename decltype(std::declval<Ts>().parseOn(src, ctx))::value_type...>;
 
 			tuple_type matches;
 			auto next = src;
@@ -23,7 +23,7 @@ auto makeSequence(Ts... children) {
 
 			auto recursiveSteps = [&]<size_t I = 0>(const auto& self, auto ctx) {
 				if constexpr (I < sizeof...(Ts)) {
-					auto result = std::get<I>(childrenTuple).parse(next, ctx);
+					auto result = std::get<I>(childrenTuple).parseOn(next, ctx);
 					if (result.has_value()) {
 						std::get<I>(matches) = result.value();
 						next = result->next;
