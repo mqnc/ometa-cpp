@@ -6,8 +6,6 @@
 
 #include "parser.h"
 
-using namespace std::string_literals;
-
 auto makeLiteral(auto compare) {
 
 	auto parseFn = [compare]<forward_range TSource>
@@ -22,7 +20,7 @@ auto makeLiteral(auto compare) {
 			return equalUntil.in2 == compare.end() ? [&] {
 					auto next = SourceView<TSource>(equalUntil.in1, src.end());
 					auto matched = SourceView<TSource>(src.begin(), equalUntil.in1);
-					return match(matched, next);
+					return makeMaybeMatch(matched, next);
 				}() : fail;
 		};
 

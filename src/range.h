@@ -2,15 +2,16 @@
 
 #include "parser.h"
 
-auto makeAny() {
+template <typename T1, typename T2>
+auto makeRange(T1 a, T2 b) {
 
-	auto parseFn = []<forward_range TSource>
+	auto parseFn = [a, b]<forward_range TSource>
 		(
 			SourceView<TSource> src,
 			auto ctx
 		) {
 			(void) ctx;
-			return src.begin() != src.end() ?
+			return a <= *src.begin() && *src.begin() <= b ?
 				makeMaybeMatch(
 					SourceView<TSource>(
 						src.begin(),
@@ -24,4 +25,4 @@ auto makeAny() {
 	return Parser(parseFn);
 }
 
-#define ANY makeAny()
+#define RNG(a, b) makeRange(a, b)

@@ -12,7 +12,7 @@ auto makePredicate(T child, F fn) {
 		) {
 			auto result = child.parseOn(src, ctx);
 
-			return fn(result) ? result : fail;
+			return fn(unwrap(result)) ? result : fail;
 		};
 
 	return Parser(parseFn);

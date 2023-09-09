@@ -14,11 +14,6 @@ template <
 struct Match {
 	TValue value;
 	SourceView<TSource> next;
-
-	// template <StringLiteral NewTag>
-	// auto toTagged() {
-	// 	return Match<TValue, TSource, NewTag> {value, next};
-	// }
 };
 
 template <
@@ -48,13 +43,26 @@ template <
 	typename TValue,
 	forward_range TSource
 	>
-inline MaybeMatch<Tag, TValue, TSource> match(
+inline MaybeMatch<Tag, TValue, TSource> makeMaybeMatch(
 	TValue value,
 	SourceView<TSource> next
 ) {
 	return Match<Tag, TValue, TSource> {
 		value, next
 	};
+}
+
+template <
+	StringLiteral Tag = "",
+	typename TValue,
+	forward_range TSource
+	>
+inline std::optional<TValue> unwrap(
+	MaybeMatch<Tag, TValue, TSource> match
+) {
+	return match ?
+		std::make_optional(match->value)
+		: fail;
 }
 
 template <

@@ -14,7 +14,7 @@ auto makeAction(T child, F fn) {
 			auto result = child.parseOn(src, ctx);
 
 			return result.has_value() ?
-				match(fn(result->value), result->next)
+				makeMaybeMatch(fn(result->value), result->next)
 				: fail;
 		};
 

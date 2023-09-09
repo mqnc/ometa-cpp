@@ -20,7 +20,7 @@ auto makeCapture(T child) {
 			auto result = child.parseOn(src, ctx);
 
 			return result.has_value() ?
-				match(
+				makeMaybeMatch(
 					Capture<TSource, decltype(result->value)> {
 						SourceView<TSource>(
 							src.begin(),

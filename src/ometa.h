@@ -3,6 +3,7 @@
 #include "parser.h"
 #include "any.h"
 #include "literal.h"
+#include "range.h"
 #include "repetition.h"
 #include "lookahead.h"
 #include "sequence.h"

@@ -9,33 +9,6 @@
 
 using std::get;
 
-/*
-template<class TupType, size_t... I>
-void print(std::ostream& os, const TupType& tup, std::index_sequence<I...>){
-	os << "(";
-	(..., (os << (I == 0? "" : ", ") << std::get<I>(tup)));
-	os << ")";
-}
-
-template<class... T>
-std::ostream& operator<<(std::ostream& os, const std::tuple<T...>& tup){
-	print(os, tup, std::make_index_sequence<sizeof...(T)>());
-	return os;
-}
-
-template<class T>
-std::ostream& operator<<(std::ostream& os, const std::deque<T>& deq){
-	os << "[";
-	std::string sep = "";
-	for(const auto& el : deq){
-		os << sep << el;
-		sep = ", ";
-	}
-	os << "]";
-	return os;
-}
-*/
-
 int main() {
 
 	assert(ANY.parse("1"));
@@ -48,20 +21,33 @@ int main() {
 	auto lit = abc;
 	assert(*lit.parse("abcd") == "abc");
 	assert(not lit.parse("abX"));
+	assert(not lit.parse(""));
+
+	auto rng = RNG('a', 'm');
+	assert(*rng.parse("m") == "m");
+	assert(not rng.parse("n"));
 
 	auto seq = abc > def > ghi;
 
-	assert(get<0>(*seq.parse("abcdefghi")).value == "abc");
-	assert(get<1>(*seq.parse("abcdefghi")).value == "def");
-	assert(get<2>(*seq.parse("abcdefghi")).value == "ghi");
+	assert(get<0>(*seq.parse("abcdefghi")) == "abc");
+	assert(get<1>(*seq.parse("abcdefghi")) == "def");
+	assert(get<2>(*seq.parse("abcdefghi")) == "ghi");
 
 	assert(not seq.parse("abcdefghX"));
 
-	auto cho = abc | def | ghi;
-	assert(cho.parse("abc")->index() == 0);
-	assert(cho.parse("def")->index() == 1);
-	assert(cho.parse("ghi")->index() == 2);
-	assert(not cho.parse("XXX"));
+	// enforce same semantic value type of all branches
+	auto cho1 = abc | def | ghi;
+	assert(*cho1.parse("abc") == "abc");
+	assert(*cho1.parse("def") == "def");
+	assert(*cho1.parse("ghi") == "ghi");
+	assert(not cho1.parse("XXX"));
+
+	// create variant of semantic value types of all branches
+	auto cho2 = abc || def || ghi;
+	assert(cho2.parse("abc")->index() == 0);
+	assert(cho2.parse("def")->index() == 1);
+	assert(cho2.parse("ghi")->index() == 2);
+	assert(not cho2.parse("XXX"));
 
 	auto pla = &abc;
 	assert(pla.parse("abc"));
@@ -78,7 +64,7 @@ int main() {
 
 	auto zom = *abc > def;
 	assert(zom.parse("abcabcdef"));
-	assert(get<0>(*zom.parse("abcabcdef")).value.size() == 2);
+	assert(get<0>(*zom.parse("abcabcdef")).size() == 2);
 	assert(zom.parse("abcdef"));
 	assert(zom.parse("def"));
 	assert(not zom.parse("XXX"));
@@ -99,7 +85,7 @@ int main() {
 	assert(*act.parse("abc") == 123);
 
 	auto prd1 = abc <= [](auto matched) {
-		assert(matched->value == "abc");
+		assert(*matched == "abc");
 		return true;
 	};
 	assert(*prd1.parse("abc") == "abc");
@@ -107,7 +93,7 @@ int main() {
 	auto prd0 = abc <= [](auto matched) {
 		assert(not matched);
 		return false;
-	};
+	}; 
 	assert(not prd0.parse("XXX"));
 
 
@@ -116,11 +102,11 @@ int main() {
 			(void) src;
 
 			if constexpr (not ctx.is_empty()) {
-				assert(ctx.GET(t0).value == "abc");
-				assert(get<1>(ctx.GET(ts).value[1].value).value == "abc");
+				assert(ctx.GET(t0) == "abc");
+				assert(get<1>(ctx.GET(ts)[1]) == "abc");
 			}
 
-			return match(empty, src);
+			return makeMaybeMatch(empty, src);
 		}
 	);
 
@@ -129,17 +115,17 @@ int main() {
 
 	auto expression = makeDummy<std::string_view, std::string>();
 
-	expression = ("atom"_L | "("_L > REF(expression) > ")"_L) >= [](auto matched) {
+	expression = ("atom"_L || "("_L > REF(expression) > ")"_L) >= [](auto matched) {
 		std::stringstream ss;
 		switch (matched.index()) {
 			case 0:
-				ss << get<0>(matched).value;
+				ss << get<0>(matched);
 				break;
 			case 1: {
-				auto tuple = get<1>(matched).value;
-				ss << get<2>(tuple).value
-				   << get<1>(tuple).value
-				   << get<0>(tuple).value;
+				auto tuple = get<1>(matched);
+				ss << get<2>(tuple)
+				   << get<1>(tuple)
+				   << get<0>(tuple);
 				break;
 			}
 		}

@@ -3,7 +3,6 @@
 #include "parser.h"
 #include "stringliteral.h"
 
-
 template <typename... Ts>
 auto makeSequence(Ts... children) {
 
@@ -15,7 +14,7 @@ auto makeSequence(Ts... children) {
 			auto ctx
 		) {
 			using tuple_type = std::tuple<
-				typename decltype(std::declval<Ts>().parseOn(src, ctx))::value_type...>;
+				decltype(std::declval<Ts>().parseOn(src, ctx)->value)...>;
 
 			tuple_type matches;
 			auto next = src;
@@ -25,7 +24,7 @@ auto makeSequence(Ts... children) {
 				if constexpr (I < sizeof...(Ts)) {
 					auto result = std::get<I>(childrenTuple).parseOn(next, ctx);
 					if (result.has_value()) {
-						std::get<I>(matches) = result.value();
+						std::get<I>(matches) = result->value;
 						next = result->next;
 						auto newCtx = []<StringLiteral Tag, typename TVal, forward_range TSrc>
 							(Match<Tag, TVal, TSrc> match, auto ctx) {
@@ -33,9 +32,9 @@ auto makeSequence(Ts... children) {
 									return ctx;
 								}
 								else {
-									return ctx.template add<Tag>(match);
+									return ctx.template add<Tag>(match.value);
 								}
-							}(result.value(), ctx);
+							}(*result, ctx);
 						self.template operator()<I + 1>(self, newCtx);
 					}
 					else {
@@ -46,7 +45,7 @@ auto makeSequence(Ts... children) {
 
 			recursiveSteps(recursiveSteps, ctx);
 
-			return success ? match(matches, next) : fail;
+			return success ? makeMaybeMatch(matches, next) : fail;
 		};
 
 	return Parser(parseFn);

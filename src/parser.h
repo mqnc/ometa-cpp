@@ -20,10 +20,7 @@ public:
 	template <typename TCtx = decltype(Context {})>
 	auto parse(const auto& src, TCtx ctx = Context {}) const {
 		auto result = parseFn(SourceView(src), ctx);
-		// unwrap match, we don't need the .next member
-		return result ?
-			std::make_optional(result->value)
-			: fail;
+		return unwrap(result);
 	}
 
 	// to be called internally by parent parsers

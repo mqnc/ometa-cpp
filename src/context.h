@@ -68,4 +68,6 @@ struct is_context<Context<T, U, V>>: public std::true_type {};
 template <typename T>
 concept context_type = is_context<T>::value;
 
-#define GET(NAME) get(binding<#NAME>)
+#ifndef GET
+	#define GET(NAME) get(binding<#NAME>)
+#endif
