@@ -44,10 +44,13 @@ public:
 			) {
 				auto result = this->parseOn(src, ctx);
 				return (result) ?
-					std::make_optional(relabel<tag>(std::move(*result)))
+					makeMaybeMatch(
+						makeTagged<tag>(result->value),
+						result->next
+					)
 					: fail;
 			};
-		
+
 		return Parser<decltype(parseFn)>(parseFn);
 	}
 

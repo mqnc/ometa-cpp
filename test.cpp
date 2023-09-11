@@ -93,25 +93,17 @@ int main() {
 	auto prd0 = abc <= [](auto matched) {
 		assert(not matched);
 		return false;
-	}; 
+	};
 	assert(not prd0.parse("XXX"));
 
-
-	Parser check(
-		[](auto src, auto ctx) {
-			(void) src;
-
-			if constexpr (not std::is_same_v<decltype(ctx), Empty>) {
-				assert(get<"t0">(ctx) == "abc");
-				assert(get<1>(get<"ts">(ctx)[1]) == "abc");
-			}
-
-			return makeMaybeMatch(empty, src);
-		}
-	);
-
-	auto list = abc.as<"t0">() > (*("+"_L > abc)).as<"ts">() > check;
-	list.parse("abc+abc+abc");
+	auto list = abc.as<"t0">() > (*("+"_L > abc)).as<"ts">();
+	assert(get<"t0">(*list.parse("abc+abc+abc")) == "abc");
+	assert(
+		get<0>(
+			get<"ts">(
+				*list.parse("abc+abc+abc")
+				)[0]
+			) == "-");
 
 	auto expression = makeDummy<std::string_view, std::string>();
 
@@ -122,10 +114,10 @@ int main() {
 				ss << get<0>(matched);
 				break;
 			case 1: {
-				auto tuple = get<1>(matched);
-				ss << get<2>(tuple)
-				   << get<1>(tuple)
-				   << get<0>(tuple);
+				auto tree = get<1>(matched);
+				ss << get<2>(tree)
+				   << get<1>(tree)
+				   << get<0>(tree);
 				break;
 			}
 		}

@@ -84,3 +84,11 @@ inline auto get(const ValueTree<T1, T2>& tree) {
 		static_assert(always_false<T1>, "tree must contain value with requested tag");
 	}
 }
+
+
+template <typename T1, typename T2>
+std::ostream& operator<<(std::ostream& os, const ValueTree<T1, T2>& tree) {
+	os << tree.left << "\n";
+	os << tree.right;
+	return os;
+}
