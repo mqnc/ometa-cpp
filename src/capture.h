@@ -2,12 +2,6 @@
 
 #include "parser.h"
 
-template <forward_range TSource, typename TValue>
-struct Capture {
-	SourceView<TSource> match;
-	TValue value;
-};
-
 template <typename T>
 auto capture(T child) {
 
@@ -21,13 +15,10 @@ auto capture(T child) {
 
 			return result.has_value() ?
 				makeMaybeMatch(
-					Capture<TSource, decltype(result->value)> {
-						SourceView<TSource>(
-							src.begin(),
-							result->next.begin()
-							),
-						result->value
-					},
+					SourceView<TSource>(
+						src.begin(),
+						result->next.begin()
+						),
 					result->next
 					)
 				: fail;

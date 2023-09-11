@@ -5,6 +5,16 @@
 #include "parser.h"
 
 template <typename T>
+class PickDeque:public std::deque<T>{
+	public:
+
+	template <size_t i>
+	auto pick(){
+		return (*this)[i];
+	};
+};
+
+template <typename T>
 auto repetition(T child, size_t min, size_t max) {
 
 	auto parseFn = [child, min, max]<forward_range TSource>
@@ -14,7 +24,7 @@ auto repetition(T child, size_t min, size_t max) {
 		) {
 
 			using return_element_type = decltype(child.parseOn(src, ctx)->value);
-			std::deque<return_element_type> matches {};
+			PickDeque<return_element_type> matches {};
 
 			auto next = src;
 

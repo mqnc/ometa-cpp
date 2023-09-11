@@ -27,25 +27,17 @@ int main() {
 
 	auto seq = abc > def > ghi;
 
-	assert(get<0>(*seq.parse("abcdefghi")) == "abc");
-	assert(get<1>(*seq.parse("abcdefghi")) == "def");
-	assert(get<2>(*seq.parse("abcdefghi")) == "ghi");
+	assert(seq.parse("abcdefghi")->pick<0>() == "abc");
+	assert(seq.parse("abcdefghi")->pick<1>() == "def");
+	assert(seq.parse("abcdefghi")->pick<2>() == "ghi");
 
 	assert(not seq.parse("abcdefghX"));
 
-	// enforce same semantic value type of all branches
-	auto cho1 = abc | def | ghi;
-	assert(*cho1.parse("abc") == "abc");
-	assert(*cho1.parse("def") == "def");
-	assert(*cho1.parse("ghi") == "ghi");
-	assert(not cho1.parse("XXX"));
-
-	// create variant of semantic value types of all branches
-	auto cho2 = abc || def || ghi;
-	assert(cho2.parse("abc")->index() == 0);
-	assert(cho2.parse("def")->index() == 1);
-	assert(cho2.parse("ghi")->index() == 2);
-	assert(not cho2.parse("XXX"));
+	auto cho = abc | def | ghi;
+	assert(*cho.parse("abc") == "abc");
+	assert(*cho.parse("def") == "def");
+	assert(*cho.parse("ghi") == "ghi");
+	assert(not cho.parse("XXX"));
 
 	auto pla = &abc;
 	assert(pla.parse("abc"));
@@ -62,7 +54,9 @@ int main() {
 
 	auto zom = *abc > def;
 	assert(zom.parse("abcabcdef"));
-	assert(get<0>(*zom.parse("abcabcdef")).size() == 2);
+	assert(zom.parse("abcabcdef")->pick<0>().size() == 2);
+	assert(zom.parse("abcabcdef")->pick<0>()[1] == "abc");
+	assert(zom.parse("abcabcdef")->pick<0>().pick<1>() == "abc");
 	assert(zom.parse("abcdef"));
 	assert(zom.parse("def"));
 	assert(not zom.parse("XXX"));
@@ -74,7 +68,7 @@ int main() {
 	assert(not oom.parse("XXX"));
 
 	auto cap = capture(oom);
-	assert(cap.parse("abcabcdef---")->match == "abcabcdef");
+	assert(cap.parse("abcabcdef---") == "abcabcdef");
 
 	auto act = abc >= [](auto matched) {
 		assert(matched == "abc");
@@ -95,37 +89,17 @@ int main() {
 	assert(not prd0.parse("XXX"));
 
 	auto list = abc.as<"t0">() > (*("+"_L > abc)).as<"ts">();
-	assert(get<"t0">(*list.parse("abc+abc+abc")) == "abc");
-	assert(
-		get<0>(
-			get<"ts">(
-				*list.parse("abc+abc+abc")
-				)[0]
-			) == "+"
-	);
+	assert(list.parse("abc+abc+abc")->pick<"t0">() == "abc");
+	assert(list.parse("abc+abc+abc")->pick<"ts">()[0].pick<0>() == "+");
 
-	auto expression = dummy<std::string_view, std::string>();
+	auto expression = dummy<std::string_view, SourceView<std::string_view>>();
 
-	expression = ("atom"_L || "("_L > ref(expression) > ")"_L) >= [](auto matched) {
-		std::stringstream ss;
-		switch (matched.index()) {
-			case 0:
-				ss << get<0>(matched);
-				break;
-			case 1: {
-				auto tree = get<1>(matched);
-				ss << get<2>(tree)
-				   << get<1>(tree)
-				   << get<0>(tree);
-				break;
-			}
-		}
-		return ss.str();
-	};
+	expression = capture("atom"_L)
+		| capture("("_L > ref(expression) > ")"_L);
 
 	assert(*expression.parse("atom") == "atom");
-	assert(*expression.parse("(atom)") == ")atom(");
-	assert(*expression.parse("((atom))") == "))atom((");
+	assert(*expression.parse("(atom)") == "(atom)");
+	assert(*expression.parse("((atom))") == "((atom))");
 
 	std::cout << "done!\n";
 
