@@ -3,7 +3,7 @@
 #include "parser.h"
 
 template <typename T, typename F>
-auto makeAction(T child, F fn) {
+auto action(T child, F fn) {
 
 	auto parseFn = [child, fn]<forward_range TSource>
 		(
@@ -22,6 +22,6 @@ auto makeAction(T child, F fn) {
 }
 
 template <typename F, typename A>
-auto operator>=(Parser<F> parser, A action) {
-	return makeAction(parser, action);
+auto operator>=(Parser<F> parser, A fn) {
+	return action(parser, fn);
 }

@@ -3,7 +3,7 @@
 #include "parser.h"
 
 template <typename T, typename F>
-auto makePredicate(T child, F fn) {
+auto predicate(T child, F fn) {
 
 	auto parseFn = [child, fn]<forward_range TSource>
 		(
@@ -20,6 +20,6 @@ auto makePredicate(T child, F fn) {
 
 
 template <typename F, typename P>
-auto operator<=(Parser<F> parser, P predicate) {
-	return makePredicate(parser, predicate);
+auto operator<=(Parser<F> parser, P pred) {
+	return predicate(parser, pred);
 }

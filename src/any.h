@@ -2,7 +2,7 @@
 
 #include "parser.h"
 
-auto makeAny() {
+auto any() {
 
 	auto parseFn = []<forward_range TSource>
 		(
@@ -23,5 +23,3 @@ auto makeAny() {
 
 	return Parser(parseFn);
 }
-
-#define ANY makeAny()

@@ -5,7 +5,7 @@
 enum Polarity { positive, negative };
 
 template <typename T>
-auto makeLookAhead(T child, Polarity polarity) {
+auto lookAhead(T child, Polarity polarity) {
 
 	auto parseFn = [child, polarity]<forward_range TSource>
 		(
@@ -25,9 +25,9 @@ auto makeLookAhead(T child, Polarity polarity) {
 
 template <typename F>
 auto operator&(Parser<F> parser) {
-	return makeLookAhead(parser, positive);
+	return lookAhead(parser, positive);
 }
 template <typename F>
 auto operator!(Parser<F> parser) {
-	return makeLookAhead(parser, negative);
+	return lookAhead(parser, negative);
 }

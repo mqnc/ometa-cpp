@@ -11,7 +11,7 @@ using std::get;
 
 int main(int argc, char *argv[]) {
 
-	auto sum = makeDummy<std::string_view, int>();
+	auto sum = dummy<std::string_view, int>();
 
 	auto number = CAP(~("+"_L | "-"_L) > +RNG('0', '9'))
 		>= [](auto value) -> int {
@@ -21,7 +21,7 @@ int main(int argc, char *argv[]) {
 		return std::stoi(s);
 	};
 
-	auto atomic = (number AS(num) | "("_L > REF(sum) AS(sum) > ")"_L)
+	auto atomic = (number AS(num) | "("_L > ref(sum) AS(sum) > ")"_L)
 		>= [](auto value) -> int {
 
 		switch (value.index()) {

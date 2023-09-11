@@ -5,7 +5,7 @@
 #include "parser.h"
 
 template <bool UseVariant = false, typename... Ts>
-auto makeChoice(Ts... children) {
+auto choice(Ts... children) {
 
 	auto childrenTuple = std::make_tuple(children...);
 
@@ -57,7 +57,7 @@ auto makeChoice(Ts... children) {
 
 template <typename F1, typename F2>
 auto operator|(Parser<F1> parser1, Parser<F2> parser2) {
-	return makeChoice<false>(parser1, parser2);
+	return choice<false>(parser1, parser2);
 }
 
 // the PartialChoice wrapper allows chains like
@@ -77,7 +77,7 @@ struct PartialChoice: public Parser<F> {
 template <typename F1, typename F2>
 auto operator||(Parser<F1> parser1, Parser<F2> parser2) {
 	return PartialChoice {
-		makeChoice<true>(parser1, parser2),
+		choice<true>(parser1, parser2),
 		std::make_tuple(parser1, parser2)
 	};
 }
@@ -90,7 +90,7 @@ auto operator||(PartialChoice<F1, Ts...> parser1, Parser<F2> parser2) {
 	);
 	return PartialChoice {
 		std::apply( [](auto&&... args) {
-				return makeChoice<true>(args...);
+				return choice<true>(args...);
 			}, allChildren),
 		allChildren
 	};

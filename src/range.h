@@ -3,7 +3,7 @@
 #include "parser.h"
 
 template <typename T1, typename T2>
-auto makeRange(T1 a, T2 b) {
+auto range(T1 a, T2 b) {
 
 	auto parseFn = [a, b]<forward_range TSource>
 		(
@@ -24,5 +24,3 @@ auto makeRange(T1 a, T2 b) {
 
 	return Parser(parseFn);
 }
-
-#define RNG(a, b) makeRange(a, b)

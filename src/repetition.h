@@ -5,7 +5,7 @@
 #include "parser.h"
 
 template <typename T>
-auto makeRepetition(T child, size_t min, size_t max) {
+auto repetition(T child, size_t min, size_t max) {
 
 	auto parseFn = [child, min, max]<forward_range TSource>
 		(
@@ -42,15 +42,15 @@ auto makeRepetition(T child, size_t min, size_t max) {
 
 template <typename F>
 auto operator~(Parser<F> parser) {
-	return makeRepetition(parser, 0, 1);
+	return repetition(parser, 0, 1);
 }
 template <typename F>
 auto operator*(Parser<F> parser) {
-	return makeRepetition(parser, 0, (size_t) -1);
+	return repetition(parser, 0, (size_t) -1);
 }
 template <typename F>
 auto operator+(Parser<F> parser) {
-	return makeRepetition(parser, 1, (size_t) -1);
+	return repetition(parser, 1, (size_t) -1);
 }
 
 template <class T>

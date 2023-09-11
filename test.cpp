@@ -7,12 +7,10 @@
 
 #include <map>
 
-using std::get;
-
 int main() {
 
-	assert(ANY.parse("1"));
-	assert(not ANY.parse(""));
+	assert(any().parse("1"));
+	assert(not any().parse(""));
 
 	auto abc = "abc"_L;
 	auto def = "def"_L;
@@ -23,7 +21,7 @@ int main() {
 	assert(not lit.parse("abX"));
 	assert(not lit.parse(""));
 
-	auto rng = RNG('a', 'm');
+	auto rng = range('a', 'm');
 	assert(*rng.parse("m") == "m");
 	assert(not rng.parse("n"));
 
@@ -75,7 +73,7 @@ int main() {
 	assert(not oom.parse("def"));
 	assert(not oom.parse("XXX"));
 
-	auto cap = CAP(oom);
+	auto cap = capture(oom);
 	assert(cap.parse("abcabcdef---")->match == "abcabcdef");
 
 	auto act = abc >= [](auto matched) {
@@ -103,11 +101,12 @@ int main() {
 			get<"ts">(
 				*list.parse("abc+abc+abc")
 				)[0]
-			) == "-");
+			) == "+"
+	);
 
-	auto expression = makeDummy<std::string_view, std::string>();
+	auto expression = dummy<std::string_view, std::string>();
 
-	expression = ("atom"_L || "("_L > REF(expression) > ")"_L) >= [](auto matched) {
+	expression = ("atom"_L || "("_L > ref(expression) > ")"_L) >= [](auto matched) {
 		std::stringstream ss;
 		switch (matched.index()) {
 			case 0:

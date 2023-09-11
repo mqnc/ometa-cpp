@@ -6,7 +6,7 @@
 
 #include "parser.h"
 
-auto makeLiteral(auto compare) {
+auto literal(auto compare) {
 
 	auto parseFn = [compare]<forward_range TSource>
 		(
@@ -27,10 +27,10 @@ auto makeLiteral(auto compare) {
 	return Parser(parseFn);
 }
 
-auto makeLiteral(const char* compare) {
-	return makeLiteral(std::string_view(compare));
+auto literal(const char* compare) {
+	return literal(std::string_view(compare));
 }
 
 auto operator""_L(const char* compare, size_t size) {
-	return makeLiteral<std::string>(std::string(compare, size));
+	return literal<std::string>(std::string(compare, size));
 }

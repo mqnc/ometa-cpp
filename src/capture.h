@@ -9,7 +9,7 @@ struct Capture {
 };
 
 template <typename T>
-auto makeCapture(T child) {
+auto capture(T child) {
 
 	auto parseFn = [child]<forward_range TSource>
 		(
@@ -35,5 +35,3 @@ auto makeCapture(T child) {
 
 	return Parser(parseFn);
 }
-
-#define CAP(x) makeCapture(x)

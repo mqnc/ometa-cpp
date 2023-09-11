@@ -4,7 +4,7 @@
 #include "tree.h"
 
 template <typename T1, typename T2>
-auto makeSequence(T1 child1, T2 child2) {
+auto sequence(T1 child1, T2 child2) {
 
 	auto parseFn = [child1, child2]<forward_range TSource>
 		(
@@ -44,5 +44,5 @@ auto makeSequence(T1 child1, T2 child2) {
 
 template <typename F1, typename F2>
 auto operator>(Parser<F1> parser1, Parser<F2> parser2) {
-	return makeSequence(parser1, parser2);
+	return sequence(parser1, parser2);
 }
