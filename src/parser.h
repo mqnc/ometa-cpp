@@ -7,7 +7,7 @@
 #include "empty.h"
 #include "sourceview.h"
 #include "match.h"
-#include "context.h"
+#include "tag.h"
 
 template <typename F>
 class Parser {
@@ -17,8 +17,8 @@ public:
 	Parser(F parseFn): parseFn {parseFn} {}
 
 	// to be called from the outside to start the parsing process
-	template <typename TCtx = decltype(Context {})>
-	auto parse(const auto& src, TCtx ctx = Context {}) const {
+	template <typename TCtx = Empty>
+	auto parse(const auto& src, TCtx ctx = empty) const {
 		auto result = parseFn(SourceView(src), ctx);
 		return unwrap(result);
 	}
@@ -32,6 +32,23 @@ public:
 	template <typename F2>
 	void operator=(const Parser<F2>& target) {
 		parseFn = target.parseFn;
+	}
+
+	template <Tag tag>
+	auto as() {
+
+		auto parseFn = [this]<forward_range TSource>
+			(
+				SourceView<TSource> src,
+				auto ctx
+			) {
+				auto result = this->parseOn(src, ctx);
+				return (result) ?
+					std::make_optional(relabel<tag>(std::move(*result)))
+					: fail;
+			};
+		
+		return Parser<decltype(parseFn)>(parseFn);
 	}
 
 	// template <typename TSource>

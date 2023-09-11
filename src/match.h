@@ -4,10 +4,10 @@
 
 #include "empty.h"
 #include "sourceview.h"
-#include "stringliteral.h"
+#include "tag.h"
 
 template <
-	StringLiteral Tag,
+	Tag tag,
 	typename TValue,
 	forward_range TSource
 	>
@@ -17,21 +17,21 @@ struct Match {
 };
 
 template <
-	StringLiteral NewTag,
-	StringLiteral Tag,
+	Tag newTag,
+	Tag tag,
 	typename TValue,
 	forward_range TSource
 	>
-Match<NewTag, TValue, TSource> tag(Match<Tag, TValue, TSource> m) {
+Match<newTag, TValue, TSource> relabel(Match<tag, TValue, TSource> m) {
 	return {m.value, m.next};
 }
 
 template <
-	StringLiteral Tag,
+	Tag tag,
 	typename TValue,
 	forward_range TSource
 	>
-using MaybeMatch = std::optional<Match<Tag, TValue, TSource>>;
+using MaybeMatch = std::optional<Match<tag, TValue, TSource>>;
 
 inline const auto fail = std::nullopt;
 
@@ -39,26 +39,26 @@ template <typename T>
 inline const auto fail_as = static_cast<T>(std::nullopt);
 
 template <
-	StringLiteral Tag = "",
+	Tag tag = "",
 	typename TValue,
 	forward_range TSource
 	>
-inline MaybeMatch<Tag, TValue, TSource> makeMaybeMatch(
+inline MaybeMatch<tag, TValue, TSource> makeMaybeMatch(
 	TValue value,
 	SourceView<TSource> next
 ) {
-	return Match<Tag, TValue, TSource> {
+	return Match<tag, TValue, TSource> {
 		value, next
 	};
 }
 
 template <
-	StringLiteral Tag = "",
+	Tag tag = "",
 	typename TValue,
 	forward_range TSource
 	>
 inline std::optional<TValue> unwrap(
-	MaybeMatch<Tag, TValue, TSource> match
+	MaybeMatch<tag, TValue, TSource> match
 ) {
 	return match ?
 		std::make_optional(match->value)
@@ -66,27 +66,27 @@ inline std::optional<TValue> unwrap(
 }
 
 template <
-	StringLiteral Tag,
+	Tag tag,
 	typename TValue,
 	forward_range TSource
 	>
 std::ostream& operator<<(
-	std::ostream& os, const Match<Tag, TValue, TSource> match
+	std::ostream& os, const Match<tag, TValue, TSource> match
 ) {
-	if constexpr (Tag != "") { os << Tag; }
+	if constexpr (tag != "") { os << tag; }
 	os << "{" << match.value << "}";
 	return os;
 }
 
 template <
-	StringLiteral Tag,
+	Tag tag,
 	typename TValue,
 	forward_range TSource
 	>
 std::ostream& operator<<(
-	std::ostream& os, const MaybeMatch<Tag, TValue, TSource> mmatch
+	std::ostream& os, const MaybeMatch<tag, TValue, TSource> mmatch
 ) {
-	if constexpr (Tag != "") { os << Tag; }
+	if constexpr (tag != "") { os << tag; }
 	if (mmatch) {
 		os << "{?" << mmatch->value << "?}";
 	}

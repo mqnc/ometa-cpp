@@ -1,7 +1,7 @@
 #pragma once
 
 #include "parser.h"
-#include "stringliteral.h"
+#include "tree.h"
 
 template <typename... Ts>
 auto makeSequence(Ts... children) {
@@ -26,13 +26,16 @@ auto makeSequence(Ts... children) {
 					if (result.has_value()) {
 						std::get<I>(matches) = result->value;
 						next = result->next;
-						auto newCtx = []<StringLiteral Tag, typename TVal, forward_range TSrc>
-							(Match<Tag, TVal, TSrc> match, auto ctx) {
-								if constexpr (Tag == StringLiteral("")) {
+						auto newCtx = []<Tag tag, typename TVal, forward_range TSrc>
+							(Match<tag, TVal, TSrc> match, auto ctx) {
+								if constexpr (tag == Tag("")) {
 									return ctx;
 								}
 								else {
-									return ctx.template add<Tag>(match.value);
+									return join(
+										makeTagged<tag>(match.value),	
+										ctx
+									);
 								}
 							}(*result, ctx);
 						self.template operator()<I + 1>(self, newCtx);

@@ -101,16 +101,16 @@ int main() {
 		[](auto src, auto ctx) {
 			(void) src;
 
-			if constexpr (not ctx.is_empty()) {
-				assert(ctx.GET(t0) == "abc");
-				assert(get<1>(ctx.GET(ts)[1]) == "abc");
+			if constexpr (not std::is_same_v<decltype(ctx), Empty>) {
+				assert(get<"t0">(ctx) == "abc");
+				assert(get<1>(get<"ts">(ctx)[1]) == "abc");
 			}
 
 			return makeMaybeMatch(empty, src);
 		}
 	);
 
-	auto list = abc AS(t0) > *("+"_L > abc) AS(ts) > check;
+	auto list = abc.as<"t0">() > (*("+"_L > abc)).as<"ts">() > check;
 	list.parse("abc+abc+abc");
 
 	auto expression = makeDummy<std::string_view, std::string>();
@@ -137,5 +137,6 @@ int main() {
 	assert(*expression.parse("((atom))") == "))atom((");
 
 	std::cout << "done!\n";
+
 	return 0;
 }

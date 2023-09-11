@@ -1,8 +1,9 @@
 #pragma once
 
 #include "parser.h"
+#include "empty.h"
 
-template <typename TSource, typename TValue, typename TContext = decltype(Context {})>
+template <typename TSource, typename TValue, typename TContext = Empty>
 auto makeDummy() {
 	return Parser<std::function<MaybeMatch<"", TValue, TSource>(SourceView<TSource>, TContext)>> {
 		[](SourceView<TSource> src, TContext ctx) -> MaybeMatch<"", TValue, TSource> {
