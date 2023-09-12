@@ -3,6 +3,7 @@
 #include <tuple>
 #include <string>
 #include <functional>
+#include <iostream>
 
 #include "empty.h"
 #include "sourceview.h"
@@ -16,17 +17,17 @@ public:
 
 	Parser(F parseFn): parseFn {parseFn} {}
 
-	// to be called from the outside to start the parsing process
-	template <typename TCtx = Empty>
-	auto parse(const auto& src, TCtx ctx = empty) const {
-		auto result = parseFn(SourceView(src), ctx);
-		return unwrap(result);
-	}
-
 	// to be called internally by parent parsers
 	template <forward_range TSource>
 	auto parseOn(SourceView<TSource> src, auto ctx) const {
 		return parseFn(src, ctx);
+	}
+
+	// to be called from the outside to start the parsing process
+	template <typename TCtx = Empty>
+	auto parse(const auto& src, TCtx ctx = empty) const {
+		auto result = parseOn(SourceView(src), ctx);
+		return unwrap(result);
 	}
 
 	template <typename F2>

@@ -13,6 +13,9 @@ struct ValueTree {
 	T1 left;
 	T2 right;
 
+	using Type1 = T1;
+	using Type2 = T2;
+
 	ValueTree(T1 left, T2 right):
 		left {left}, right {right} {}
 
@@ -95,13 +98,13 @@ inline auto pick(const ValueTree<T1, T2>& tree) {
 
 template <typename T1, typename T2>
 template <size_t i>
-auto ValueTree<T1, T2>::pick(){
+auto ValueTree<T1, T2>::pick() {
 	return ::pick<i>(*this);
 }
 
 template <typename T1, typename T2>
 template <Tag tag>
-auto ValueTree<T1, T2>::pick(){
+auto ValueTree<T1, T2>::pick() {
 	return ::pick<tag>(*this);
 }
 
@@ -111,3 +114,8 @@ std::ostream& operator<<(std::ostream& os, const ValueTree<T1, T2>& tree) {
 	os << tree.right;
 	return os;
 }
+
+template <typename T>
+concept TreeType = std::is_same_v<
+	T, ValueTree<typename T::Type1, typename T::Type2>
+	>;

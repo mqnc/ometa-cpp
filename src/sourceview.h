@@ -35,6 +35,13 @@ public:
 		}
 	}
 
+	template <typename T>
+	T copyAs() const {
+		T buffer;
+		copyInto(buffer);
+		return buffer;
+	}
+
 	bool operator==(const auto& other) const {
 		return std::ranges::equal(*this, other);
 	}

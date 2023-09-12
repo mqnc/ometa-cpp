@@ -13,3 +13,4 @@
 #include "predicate.h"
 #include "action.h"
 #include "recursion.h"
+#include "helpers.h"
