@@ -5,6 +5,8 @@
 #include "empty.h"
 #include "tag.h"
 
+namespace ometa {
+
 template <class T>
 constexpr bool always_false = false;
 
@@ -99,13 +101,13 @@ inline auto pick(const ValueTree<T1, T2>& tree) {
 template <typename T1, typename T2>
 template <size_t i>
 auto ValueTree<T1, T2>::pick() {
-	return ::pick<i>(*this);
+	return ometa::pick<i>(*this);
 }
 
 template <typename T1, typename T2>
 template <Tag tag>
 auto ValueTree<T1, T2>::pick() {
-	return ::pick<tag>(*this);
+	return ometa::pick<tag>(*this);
 }
 
 template <typename T1, typename T2>
@@ -119,3 +121,5 @@ template <typename T>
 concept TreeType = std::is_same_v<
 	T, ValueTree<typename T::Type1, typename T::Type2>
 	>;
+
+}

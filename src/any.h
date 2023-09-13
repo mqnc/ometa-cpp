@@ -2,6 +2,8 @@
 
 #include "parser.h"
 
+namespace ometa {
+
 auto any() {
 
 	auto parseFn = []<forward_range TSource>
@@ -22,4 +24,6 @@ auto any() {
 		};
 
 	return Parser(parseFn);
+}
+
 }

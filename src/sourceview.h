@@ -5,6 +5,8 @@
 #include <algorithm>
 #include <ostream>
 
+namespace ometa {
+
 using std::ranges::forward_range;
 
 template <forward_range TSource>
@@ -64,4 +66,6 @@ std::ostream& operator<<(std::ostream& os, const SourceView<TSource> src)
 		os << item;
 	}
 	return os;
+}
+
 }

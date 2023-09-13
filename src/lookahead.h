@@ -2,6 +2,8 @@
 
 #include "parser.h"
 
+namespace ometa {
+
 enum Polarity { positive, negative };
 
 template <typename T>
@@ -30,4 +32,6 @@ auto operator&(Parser<F> parser) {
 template <typename F>
 auto operator!(Parser<F> parser) {
 	return lookAhead(parser, negative);
+}
+
 }

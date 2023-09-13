@@ -4,6 +4,8 @@
 #include <variant>
 #include "parser.h"
 
+namespace ometa {
+
 template <typename T1, typename T2>
 auto choice(T1 child1, T2 child2) {
 
@@ -28,4 +30,6 @@ auto choice(T1 child1, T2 child2) {
 template <typename F1, typename F2>
 auto operator|(Parser<F1> parser1, Parser<F2> parser2) {
 	return choice(parser1, parser2);
+}
+
 }

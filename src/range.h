@@ -2,6 +2,8 @@
 
 #include "parser.h"
 
+namespace ometa {
+
 template <typename T1, typename T2>
 auto range(T1 a, T2 b) {
 
@@ -23,4 +25,6 @@ auto range(T1 a, T2 b) {
 		};
 
 	return Parser(parseFn);
+}
+
 }

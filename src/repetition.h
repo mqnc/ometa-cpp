@@ -4,6 +4,8 @@
 
 #include "parser.h"
 
+namespace ometa {
+
 template <typename T>
 class PickDeque:public std::deque<T>{
 	public:
@@ -73,4 +75,6 @@ std::ostream& operator<<(std::ostream& os, std::deque<T> const& vals) {
 	}
 	os << "]";
 	return os;
+}
+
 }

@@ -2,6 +2,8 @@
 
 #include "parser.h"
 
+namespace ometa {
+
 template <typename T, typename F>
 auto predicate(T child, F fn) {
 
@@ -22,4 +24,6 @@ auto predicate(T child, F fn) {
 template <typename F, typename P>
 auto operator<=(Parser<F> parser, P pred) {
 	return predicate(parser, pred);
+}
+
 }

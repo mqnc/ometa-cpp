@@ -2,6 +2,8 @@
 
 #include "parser.h"
 
+namespace ometa {
+
 template <typename T>
 auto capture(T child) {
 
@@ -25,4 +27,6 @@ auto capture(T child) {
 		};
 
 	return Parser(parseFn);
+}
+
 }

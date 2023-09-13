@@ -7,6 +7,8 @@
 
 #include <map>
 
+using namespace ometa;
+
 int main() {
 
 	assert(any().parse("1"));

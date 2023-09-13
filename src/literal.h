@@ -6,6 +6,8 @@
 
 #include "parser.h"
 
+namespace ometa {
+
 auto literal(auto compare) {
 
 	auto parseFn = [compare]<forward_range TSource>
@@ -33,4 +35,6 @@ auto literal(const char* compare) {
 
 auto operator""_L(const char* compare, size_t size) {
 	return literal<std::string>(std::string(compare, size));
+}
+
 }

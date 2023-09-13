@@ -6,6 +6,8 @@
 #include <iostream>
 #include <cmath>
 
+using namespace ometa;
+
 int main(int argc, char* argv[]) {
 
 	auto sum = dummy<std::string_view, int>();

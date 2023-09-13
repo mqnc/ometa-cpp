@@ -3,6 +3,8 @@
 #include "parser.h"
 #include "empty.h"
 
+namespace ometa {
+
 template <typename TSource, typename TValue, typename TContext = Empty>
 auto dummy() {
 	return Parser<std::function<MaybeMatch<TValue, TSource>(SourceView<TSource>, TContext)>> {
@@ -23,3 +25,5 @@ auto ref = []<typename F>(const Parser<F>& target) {
 		};
 	return Parser(parseFn);
 };
+
+}

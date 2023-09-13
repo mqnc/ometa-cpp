@@ -6,6 +6,8 @@
 #include "sourceview.h"
 #include "tag.h"
 
+namespace ometa {
+
 template <
 	typename TValue,
 	forward_range TSource
@@ -76,4 +78,6 @@ std::ostream& operator<<(
 		os << "{-fail-}";
 	}
 	return os;
+}
+
 }

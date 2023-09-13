@@ -7,6 +7,8 @@
 #include <utility>
 #include <string_view>
 
+namespace ometa {
+
 template <size_t N>
 struct Tag {
 	constexpr Tag(const char (&str)[N]) {
@@ -56,4 +58,6 @@ std::ostream& operator<<(
 ) {
 	os << *tagged << ":" << tag;
 	return os;
+}
+
 }

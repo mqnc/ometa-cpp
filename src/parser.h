@@ -10,6 +10,8 @@
 #include "match.h"
 #include "tag.h"
 
+namespace ometa {
+
 template <typename F>
 class Parser {
 public:
@@ -59,3 +61,5 @@ public:
 	// using TValue = decltype(std::declval<Parser<F, TChildren>>().parse(std::declval<TSource>()));
 
 };
+
+}

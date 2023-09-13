@@ -2,6 +2,8 @@
 
 #include <ostream>
 
+namespace ometa {
+
 struct Empty {
 	constexpr bool operator==(const Empty other) const {
 		return true;
@@ -14,4 +16,6 @@ std::ostream& operator<<(std::ostream& os, Empty)
 {
 	os << "(empty)";
 	return os;
+}
+
 }
