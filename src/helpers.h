@@ -8,6 +8,16 @@ auto select = [](auto value) {
 	return pick<i>(value);
 };
 
+auto constant = [](auto value) {
+	return [value](auto) {
+		return value;
+	};
+};
+
+auto insert = [](auto value){
+	return epsilon() >= constant(value);
+};
+
 auto lfold = [](auto combine) {
 	return [combine](auto value) {
 

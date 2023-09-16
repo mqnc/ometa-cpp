@@ -53,7 +53,7 @@ auto repetition(T child, size_t min, size_t max) {
 }
 
 template <typename F>
-auto operator~(Parser<F> parser) {
+auto operator-(Parser<F> parser) {
 	return repetition(parser, 0, 1);
 }
 template <typename F>

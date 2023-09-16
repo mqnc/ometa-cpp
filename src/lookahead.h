@@ -1,6 +1,7 @@
 #pragma once
 
 #include "parser.h"
+#include "ignore.h"
 
 namespace ometa {
 
@@ -18,7 +19,7 @@ auto lookAhead(T child, Polarity polarity) {
 			auto result = child.parseOn(src, ctx);
 
 			return result.has_value() == (polarity == positive) ?
-				makeMaybeMatch(empty, src) : fail;
+				makeMaybeMatch(ignore, src) : fail;
 		};
 
 	return Parser(parseFn);

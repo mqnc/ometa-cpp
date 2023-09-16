@@ -2,7 +2,7 @@
 
 #include <tuple>
 
-#include "empty.h"
+#include "ignore.h"
 #include "tag.h"
 
 namespace ometa {
@@ -29,12 +29,24 @@ struct ValueTree {
 
 };
 
-auto join(auto value) {
+auto join(Ignore, Ignore) {
+	return ignore;
+}
+
+auto join(Ignore, auto value) {
 	return value;
 }
 
-auto join(auto value, auto... rest) {
-	return ValueTree {value, join(rest...)};
+auto join(auto value, Ignore) {
+	return value;
+}
+
+auto join(auto value1, auto value2) {
+	return ValueTree {value1, value2};
+}
+
+auto join(auto a, auto b, auto... rest) {
+	return join(join(a, b), rest...);
 }
 
 template <typename>
@@ -112,8 +124,7 @@ auto ValueTree<T1, T2>::pick() {
 
 template <typename T1, typename T2>
 std::ostream& operator<<(std::ostream& os, const ValueTree<T1, T2>& tree) {
-	os << tree.left << "\n";
-	os << tree.right;
+	os << "\\" << tree.left << "|" << tree.right << "/";
 	return os;
 }
 

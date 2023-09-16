@@ -1,6 +1,7 @@
 #pragma once
 
 #include "parser.h"
+#include "epsilon.h"
 #include "any.h"
 #include "literal.h"
 #include "range.h"
@@ -9,6 +10,7 @@
 #include "sequence.h"
 #include "choice.h"
 #include "capture.h"
+#include "ignore.h"
 #include "tree.h"
 #include "predicate.h"
 #include "action.h"

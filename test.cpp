@@ -49,7 +49,7 @@ int main() {
 	assert(not nla.parse("abc"));
 	assert(nla.parse("XXX"));
 
-	auto opt = ~abc > def;
+	auto opt = -abc > def;
 	assert(opt.parse("abcdef"));
 	assert(opt.parse("def"));
 	assert(not opt.parse("XXX"));
@@ -102,6 +102,10 @@ int main() {
 	assert(*expression.parse("atom") == "atom");
 	assert(*expression.parse("(atom)") == "(atom)");
 	assert(*expression.parse("((atom))") == "((atom))");
+
+	auto paramd = [=](auto x, auto y){return abc > x > y;};
+	auto paramTest = paramd(def, ghi);
+	assert(paramTest.parse("abcdefghi"));
 
 	std::cout << "done!\n";
 
