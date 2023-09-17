@@ -1,12 +1,9 @@
 
 #include <ranges>
+#include "tree.h"
+#include "repetition.h"
 
 namespace ometa {
-
-template <size_t i>
-auto select = [](auto value) {
-	return pick<i>(value);
-};
 
 auto constant = [](auto value) {
 	return [value](auto) {
@@ -14,7 +11,34 @@ auto constant = [](auto value) {
 	};
 };
 
-auto insert = [](auto value){
+template <size_t i>
+auto select = [](auto value) {
+	return pick<i>(value);
+};
+
+template <typename T>
+auto concatImpl = [](T value) {
+	if constexpr (TreeType<T>) {
+		return concatImpl<typename T::Type1>(value.left)
+			+ concatImpl<typename T::Type2>(value.right);
+	}
+	else if constexpr (RepetitionValueType<T>) {
+		typename T::value_type temp{};
+		for(auto item:value){
+			temp = temp + item;
+		}
+		return temp;
+	}
+	else {
+		return value;
+	}
+};
+
+auto concat = []<typename T>(T value) {
+	return concatImpl<T>(value);
+};
+
+auto insert = [](auto value) {
 	return epsilon() >= constant(value);
 };
 
@@ -38,7 +62,7 @@ auto rfold = [](auto combine) {
 	return [combine](auto value) {
 
 		auto steps = value.template pick<1>();
-		if(steps.size() == 0){
+		if (steps.size() == 0) {
 			return value.template pick<0>();
 		}
 		auto op = steps.back().template pick<0>();

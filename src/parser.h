@@ -37,9 +37,10 @@ public:
 			return parseFn(src, ctx);
 		}
 		else {
-			log(name, src, LogEvent::enter);
+			log(name, LogEvent::enter, src);
 			auto result = parseFn(src, ctx);
-			log(name, src, result ? LogEvent::accept : LogEvent::reject);
+			auto evt = result ? LogEvent::accept : LogEvent::reject;
+			log(name, evt, src, result->next);
 			return result;
 		}
 #endif

@@ -7,7 +7,7 @@
 namespace ometa {
 
 template <typename T>
-class PickDeque:public std::deque<T>{
+class RepetitionValue:public std::deque<T>{
 	public:
 
 	template <size_t i>
@@ -15,6 +15,10 @@ class PickDeque:public std::deque<T>{
 		return (*this)[i];
 	};
 };
+template <typename T>
+concept RepetitionValueType = std::is_same_v<
+	T, RepetitionValue<typename T::value_type>
+	>;
 
 template <typename T>
 auto repetition(T child, size_t min, size_t max) {
@@ -26,7 +30,7 @@ auto repetition(T child, size_t min, size_t max) {
 		) {
 
 			using return_element_type = decltype(child.parseOn(src, ctx)->value);
-			PickDeque<return_element_type> matches {};
+			RepetitionValue<return_element_type> matches {};
 
 			auto next = src;
 
