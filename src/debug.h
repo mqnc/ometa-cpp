@@ -40,12 +40,13 @@ void log(
 		case LogEvent::reject: std::cout << red << "[X] "; break;
 	}
 	std::cout << reset;
-	for (size_t i = 0; i < 30; i++) {
-		std::stringstream ss;
-		if(src.begin() == next){
+
+	auto printFirstChar = [next](const auto& src) {
+		if (src.begin() == next.begin()) {
 			std::cout << green << "«" << reset;
 		}
 		if (src.begin() != src.end()) {
+			std::stringstream ss;
 			ss << src.front();
 			if (ss.str() == " ") {
 				std::cout << blue << "·" << reset;
@@ -59,17 +60,34 @@ void log(
 			else {
 				std::cout << ss.str();
 			}
+			return true;
 		}
-
 		else {
 			std::cout << blue << "∎" << reset;
-			break;
+			return false;
 		}
+	};
+
+	// const size_t s = src.size();
+	// if (s <= 30) {
+	size_t i = 0;
+	while (printFirstChar(src) && i < 30) {
 		src.next();
+		i++;
 	}
+	// }
+	// else {
+	// 	for (size_t i = 0; i < 15; i++) {
+	// 		printFirstChar(src);
+	// 		src.next();
+	// 	}
+
+	// }
 	std::cout << "\n";
 
 	if (event == LogEvent::enter) { logIndent++; }
 }
+
+#define LOG(p) (p).name = #p
 
 }

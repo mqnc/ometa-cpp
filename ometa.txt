@@ -11,11 +11,11 @@ A B C
 
 action:
 A -> {...} // with parameters
-{...} // without parameters
+^{...} // without parameters
 
 predicate:
-A -> {...}? // with parameters
-{...}? without parameters
+A -> ?{...} // with parameters
+^?{...} // without parameters
 
 cpp:
 {a == b}
@@ -56,6 +56,6 @@ ignore:
 ~A
 
 recursion:
-R := @{std::string_view -> int}
-S := "(" @R ")"
-@R := S
+(R) := {std::string_view} -> {int}
+S := "(" R ")"
+R :> S

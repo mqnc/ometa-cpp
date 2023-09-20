@@ -81,8 +81,14 @@ public:
 #ifdef NDEBUG
 	Parser operator[](std::string) { return *this; }
 #else
-	Parser operator[](std::string name) {
-		Parser wrap{parseFn};
+	auto operator[](std::string name) {
+		auto parseFn = [this]<forward_range TSource>(
+						   SourceView<TSource> src, auto ctx
+					   ) {
+			return this->parseOn(src, ctx);
+		};
+
+		auto wrap = Parser<decltype(parseFn)>(parseFn);
 		wrap.name = name;
 		return wrap;
 	}
