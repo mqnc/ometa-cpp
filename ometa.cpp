@@ -24,6 +24,7 @@ int main(int argc, char* argv[]) {
 	auto identStart = o::range('A', 'Z') | o::range('a', 'z') | "_"_L;
 	auto identContinue = identStart | o::range('0', '9');
 	auto identifier = o::capture(identStart > *identContinue) >= toSnippet;
+	auto reference = ~"@"_L > identifier >= [](auto value){return "o::ref("_S + value + ")"_S;};
 
 	auto cppChar = ~"\\"_L > ~o::any()
 		| ~!"\\"_L > ~o::any();
@@ -37,7 +38,7 @@ int main(int argc, char* argv[]) {
 	auto ruleRedefinition = o::dummy<std::string, Snippet>();
 
 	auto bracedCpp = ~"{"_L > o::ref(cpp) > ~"}"_L;
-	// LOG(bracedCpp);
+	//LOG(bracedCpp);
 	cpp = *(
 			  o::ref(ruleForwardDecl)
 			  | o::ref(ruleDefinition)
@@ -47,7 +48,7 @@ int main(int argc, char* argv[]) {
 			  | bracedCpp >= [](auto value) { return "{"_S + value + "}"_S; }
 			  | !"}"_L > o::any() >= toSnippet
 			  ) >= o::concat;
-	// LOG(cpp);
+	//LOG(cpp);
 	//  // todo: handle //, /**/, \\\n, R"()", "", ''
 
 	auto _ = *(" "_L | "\t"_L | "\n"_L) >= o::constant(" "_S);
@@ -56,11 +57,11 @@ int main(int argc, char* argv[]) {
 	auto epsilon = "()"_L >= o::constant(Snippet("o::epsilon()"));
 
 	auto character =
-		~"\\"_L > ~("n"_L | "r"_L | "t"_L | "\""_L | "\\\\"_L)
+		~"\\"_L > ~("n"_L | "r"_L | "t"_L | "\""_L | "\\"_L)
 		| !"\\"_L > ~o::any();
 	auto literal = o::capture("\""_L > *(!"\""_L > character) > "\""_L) >= toSnippet
 		> o::insert("_L"_S) >= o::concat;
-	// LOG(literal);
+	//LOG(literal);
 
 	auto range = bracedCpp > ~_ > ~".."_L > ~_ > bracedCpp
 		>= [](auto value) {
@@ -70,14 +71,14 @@ int main(int argc, char* argv[]) {
 				   + o::pick<1>(value)
 				   + "))"_S;
 		   };
-	// LOG(range);
+	//LOG(range);
 
 	auto choice = o::dummy<std::string, Snippet>();
 	auto parenthesized = ~"("_L > ~_ > o::ref(choice) > ~_ > ~")"_L >=
 		[](auto value) { return "("_S + value + ")"_S; };
 	auto capture = ~"<"_L > ~_ > o::ref(choice) > ~_ > ~">"_L >=
 		[](auto value) { return "o::capture("_S + value + ")"_S; };
-	// LOG(capture);
+	//LOG(capture);
 
 	auto action =
 		identifier >= toSnippet
@@ -106,6 +107,7 @@ int main(int argc, char* argv[]) {
 
 	auto primary =
 		identifier
+		| reference
 		| any
 		| epsilon
 		| literal
@@ -114,7 +116,7 @@ int main(int argc, char* argv[]) {
 		| freeActionOrPredicate
 		| parenthesized;
 
-	auto repetition = primary >
+	auto postfix = primary >
 		-(
 			"?"_L >= o::constant("-"_S)
 			| "*"_L >= o::constant("*"_S)
@@ -128,18 +130,18 @@ int main(int argc, char* argv[]) {
 				   return pick<1>(value)[0] + pick<0>(value);
 			   }
 		   };
-	auto lookAhead = o::capture(-("&"_L | "!"_L)) >= toSnippet
-		> ~_ > repetition >= o::concat;
-	auto sequence = lookAhead >
+	auto prefix = o::capture(-("&"_L | "!"_L | "~"_L)) >= toSnippet
+		> ~_ > postfix >= o::concat;
+	auto sequence = prefix >
 		*((~_ > (
-					o::insert(" > "_S) > lookAhead >= o::concat
+					o::insert(" > "_S) > prefix >= o::concat
 					| boundActionOrPredicate
 					)) >= o::concat) >= o::concat;
-	// LOG(sequence);
+	//LOG(sequence);
 	choice = sequence > *(
 							~_ > "|"_L >= o::constant(" | "_S) > ~_ > sequence >= o::concat
 							) >= o::concat;
-	// LOG(choice);
+	//LOG(choice);
 
 	ruleForwardDecl = ~"("_L > ~_ > identifier > ~_ > ~")"_L > ~_ > ~":="_L > ~_
 		> bracedCpp > ~_ > ~"->"_L > ~_ > bracedCpp > ~_ > ~";"_L
@@ -153,7 +155,7 @@ int main(int argc, char* argv[]) {
 
 	ruleRedefinition = identifier > ~_ > ~":>"_L > ~_ > choice > ~_ > ~";"_L
 		>= [](auto value) { return pick<0>(value) + " = "_S + pick<1>(value) + ";"; };
-	// LOG(ruleDefinition);
+	//LOG(ruleDefinition);
 
 
 
