@@ -23,16 +23,21 @@ auto operator""_S(const char* compare, size_t size) {
 
 int main(int argc, char* argv[]) {
 
+	_ := <(" " | "\t" | "\n")*> -> toSnippet;
+
 	identStart := {'A'}..{'Z'} | {'a'}..{'z'} | "_";
 	identContinue := identStart | {'0'}..{'9'};
 	identifier := <identStart identContinue*> -> toSnippet;
-	reference := ~"@" identifier -> {return "o::ref("_S + value + ")"_S;};
+	reference := ~"@" identifier -> {return "o::ref("_S + $ + ")"_S;};
 
 	cppChar := ~"\\" ~. | ~.;
 	cppLiteral := <
 		~"'" !"'" ~cppChar ~"'"
 		| ~"\"" ~(!"\"" ~cppChar)* ~"\""
 	> -> toSnippet;
+
+	valueRef := ~"$" -> {return "value"_S;};
+	indexedValueRef := ~"$" <{'0'}..{'9'}+> -> toSnippet -> {return "o::pick<"_S + $ + "-1>(value)"_S;};
 
 	(cpp) := {std::string} -> {Snippet};
 
@@ -48,11 +53,11 @@ int main(int argc, char* argv[]) {
 		| @ruleRedefinition
 		| identifier
 		| cppLiteral
-		| bracedCpp -> { return "{"_S + value + "}"_S; }
+		| bracedCpp -> { return "{"_S + $ + "}"_S; }
+		| indexedValueRef
+		| valueRef
 		| !"}" . -> toSnippet
 	)* -> concat;
-
-	_ := <(" " | "\t" | "\n")*> -> toSnippet;
 
 	any := "." -> {return "o::any()"_S;};
 	epsilon := "()" -> {return "o::epsilon()"_S;};
@@ -64,25 +69,21 @@ int main(int argc, char* argv[]) {
 		^{return "_L"_S;} -> concat;
 
 	range := bracedCpp ~_ ~".." ~_ bracedCpp -> {
-		return "o::range(("_S
-			+ o::pick<0>(value)
-			+ "), ("_S
-			+ o::pick<1>(value)
-			+ "))"_S;
+		return "o::range(("_S + $1 + "), ("_S + $2 + "))"_S;
 	};
 
 	(choice) := {std::string} -> {Snippet};
 	parenthesized := ~"(" ~_ @choice ~_ ~")" ->
-		{ return "("_S + value + ")"_S; };
+		{ return "("_S + $ + ")"_S; };
 	capture := ~"<" ~_ @choice ~_ ~">" ->
-		{ return "o::capture("_S + value + ")"_S; };
+		{ return "o::capture("_S + $ + ")"_S; };
 
 	action :=
 		identifier -> toSnippet
-		| bracedCpp -> { return "[](auto value){"_S + value + "}"_S; };
+		| bracedCpp -> { return "[](auto value){"_S + $ + "}"_S; };
 	predicate := ~"?" ~_ (
 		identifier -> toSnippet
-		| bracedCpp -> { return "[](auto value){"_S + value + "}"_S; }
+		| bracedCpp -> { return "[](auto value){"_S + $ + "}"_S; }
 	);
 
 	freeActionOrPredicate := ~"^" ~_ ^{ return "(o::epsilon()"_S; }(
@@ -111,11 +112,11 @@ int main(int argc, char* argv[]) {
 		| "*" -> {return "*"_S;}
 		| "+" -> {return "+"_S;}
 	)? -> {
-		if (pick<1>(value).size() == 0) {
-			return pick<0>(value);
+		if ($2.size() == 0) {
+			return $1;
 		}
 		else {
-			return pick<1>(value)[0] + pick<0>(value);
+			return $2[0] + $1;
 		}
 	};
 
@@ -130,21 +131,21 @@ int main(int argc, char* argv[]) {
 	)* -> concat;
 
 	choice :> sequence (
-		~_ "|" -> {return " | "_S;} ~_ sequence -> concat
+		<_ "|" _> -> toSnippet sequence -> concat
 	)* -> concat;
 
 	ruleForwardDecl :> ~"(" ~_ identifier ~_ ~")" ~_ ~":=" ~_
 		bracedCpp ~_ ~"->" ~_ bracedCpp ~_ ~";"
 		-> {
-			return "auto "_S + pick<0>(value) + " = o::dummy<"
-				+ pick<1>(value) + ", " + pick<2>(value) + ">();";
+			return "auto "_S + $1 + " = o::dummy<"
+				+ $2 + ", " + $3 + ">();";
 		};
 
 	ruleDefinition :> identifier ~_ ~":=" ~_ choice ~_ ~";"
-		-> { return "auto "_S + pick<0>(value) + " = "_S + pick<1>(value) + ";"; };
+		-> { return "auto "_S + $1 + " = "_S + $2 + ";"; };
 
 	ruleRedefinition :> identifier ~_ ~":>" ~_ choice ~_ ~";"
-		-> { return pick<0>(value) + " = "_S + pick<1>(value) + ";"; };
+		-> { return $1 + " = "_S + $2 + ";"; };
 
 
 
