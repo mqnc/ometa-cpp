@@ -7,6 +7,7 @@
 #include <fstream>
 #include <cmath>
 #include <string>
+#include <ctime>
 
 namespace o = ometa;
 using o::operator""_L;
@@ -40,7 +41,7 @@ int main(int argc, char* argv[]) {
 	
 	cpp = *(o::ref(ruleForwardDecl) | o::ref(ruleDefinition) | o::ref(ruleRedefinition) | identifier | cppLiteral | bracedCpp >= [](auto value){ return "{"_S + value + "}"_S; } | !"}"_L > o::any() >= toSnippet) >= concat;
 
-	auto _ = *(" "_L | "\t"_L | "\n"_L) >= [](auto value){return " "_S;};
+	auto _ = o::capture(*(" "_L | "\t"_L | "\n"_L)) >= toSnippet;
 
 	auto any = "."_L >= [](auto value){return "o::any()"_S;};
 	auto epsilon = "()"_L >= [](auto value){return "o::epsilon()"_S;};
@@ -94,11 +95,23 @@ int main(int argc, char* argv[]) {
 	ruleRedefinition = identifier > ~_ > ~":>"_L > ~_ > choice > ~_ > ~";"_L >= [](auto value){ return pick<0>(value) + " = "_S + pick<1>(value) + ";"; };
 
 
+
+
 	auto code = o::readFile("../ometa.ometa");
 
 	auto result = cpp.parse(code);
 	if (result) {
-		o::writeFile("../ometa-self.ometa.cpp", *result);
+		try {
+			auto backup = o::readFile("../ometa.ometa.cpp");
+			std::time_t time = std::time({});
+			char timeString[std::size("yyyy_mm_dd__hh_mm_ssZ")];
+			std::strftime(std::data(timeString), std::size(timeString),
+				"%Y_%m_%d__%H_%M_%S", std::gmtime(&time));
+			o::writeFile(std::string("../ometa.ometa.cpp.") + timeString + ".backup", backup);
+		}
+		catch (...) {}
+
+		o::writeFile("../ometa.ometa.cpp", *result);
 	}
 	else {
 		std::cout << "fail\n";
