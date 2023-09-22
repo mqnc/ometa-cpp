@@ -10,6 +10,7 @@
 
 namespace o = ometa;
 using o::operator""_L;
+using o::concat;
 
 using Snippet = std::string;
 Snippet toSnippet(o::SourceView<std::string> src) {
@@ -27,7 +28,7 @@ int main(int argc, char* argv[]) {
 	auto reference = ~"@"_L > identifier >= [](auto value){return "o::ref("_S + value + ")"_S;};
 
 	auto cppChar = ~"\\"_L > ~o::any()
-		| ~!"\\"_L > ~o::any();
+		| ~o::any();
 	auto cppLiteral = o::capture(~"'"_L > !"'"_L > ~cppChar > ~"'"_L
 						  | ~"\""_L > ~*(!"\""_L > ~cppChar) > ~"\""_L) >= toSnippet;
 
@@ -47,7 +48,7 @@ int main(int argc, char* argv[]) {
 			  | cppLiteral
 			  | bracedCpp >= [](auto value) { return "{"_S + value + "}"_S; }
 			  | !"}"_L > o::any() >= toSnippet
-			  ) >= o::concat;
+			  ) >= concat;
 	//LOG(cpp);
 	//  // todo: handle //, /**/, \\\n, R"()", "", ''
 
@@ -60,7 +61,7 @@ int main(int argc, char* argv[]) {
 		~"\\"_L > ~("n"_L | "r"_L | "t"_L | "\""_L | "\\"_L)
 		| !"\\"_L > ~o::any();
 	auto literal = o::capture("\""_L > *(!"\""_L > character) > "\""_L) >= toSnippet
-		> o::insert("_L"_S) >= o::concat;
+		> o::insert("_L"_S) >= concat;
 	//LOG(literal);
 
 	auto range = bracedCpp > ~_ > ~".."_L > ~_ > bracedCpp
@@ -97,13 +98,13 @@ int main(int argc, char* argv[]) {
 		> (
 			  o::insert(" >= "_S) > action
 			  | o::insert(" <= "_S) > predicate
-			  ) > o::insert(")"_S) >= o::concat;
+			  ) > o::insert(")"_S) >= concat;
 
 	auto boundActionOrPredicate = ~"->"_L > ~_
 		> (
 			  o::insert(" >= "_S) > action
 			  | o::insert(" <= "_S) > predicate
-			  ) >= o::concat;
+			  ) >= concat;
 
 	auto primary =
 		identifier
@@ -131,16 +132,16 @@ int main(int argc, char* argv[]) {
 			   }
 		   };
 	auto prefix = o::capture(-("&"_L | "!"_L | "~"_L)) >= toSnippet
-		> ~_ > postfix >= o::concat;
+		> ~_ > postfix >= concat;
 	auto sequence = prefix >
 		*((~_ > (
-					o::insert(" > "_S) > prefix >= o::concat
+					o::insert(" > "_S) > prefix >= concat
 					| boundActionOrPredicate
-					)) >= o::concat) >= o::concat;
+					)) >= concat) >= concat;
 	//LOG(sequence);
 	choice = sequence > *(
-							~_ > "|"_L >= o::constant(" | "_S) > ~_ > sequence >= o::concat
-							) >= o::concat;
+							~_ > "|"_L >= o::constant(" | "_S) > ~_ > sequence >= concat
+							) >= concat;
 	//LOG(choice);
 
 	ruleForwardDecl = ~"("_L > ~_ > identifier > ~_ > ~")"_L > ~_ > ~":="_L > ~_
