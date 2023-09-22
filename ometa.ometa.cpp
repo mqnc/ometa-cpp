@@ -10,6 +10,7 @@
 
 namespace o = ometa;
 using o::operator""_L;
+using o::concat;
 
 using Snippet = std::string;
 Snippet toSnippet(o::SourceView<std::string> src) {
@@ -37,121 +38,67 @@ int main(int argc, char* argv[]) {
 
 	auto bracedCpp = ~"{"_L > o::ref(cpp) > ~"}"_L;
 	
-	auto cpp = (o::ref(ruleForwardDecl) | o::ref(ruleDefinition) | o::ref(ruleRedefinition) | identifier | cppLiteral | bracedCpp >= [](auto value){ return "{"_S + value + "}"_S; } | !"}"_L > o::any() >= toSnippet) >= concat;
+	cpp = (o::ref(ruleForwardDecl) | o::ref(ruleDefinition) | o::ref(ruleRedefinition) | identifier | cppLiteral | bracedCpp >= [](auto value){ return "{"_S + value + "}"_S; } | !"}"_L > o::any() >= toSnippet) >= concat;
 
-	auto _ = *(" "_L | "\t"_L | "\n"_L) >= o::constant(" "_S);
+	auto _ = *(" "_L | "\t"_L | "\n"_L) >= [](auto value){return " "_S;};
 
-	auto any = "."_L >= o::constant(Snippet("o::any()"));
-	auto epsilon = "()"_L >= o::constant(Snippet("o::epsilon()"));
+	auto any = "."_L >= [](auto value){return "o::any()"_S;};
+	auto epsilon = "()"_L >= [](auto value){return "o::epsilon()"_S;};
 
-	auto character =
-		~"\\"_L > ~("n"_L | "r"_L | "t"_L | "\""_L | "\\"_L)
-		| !"\\"_L > ~o::any();
-	auto literal = o::capture("\""_L > *(!"\""_L > character) > "\""_L) >= toSnippet
-		> o::insert("_L"_S) >= o::concat;
-	// LOG(literal);
+	auto character = ~"\\"_L > ~("n"_L | "r"_L | "t"_L | "\""_L | "\\"_L) | !"\\"_L > ~o::any();
+	auto literal = o::capture("\""_L > *(!"\""_L > character) > "\""_L) >= toSnippet > (o::epsilon() >= [](auto value){return "_L"_S;}) >= concat;
 
-	auto range = bracedCpp > ~_ > ~".."_L > ~_ > bracedCpp
-		>= [](auto value) {
-			   return "o::range(("_S
-				   + o::pick<0>(value)
-				   + "), ("_S
-				   + o::pick<1>(value)
-				   + "))"_S;
-		   };
-	// LOG(range);
+	auto range = bracedCpp > ~_ > ~".."_L > ~_ > bracedCpp >= [](auto value){
+		return "o::range(("_S
+			+ o::pick<0>(value)
+			+ "), ("_S
+			+ o::pick<1>(value)
+			+ "))"_S;
+	};
 
 	auto choice = o::dummy<std::string, Snippet>();
-	auto parenthesized = ~"("_L > ~_ > @choice > ~_ > ~")"_L >=
-		[](auto value) { return "("_S + value + ")"_S; };
-	auto capture = ~"<"_L > ~_ > @choice > ~_ > ~">"_L >=
-		[](auto value) { return "o::capture("_S + value + ")"_S; };
-	// LOG(capture);
+	auto parenthesized = ~"("_L > ~_ > o::ref(choice) > ~_ > ~")"_L >= [](auto value){ return "("_S + value + ")"_S; };
+	auto capture = ~"<"_L > ~_ > o::ref(choice) > ~_ > ~">"_L >= [](auto value){ return "o::capture("_S + value + ")"_S; };
 
-	auto action =
-		identifier >= toSnippet
-		| bracedCpp >= [](auto value) {
-			  return "[](auto value){"_S + value + "}"_S;
-		  };
-	auto predicate = ~"?"_L > ~_ >
-		(
-			identifier >= toSnippet
-			| bracedCpp >= [](auto value) {
-					return "[](auto value){"_S + value + "}"_S;
-				}
-		);
+	auto action = identifier >= toSnippet | bracedCpp >= [](auto value){ return "[](auto value){"_S + value + "}"_S; };
+	auto predicate = ~"?"_L > ~_ > (identifier >= toSnippet | bracedCpp >= [](auto value){ return "[](auto value){"_S + value + "}"_S; });
 
-	auto freeActionOrPredicate = ~"^"_L > ~_ > o::insert("(epsilon()"_S)
-		> (
-			  o::insert(" => "_S) > action
-			  | o::insert(" =< "_S) > predicate
-			  ) > o::insert(")"_S) >= o::concat;
+	auto freeActionOrPredicate = ~"^"_L > ~_ > (o::epsilon() >= [](auto value){ return "(o::epsilon()"_S; }) > ((o::epsilon() >= [](auto value){return " >= "_S;}) > action | (o::epsilon() >= [](auto value){return " <= "_S;}) > predicate) > (o::epsilon() >= [](auto value){return ")"_S;}) >= concat;
 
-	auto boundActionOrPredicate = ~"->"_L > ~_
-		> (
-			  o::insert(" >= "_S) > action
-			  | o::insert(" <= "_S) > predicate
-			  ) >= o::concat;
+	auto boundActionOrPredicate = ~"->"_L > ~_ > ((o::epsilon() >= [](auto value){return " >= "_S;}) > action | (o::epsilon() >= [](auto value){return " <= "_S;}) > predicate) >= concat;
 
-	auto primary =
-		identifier
-		| reference
-		| any
-		| epsilon
-		| literal
-		| range
-		| capture
-		| freeActionOrPredicate
-		| parenthesized;
+	auto primary = identifier | reference | any | epsilon | literal | range | capture | freeActionOrPredicate | parenthesized;
 
-	auto postfix = primary >
-		-(
-			"?"_L >= o::constant("-"_S)
-			| "*"_L >= o::constant("*"_S)
-			| "+"_L >= o::constant("+"_S)
-			)
-		>= [](auto value) {
-			   if (pick<1>(value).size() == 0) {
-				   return pick<0>(value);
-			   }
-			   else {
-				   return pick<1>(value)[0] + pick<0>(value);
-			   }
-		   };
-	auto prefix = o::capture(-("&"_L | "!"_L | "~"_L)) >= toSnippet
-		> ~_ > postfix >= o::concat;
-	auto sequence = prefix >
-		*((~_ > (
-					o::insert(" > "_S) > prefix >= o::concat
-					| boundActionOrPredicate
-					)) >= o::concat) >= o::concat;
-	// LOG(sequence);
-	choice = sequence > *(
-							~_ > "|"_L >= o::constant(" | "_S) > ~_ > sequence >= o::concat
-							) >= o::concat;
-	// LOG(choice);
+	auto postfix = primary > -("?"_L >= [](auto value){return "-"_S;} | "*"_L >= [](auto value){return "*"_S;} | "+"_L >= [](auto value){return "+"_S;}) >= [](auto value){
+		if (pick<1>(value).size() == 0) {
+			return pick<0>(value);
+		}
+		else {
+			return pick<1>(value)[0] + pick<0>(value);
+		}
+	};
 
-	ruleForwardDecl = ~"("_L > ~_ > identifier > ~_ > ~")"_L > ~_ > ~":="_L > ~_
-		> bracedCpp > ~_ > ~"->"_L > ~_ > bracedCpp > ~_ > ~";"_L
-		>= [](auto value) {
-			   return "auto "_S + pick<0>(value) + " = o::dummy<"
-				   + pick<1>(value) + ", " + pick<2>(value) + ">();";
-		   };
+	auto prefix = o::capture(-("&"_L | "!"_L | "~"_L)) >= toSnippet > ~_ > postfix >= concat;
 
-	ruleDefinition = identifier > ~_ > ~":="_L > ~_ > choice > ~_ > ~";"_L
-		>= [](auto value) { return "auto "_S + pick<0>(value) + " = "_S + pick<1>(value) + ";"; };
+	auto sequence = prefix > *((~_ > ((o::epsilon() >= [](auto value){return " > "_S;}) > prefix >= concat | boundActionOrPredicate)) >= concat) >= concat;
 
-	ruleRedefinition = identifier > ~_ > ~":>"_L > ~_ > choice > ~_ > ~";"_L
-		>= [](auto value) { return pick<0>(value) + " = "_S + pick<1>(value) + ";"; };
-	// LOG(ruleDefinition);
+	choice = sequence > *(~_ > "|"_L >= [](auto value){return " | "_S;} > ~_ > sequence >= concat) >= concat;
 
+	ruleForwardDecl = ~"("_L > ~_ > identifier > ~_ > ~")"_L > ~_ > ~":="_L > ~_ > bracedCpp > ~_ > ~"->"_L > ~_ > bracedCpp > ~_ > ~";"_L >= [](auto value){
+			return "auto "_S + pick<0>(value) + " = o::dummy<"
+				+ pick<1>(value) + ", " + pick<2>(value) + ">();";
+		};
+
+	ruleDefinition = identifier > ~_ > ~":="_L > ~_ > choice > ~_ > ~";"_L >= [](auto value){ return "auto "_S + pick<0>(value) + " = "_S + pick<1>(value) + ";"; };
+
+	ruleRedefinition = identifier > ~_ > ~":>"_L > ~_ > choice > ~_ > ~";"_L >= [](auto value){ return pick<0>(value) + " = "_S + pick<1>(value) + ";"; };
 
 
 	auto code = o::readFile("../ometa.ometa");
 
 	auto result = cpp.parse(code);
 	if (result) {
-		o::writeFile("../ometa.ometa.cpp", *result);
+		o::writeFile("../ometa-self.ometa.cpp", *result);
 	}
 	else {
 		std::cout << "fail\n";

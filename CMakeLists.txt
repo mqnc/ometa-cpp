@@ -7,4 +7,5 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -ferror-limit=1 -ftemplate-backtrace
 add_executable(test test.cpp)
 add_executable(calculator calculator.cpp)
 add_executable(ometa ometa.cpp)
+add_executable(self ometa.ometa.cpp)
 add_executable(playground playground.cpp)

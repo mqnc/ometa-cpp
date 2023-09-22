@@ -93,10 +93,10 @@ int main(int argc, char* argv[]) {
 				}
 		);
 
-	auto freeActionOrPredicate = ~"^"_L > ~_ > o::insert("(epsilon()"_S)
+	auto freeActionOrPredicate = ~"^"_L > ~_ > o::insert("(o::epsilon()"_S)
 		> (
-			  o::insert(" => "_S) > action
-			  | o::insert(" =< "_S) > predicate
+			  o::insert(" >= "_S) > action
+			  | o::insert(" <= "_S) > predicate
 			  ) > o::insert(")"_S) >= o::concat;
 
 	auto boundActionOrPredicate = ~"->"_L > ~_
