@@ -72,12 +72,14 @@ myAny := .;
 myEpsilon := ();
 
 // generating semantic values:
-myValue := ^{return std::string("awa");};
+myValue := ^myLambda;
+myInlineValue := ^{return std::string("awa");};
 myDependentValue := A B C -> {return $1 + $2 + $3;}
 
 // semantic predicates:
-myPredicate := ^?{return std::rand() % 2 == 0;};
-myDependentPredicate := A B C -> ^{return $1 + $2 + $3 > 10;};
+myPredicate := ^?myLambda;
+myInlinePredicate := ^?{return std::rand() % 2 == 0;};
+myDependentPredicate := A B C -> ?{return $1 + $2 + $3 > 10;};
 
 // ignore values:
 myPick := ~ignoreMe useJustMe ~ignoreMe -> {return $;};
@@ -119,3 +121,7 @@ However, this makes development a bit more difficult because you probably want t
 ```cpp
 myChoice := ~number | ~(givenName familyName);
 ```
+
+## Contribute
+
+Feel free to report issues and suggest suggestions!
