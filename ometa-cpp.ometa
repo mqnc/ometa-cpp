@@ -9,12 +9,10 @@
 #include <string>
 #include <ctime>
 
-namespace o = ometa;
-using o::operator""_L;
-using o::concat;
+using ometa::operator""_L;
 
 using Snippet = std::string;
-Snippet toSnippet(o::SourceView<std::string> src) {
+Snippet toSnippet(ometa::SourceView<std::string> src) {
 	return src.copyAs<Snippet>();
 }
 auto operator""_S(const char* compare, size_t size) {
@@ -23,14 +21,19 @@ auto operator""_S(const char* compare, size_t size) {
 
 int main(int argc, char* argv[]) {
 
+	if(argc != 3){
+		std::cout << "usage: " << argv[0] << " INPUT_FILE OUTPUT_FILE\n";
+		return EXIT_FAILURE;
+	}
+
 	auto tStart = tic();
 
 	_ := <(" " | "\t" | "\n")*> -> toSnippet;
 
-	identStart := {'A'}..{'Z'} | {'a'}..{'z'} | "_";
+	identStart := {'A'}..{'Z'} | {'a'}..{'z'} | "_" | "::";
 	identContinue := identStart | {'0'}..{'9'};
 	identifier := <identStart identContinue*> -> toSnippet;
-	reference := identifier ~"'" -> {return "o::ptr("_S + $ + ")"_S;};
+	reference := identifier ~"'" -> {return "ometa::ptr("_S + $ + ")"_S;};
 
 	cppChar := ~"\\" ~. | ~.;
 	cppLiteral := <
@@ -39,7 +42,7 @@ int main(int argc, char* argv[]) {
 	> -> toSnippet;
 
 	valueRef := ~"$" -> {return "value"_S;};
-	indexedValueRef := ~"$" <{'0'}..{'9'}+> -> toSnippet -> {return "o::pick<"_S + $ + "-1>(value)"_S;};
+	indexedValueRef := ~"$" <{'0'}..{'9'}+> -> toSnippet -> {return "ometa::pick<"_S + $ + "-1>(value)"_S;};
 
 	cpp' : {std::string} -> {Snippet};
 
@@ -59,26 +62,26 @@ int main(int argc, char* argv[]) {
 		| indexedValueRef
 		| valueRef
 		| !"}" . -> toSnippet
-	)* -> concat;
+	)* -> ometa::concat;
 
-	any := "." -> {return "o::any()"_S;};
-	epsilon := "()" -> {return "o::epsilon()"_S;};
+	any := "." -> {return "ometa::any()"_S;};
+	epsilon := "()" -> {return "ometa::epsilon()"_S;};
 
 	character :=
 		~"\\" ~("n" | "r" | "t" | "\"" | "\\")
 		| !"\\" ~.;
 	literal := <"\"" (!"\"" character)* "\""> -> toSnippet
-		^{return "_L"_S;} -> concat;
+		^{return "_L"_S;} -> ometa::concat;
 
 	range := bracedCpp ~_ ~".." ~_ bracedCpp -> {
-		return "o::range(("_S + $1 + "), ("_S + $2 + "))"_S;
+		return "ometa::range(("_S + $1 + "), ("_S + $2 + "))"_S;
 	};
 
 	choice' : {std::string} -> {Snippet};
 	parenthesized := ~"(" ~_ choice' ~_ ~")" ->
 		{ return "("_S + $ + ")"_S; };
 	capture := ~"<" ~_ choice' ~_ ~">" ->
-		{ return "o::capture("_S + $ + ")"_S; };
+		{ return "ometa::capture("_S + $ + ")"_S; };
 
 	action :=
 		identifier -> toSnippet
@@ -88,15 +91,15 @@ int main(int argc, char* argv[]) {
 		| bracedCpp -> { return "[](auto value){"_S + $ + "}"_S; }
 	);
 
-	freeActionOrPredicate := ~"^" ~_ ^{ return "(o::epsilon()"_S; }(
+	freeActionOrPredicate := ~"^" ~_ ^{ return "(ometa::epsilon()"_S; }(
 		^{return " >= "_S;} action
 		| ^{return " <= "_S;} predicate
-	) ^{return ")"_S;} -> concat;
+	) ^{return ")"_S;} -> ometa::concat;
 
 	boundActionOrPredicate := ~"->" ~_ (
 		^{return " >= "_S;} action
 		| ^{return " <= "_S;} predicate
-	) -> concat;
+	) -> ometa::concat;
 
 	primary :=
 		reference
@@ -123,23 +126,23 @@ int main(int argc, char* argv[]) {
 	};
 
 	prefix := <("&" | "!" | "~")?> -> toSnippet
-		~_ postfix -> concat;
+		~_ postfix -> ometa::concat;
 
 	sequence := prefix (
 		(~_ (
-			^{return " > "_S;} prefix -> concat
+			^{return " > "_S;} prefix -> ometa::concat
 			| boundActionOrPredicate
-		)) -> concat
-	)* -> concat;
+		)) -> ometa::concat
+	)* -> ometa::concat;
 
 	choice' => sequence (
-		<_ "|" _> -> toSnippet sequence -> concat
-	)* -> concat;
+		<_ "|" _> -> toSnippet sequence -> ometa::concat
+	)* -> ometa::concat;
 
 	ruleForwardDecl' => identifier ~"'" ~_ ~":" ~_
 		bracedCpp ~_ ~"->" ~_ bracedCpp ~_ ~";"
 		-> {
-			return "auto "_S + $1 + " = o::declare<"
+			return "auto "_S + $1 + " = ometa::declare<"
 				+ $2 + ", " + $3 + ">();";
 		};
 
@@ -153,24 +156,25 @@ int main(int argc, char* argv[]) {
 	toc(tStart);
 
 
-	auto code = o::readFile("../ometa.ometa");
+	auto code = ometa::readFile(argv[1]);
 
 	auto result = cpp->parse(code);
 	if (result) {
 		try {
-			auto backup = o::readFile("../ometa.ometa.cpp");
+			auto backup = ometa::readFile(argv[2]);
 			std::time_t time = std::time({});
 			char timeString[std::size("yyyy_mm_dd__hh_mm_ssZ")];
 			std::strftime(std::data(timeString), std::size(timeString),
 				"%Y_%m_%d__%H_%M_%S", std::gmtime(&time));
-			o::writeFile(std::string("../ometa.ometa.cpp.") + timeString + ".backup", backup);
+			ometa::writeFile(std::string(argv[2]) + "." + timeString + ".backup", backup);
 		}
 		catch (...) {}
 
-		o::writeFile("../ometa.ometa.cpp", *result);
+		ometa::writeFile(argv[2], *result);
 	}
 	else {
 		std::cout << "fail\n";
+		return EXIT_FAILURE;
 	}
 
 	return EXIT_SUCCESS;

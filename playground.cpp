@@ -4,14 +4,8 @@
 
 #include <tuple>
 
-int main() {
+int main(int argc, char *argv[]) {
 
-	auto t1 = join(makeTagged<"1">(1), makeTagged<"2">(2), makeTagged<"3">(3));
-	auto t2 = join(makeTagged<"1">(11), makeTagged<"2">(22), makeTagged<"33">(33));
-	auto t3 = join(t1, t2);
-	
-	std::cout << pick<2>(t3);
-	std::cout << pick<"33">(t3);
-
+	std::cout << argv[1];
 	return 0;
 }

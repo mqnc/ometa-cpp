@@ -19,13 +19,10 @@ cd ometa-cpp
 mkdir build
 cd build
 cmake ..
-make ometa
-./ometa
-make ometa
-./ometa
+make ometa-cpp
+./ometa-cpp ../ometa-cpp.ometa ../test.cpp
+diff -s ../ometa-cpp.ometa.cpp ../test.cpp
 ```
-
-Note that the first call to `./ometa` regenerates `ometa.ometa.cpp` from `ometa.ometa` again, so you can compile again.
 
 ## Why not just use XYZ?
 
