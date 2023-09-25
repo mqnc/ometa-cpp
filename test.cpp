@@ -94,14 +94,14 @@ int main() {
 	assert(list.parse("abc+abc+abc")->pick<"t0">() == "abc");
 	assert(list.parse("abc+abc+abc")->pick<"ts">()[0].pick<0>() == "+");
 
-	auto expression = dummy<std::string_view, SourceView<std::string_view>>();
+	auto expression = declare<std::string_view, SourceView<std::string_view>>();
 
-	expression = capture("atom"_L)
-		| capture("("_L > ref(expression) > ")"_L);
+	*expression = capture("atom"_L)
+		| capture("("_L > ptr(expression) > ")"_L);
 
-	assert(*expression.parse("atom") == "atom");
-	assert(*expression.parse("(atom)") == "(atom)");
-	assert(*expression.parse("((atom))") == "((atom))");
+	assert(*expression->parse("atom") == "atom");
+	assert(*expression->parse("(atom)") == "(atom)");
+	assert(*expression->parse("((atom))") == "((atom))");
 
 	auto paramd = [=](auto x, auto y){return abc > x > y;};
 	auto paramTest = paramd(def, ghi);

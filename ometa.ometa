@@ -23,12 +23,14 @@ auto operator""_S(const char* compare, size_t size) {
 
 int main(int argc, char* argv[]) {
 
+	auto tStart = tic();
+
 	_ := <(" " | "\t" | "\n")*> -> toSnippet;
 
 	identStart := {'A'}..{'Z'} | {'a'}..{'z'} | "_";
 	identContinue := identStart | {'0'}..{'9'};
 	identifier := <identStart identContinue*> -> toSnippet;
-	reference := ~"@" identifier -> {return "o::ref("_S + $ + ")"_S;};
+	reference := identifier ~"'" -> {return "o::ptr("_S + $ + ")"_S;};
 
 	cppChar := ~"\\" ~. | ~.;
 	cppLiteral := <
@@ -39,18 +41,18 @@ int main(int argc, char* argv[]) {
 	valueRef := ~"$" -> {return "value"_S;};
 	indexedValueRef := ~"$" <{'0'}..{'9'}+> -> toSnippet -> {return "o::pick<"_S + $ + "-1>(value)"_S;};
 
-	(cpp) := {std::string} -> {Snippet};
+	cpp' : {std::string} -> {Snippet};
 
-	(ruleForwardDecl) := {std::string} -> {Snippet};
-	(ruleDefinition) := {std::string} -> {Snippet};
-	(ruleRedefinition) := {std::string} -> {Snippet};
+	ruleForwardDecl' : {std::string} -> {Snippet};
+	ruleDefinition' : {std::string} -> {Snippet};
+	ruleRedefinition' : {std::string} -> {Snippet};
 
-	bracedCpp := ~"{" @cpp ~"}";
+	bracedCpp := ~"{" cpp' ~"}";
 	
-	cpp :> (
-		@ruleForwardDecl
-		| @ruleDefinition
-		| @ruleRedefinition
+	cpp' => (
+		ruleForwardDecl'
+		| ruleDefinition'
+		| ruleRedefinition'
 		| identifier
 		| cppLiteral
 		| bracedCpp -> { return "{"_S + $ + "}"_S; }
@@ -72,10 +74,10 @@ int main(int argc, char* argv[]) {
 		return "o::range(("_S + $1 + "), ("_S + $2 + "))"_S;
 	};
 
-	(choice) := {std::string} -> {Snippet};
-	parenthesized := ~"(" ~_ @choice ~_ ~")" ->
+	choice' : {std::string} -> {Snippet};
+	parenthesized := ~"(" ~_ choice' ~_ ~")" ->
 		{ return "("_S + $ + ")"_S; };
-	capture := ~"<" ~_ @choice ~_ ~">" ->
+	capture := ~"<" ~_ choice' ~_ ~">" ->
 		{ return "o::capture("_S + $ + ")"_S; };
 
 	action :=
@@ -97,8 +99,8 @@ int main(int argc, char* argv[]) {
 	) -> concat;
 
 	primary :=
-		identifier
-		| reference
+		reference
+		| identifier
 		| any
 		| epsilon
 		| literal
@@ -130,29 +132,30 @@ int main(int argc, char* argv[]) {
 		)) -> concat
 	)* -> concat;
 
-	choice :> sequence (
+	choice' => sequence (
 		<_ "|" _> -> toSnippet sequence -> concat
 	)* -> concat;
 
-	ruleForwardDecl :> ~"(" ~_ identifier ~_ ~")" ~_ ~":=" ~_
+	ruleForwardDecl' => identifier ~"'" ~_ ~":" ~_
 		bracedCpp ~_ ~"->" ~_ bracedCpp ~_ ~";"
 		-> {
-			return "auto "_S + $1 + " = o::dummy<"
+			return "auto "_S + $1 + " = o::declare<"
 				+ $2 + ", " + $3 + ">();";
 		};
 
-	ruleDefinition :> identifier ~_ ~":=" ~_ choice ~_ ~";"
-		-> { return "auto "_S + $1 + " = "_S + $2 + ";"; };
+	ruleDefinition' => identifier ~_ ~":=" ~_ choice' ~_ ~";"
+		-> { return "const auto "_S + $1 + " = "_S + $2 + ";"; };
 
-	ruleRedefinition :> identifier ~_ ~":>" ~_ choice ~_ ~";"
-		-> { return $1 + " = "_S + $2 + ";"; };
+	ruleRedefinition' => identifier ~"'" ~_ ~"=>" ~_ choice' ~_ ~";"
+		-> { return "*"_S + $1 + " = "_S + $2 + ";"; };
 
-
+	std::cout << "setup: ";
+	toc(tStart);
 
 
 	auto code = o::readFile("../ometa.ometa");
 
-	auto result = cpp.parse(code);
+	auto result = cpp->parse(code);
 	if (result) {
 		try {
 			auto backup = o::readFile("../ometa.ometa.cpp");

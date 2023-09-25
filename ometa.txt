@@ -56,6 +56,6 @@ ignore:
 ~A
 
 recursion:
-(R) := {std::string_view} -> {int}
-S := "(" @R ")"
-R :> S
+R' : {std::string_view} -> {int}
+S := "(" R' ")"
+R' => S
