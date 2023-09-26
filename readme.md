@@ -101,24 +101,6 @@ myAddition := myList[number, plus];
 * all alternatives in a prioritized choice must return the same type
 * see `ometa.ometa` for details, it describes itself
 
-## Devlog
-
-### The Agony of Choice
-
-First I implemented the prioritized choice so that `A | B | C` returns a `std::variant<TypeA, TypeB, TypeC>`. The choice factory became huge and ugly, mainly but not only because it should return `std::variant<TypeA, TypeB, TypeC>` instead of `std::variant<std::variant<TypeA, TypeB>, TypeC>`. However, the idiomatic way to deal with variants is to dispatch on them with `std::visit`, then you might as well handle each option right away before merging them with `|`:
-
-```cpp
-myChoice :=
-	number -> {return std::to_string($);}
-	| givenName familyName -> {return std::string($1) + std::string($2);};
-```
-
-However, this makes development a bit more difficult because you probably want to write the parser first before generating any values, and most likely the types won't match. In that case, I recommend to ignore all values first:
-
-```cpp
-myChoice := ~number | ~(givenName familyName);
-```
-
 ## Contribute
 
 Feel free to report issues and suggest suggestions!
