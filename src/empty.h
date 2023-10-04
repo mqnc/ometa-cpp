@@ -4,11 +4,15 @@
 
 namespace ometa {
 
-struct Empty {
-	constexpr bool operator==(const Empty other) const {
-		return true;
-	}
-};
+struct Empty {};
+
+constexpr bool operator==(const Empty, const Empty) {
+	return true;
+}
+
+constexpr bool operator==(const auto, const Empty) {
+	return false;
+}
 
 Empty empty;
 

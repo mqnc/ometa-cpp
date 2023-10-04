@@ -4,11 +4,15 @@
 
 namespace ometa {
 
-struct Ignore {
-	constexpr bool operator==(const Ignore other) const {
-		return true;
-	}
-};
+struct Ignore {};
+
+constexpr bool operator==(const Ignore, const Ignore) {
+	return true;
+}
+
+constexpr bool operator==(const auto, const Ignore) {
+	return false;
+}
 
 Ignore ignore;
 

@@ -15,7 +15,7 @@ However, this makes development a bit more difficult because you probably want t
 myChoice := ~number | ~(givenName familyName);
 ```
 
-## Recursion
+## Recursion := Recursion
 
 It is a bit of a shame that recursion needs extra treatment. It would be nice if that wasn't necessary. Maybe something can be done if all rules are class members with defined return type or something...
 
@@ -53,20 +53,20 @@ I like how the prime' thing is subtle but visible. I dislike how it messes up C+
 
 I once heard about a whitespace operator in C++ (was probably a joke) and was thinking it'd be kinda cool to be able to write `a b` for `a*b` like in mathematics. Now that I am actually confronted with one, I must say that it has many annoying implications. Since a whitespace between two expressions in most parsing languages implies a sequence, we are very restricted with parentheses and letting symbols have different meenings as prefix or postfix. For example, the most intuitive syntax for macros (parameterizing rules) would be with appended parentheses, like this:
 
-```
-List(X) := X ("," X)*
+```cpp
+list(X) := X ("," X)*
 ```
 
 But then if we call that in a rule, it looks like this:
 
-```
-IdentifierList := List(Identifier)
+```cpp
+identifierList := list(identifier)
 ```
 
-And here we instead have a sequence of `List` and `(Identifier)`:
+And here we instead have a sequence of `list` and `(identifier)`:
 
-```
-IdentifierList := List (Identifier)
+```cpp
+identifierList := list (identifier)
 ```
 
 Uh oh, that is too similar. In [cpp-peglib](https://github.com/yhirose/cpp-peglib) this is solved by prioritizing macro calls. One wouldn't put a single identifier in parentheses if it's not a macro call. If there are more than one identifiers in there, a comma between them decides whether it's a macro call or a parenthesised sequence. It's ok I guess but it doesn't feel nice. Python would probably solve it by making `A(B)` a sequence and `A(B,)` a macro call but that just gives me eye cancer.
@@ -77,7 +77,7 @@ We can solve this by actually making `A(B)` a macro call and `A (B)` a sequence,
 
 We could also solve it by just using some explicit sequence operator like `A, B`. But [PEG](https://en.wikipedia.org/wiki/Parsing_expression_grammar#Examples), [ANTLR](https://www.antlr.org/) and even the [Dragon Book](https://en.wikipedia.org/wiki/Compilers:_Principles,_Techniques,_and_Tools) use whitespaces for sequences. [EBNF](https://en.wikipedia.org/wiki/Extended_Backus%E2%80%93Naur_form) uses a commae... But I am actually also a friend of making my grammars reflect whitespaces (in the source they parse) explicitly like this:
 
-```
+```cpp
 _ := (" " | "\n" | "\t")*
 Addition := Number (_ "+" _ Number)*
 ```
@@ -86,9 +86,96 @@ instead of having identifiers and operators swallow all following whitespaces li
 
 For now:
 
-```
-List[X] := X ("," X)*
-IdentifierList := List[Identifier]
+```cpp
+list[X] := X ("," X)*
+identifierList := list[identifier]
 
-Optional? ^?{predicate}
+optional? ^?{return predicate;}
 ```
+
+"Wait a minute!" I hear you think. "What happened to `[a-z]` ranges?" Let's be honest, they are not as useful in language design as they are when hacking together regular expressions for doing a quick search and replace operation across your codebase. You really only ever need them for specifying numbers and identifiers, maybe some unicode shenanigans. If the range syntax is slightly more elaborate than `[a-z]`, it doesn't really hurt. The `{'a'}..{'z'}` syntax can also express ranges for non text parsers, as long as the source elements can be compared.
+
+## Grand Unified Theory of Actions and Predicates
+
+It would be nice to unify the syntax for actions and predicates somehow. Actions genereate semantic values, predicates decide if parsing continues. The solution right now looks like this:
+
+```cpp
+rule1 := A B ^{return fn();} C;
+// returns a tree of the four semantic values of A, B, fn() and C
+
+rule2 := A B -> {return fn($1, $2);} C;
+// feeds a tree of two semantic values to fn and in the end returns a tree of that result and the value of C
+
+// the implicit whitespace sequence operator and -> have the same precedence, so the above rule is the same as (((A B) -> {...}) C)
+
+rule3 := A B ^?{return fn();} C;
+// generates values for A and B, continues parsing if fn() is true and if so returns a tree of the values of A, B and C
+
+rule4 := A B -> ?{return fn($1, $2);} C;
+// feeds a tree of two semantic values to fn and if it returns true, returns a tree of three semantic values of A, B and C
+```
+
+The appalling `^` only needs to be there so that `B ?{` (B followed by predicate) can not be confused with `B? {` (optional B followed by action). Other considerations for predicates were:
+
+* `{fn()?}` or `{?fn()}` but things in curly braces should be C++.
+
+* `if{fn()}` but it somehow sucks if `if` is the only keyword in the whole rule language.
+
+* `{...}!?`, `{{...}}`, `#{...}`
+
+Technically, all four constructs are very similar and there could be a unified syntax for all of them. We could also make the distinction inside C++, if `{...}` returns a bool, it is a predicate. But we might want to return a bool as a semantic value as well :/
+
+I know! I use `&` again. Look ahead is already kind of an assertion, might as well use it for semantic predicates.
+
+```cpp
+rule1 := A B {return fn();} C;
+rule2 := A B -> {return fn($1, $2);} C;
+rule3 := A B &{return fn();} C;
+rule4 := A B -> &{return fn($1, $2);} C;
+```
+
+Also, I want to provide the ability to omit `return` and `;` if it's a single expression, so:
+
+```cpp
+rule1 := A B {fn()} C;
+rule2 := A B -> {fn($1, $2)} C;
+rule3 := A B &{fn()} C;
+rule4 := A B -> &{fn($1, $2)} C;
+```
+
+Found a problem, this doesn't work:
+
+```cpp
+predicate := {fn()};
+conditional := &predicate something
+```
+
+The `&` would confusingly not be an operator but actually part of the `&{}`, the above thing counterintuitively translates to `{fn()}` being an action and `&predicate` always passing.
+
+Had two more ideas:
+
+```cpp
+rule1 := A B !{fn()} C;
+rule2 := A B -> !{fn($1, $2)} C;
+rule3 := A B ?{fn()} C;
+rule4 := A B -> ?{fn($1, $2)} C;
+```
+
+If there is no `{...}` without any prefix and it's always `!` for actions or `?` for predicates (like in OMeta/JS), the situation is never ambiguous. But I don't like it. Actions should be without extra decorations.
+
+Enough! The only way to prevent people from trying to rip apart the `{...}` and the `?` or `&` is to put the latter into the former. Most other parser MCs use `?` for semantic predicates, so will we. It can go in the beginning or the end but it's easier to parse if it's in the beginning, so `{?fn()}` it is!
+
+Also, there's not really much point in making a difference between `{?...}` and `-> {?...}` as the latter will pipe everything through anyway (you can see in the comments of the first listing in this section that rule3 and rule4 return the same thing). So we will just omit the arrow here. Then we're also very inline with OMeta/JS.
+
+Houston, we have another problem:
+
+```cpp
+predicate := {? checkA($)}
+rule := A predicate
+```
+
+This doesn't work if checkA can't handle `ignore` as input argument. The first line creates a parser that doesn't feed anything (and hence does feed `ignore`) into the lambda that forms the predicate. In the second line, a new parser is created that does feed the semantic value of `A` into the lambda. Even if the predicate is never used without an argument (and hence `ignore` as an argument), the first line still wants to instantiate it for `ignore`.
+
+I already tried making the `Predicate` class not inheriting from `Parser` but implicitly casting to one but this cast doesn't always happen. We can't call a `parse` method on it for instance.
+
+`defer` to the rescue! I already only saw syntactically hideous solutions to this misery, when I clutched to the last straw: When we call the predicate lambda in the predicate parser, we run its argument (`ignore`) through a template that also requires the type of the source code as a template argument. This way, the thing doesn't get instantiated if the source type is not known, which only becomes known when the whole predicate parser is actually put into action without arguments.

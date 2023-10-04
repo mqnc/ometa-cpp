@@ -72,22 +72,35 @@ int main() {
 	auto cap = capture(oom);
 	assert(cap.parse("abcabcdef---") == "abcabcdef");
 
-	auto act = abc >= [](auto matched) {
+	auto act1 = action([](auto matched) {
+		assert(matched == ignore);
+		return 0;
+	});
+	assert(*act1.parse("abc") == 0);
+
+	auto act2 = action([](auto matched) {
 		assert(matched == "abc");
 		return 123;
-	};
-	assert(*act.parse("abc") == 123);
+	});	
+	assert(*(abc >= act2).parse("abc") == 123);
 
-	auto prd1 = abc <= [](auto matched) {
+	auto prd = predicate([](auto matched) {
+		assert(matched == ignore);
+		return true;
+	});
+	assert(prd.parse("abc"));
+
+	auto prd1 = abc > predicate([](auto matched) {
 		assert(*matched == "abc");
 		return true;
-	};
+	});
+
 	assert(*prd1.parse("abc") == "abc");
 
-	auto prd0 = abc <= [](auto matched) {
+	auto prd0 = abc > predicate([](auto matched) {
 		assert(not matched);
 		return false;
-	};
+	});
 	assert(not prd0.parse("XXX"));
 
 	auto list = abc.as<"t0">() > (*("+"_L > abc)).as<"ts">();
@@ -103,7 +116,7 @@ int main() {
 	assert(*expression->parse("(atom)") == "(atom)");
 	assert(*expression->parse("((atom))") == "((atom))");
 
-	auto paramd = [=](auto x, auto y){return abc > x > y;};
+	auto paramd = [=](auto x, auto y) { return abc > x > y; };
 	auto paramTest = paramd(def, ghi);
 	assert(paramTest.parse("abcdefghi"));
 
