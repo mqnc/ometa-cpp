@@ -76,7 +76,7 @@ int main(int argc, char* argv[]) {
 		~"\\" ~("n" | "r" | "t" | "\"" | "\\")
 		| !"\\" ~.;
 	literal := <"\"" (!"\"" character)* "\""> -> toSnippet
-		^{return "_L"_S;} -> ometa::concat;
+		{return "_L"_S;} -> ometa::concat;
 
 	range := bracedCpp ~_ ~".." ~_ bracedCpp -> {
 		return "ometa::range(("_S + $1 + "), ("_S + $2 + "))"_S;
@@ -96,14 +96,14 @@ int main(int argc, char* argv[]) {
 		| bracedCpp -> { return "[](auto value){"_S + $ + "}"_S; }
 	);
 
-	freeActionOrPredicate := ~"^" ~_ ^{ return "(ometa::epsilon()"_S; }(
-		^{return " >= "_S;} action
-		| ^{return " <= "_S;} predicate
-	) ^{return ")"_S;} -> ometa::concat;
+	freeActionOrPredicate := { return "(ometa::epsilon()"_S; }(
+		{return " >= "_S;} action
+		| {return " <= "_S;} predicate
+	) {return ")"_S;} -> ometa::concat;
 
 	boundActionOrPredicate := ~"->" ~_ (
-		^{return " >= "_S;} action
-		| ^{return " <= "_S;} predicate
+		{return " >= "_S;} action
+		| {return " <= "_S;} predicate
 	) -> ometa::concat;
 
 	primary :=
@@ -135,7 +135,7 @@ int main(int argc, char* argv[]) {
 
 	sequence := prefix (
 		(~_ (
-			^{return " > "_S;} prefix -> ometa::concat
+			{return " > "_S;} prefix -> ometa::concat
 			| boundActionOrPredicate
 		)) -> ometa::concat
 	)* -> ometa::concat;
@@ -152,7 +152,7 @@ int main(int argc, char* argv[]) {
 		};
 
 	ruleDefinition' => identifier ~_ ~":=" ~_ choice' ~_ ~";"
-		-> { return "const auto - "_S + $1 + " = "_S + $2 + ";"; };
+		-> { return "const auto "_S + $1 + " = "_S + $2 + ";"; };
 
 	ruleRedefinition' => identifier ~"'" ~_ ~"=>" ~_ choice' ~_ ~";"
 		-> { return "*"_S + $1 + " = "_S + $2 + ";"; };

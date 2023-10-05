@@ -85,7 +85,7 @@ int main(int argc, char* argv[]) {
 	const auto predicate = ~"?"_L > ~_ > (identifier >= toSnippet
 		| bracedCpp >= ometa::action([](auto value){ return "[](auto value){"_S + value + "}"_S; }));
 
-	const auto freeActionOrPredicate = ~"^"_L > ~_ > (ometa::epsilon() >= ometa::action([](auto value){ return "(ometa::epsilon()"_S; })) > ((ometa::epsilon() >= ometa::action([](auto value){return " >= "_S;})) > action
+	const auto freeActionOrPredicate = (ometa::epsilon() >= ometa::action([](auto value){ return "(ometa::epsilon()"_S; })) > ((ometa::epsilon() >= ometa::action([](auto value){return " >= "_S;})) > action
 		| (ometa::epsilon() >= ometa::action([](auto value){return " <= "_S;})) > predicate) > (ometa::epsilon() >= ometa::action([](auto value){return ")"_S;})) >= ometa::concat;
 
 	const auto boundActionOrPredicate = ~"->"_L > ~_ > ((ometa::epsilon() >= ometa::action([](auto value){return " >= "_S;})) > action
