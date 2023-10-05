@@ -38,7 +38,7 @@ int main(int argc, char* argv[]) {
 	const auto identStart = ometa::range(('A'), ('Z')) | ometa::range(('a'), ('z')) | "_"_L | "::"_L;
 	const auto identContinue = identStart | ometa::range(('0'), ('9'));
 	const auto identifier = ometa::capture(identStart > *identContinue) >= toSnippet;
-	const auto reference = identifier > ~"'"_L >= ometa::action([](auto value){return "ometa::ptr("_S + value + ")"_S;});
+	const auto reference = identifier > ~"^"_L >= ometa::action([](auto value){return "ometa::ptr("_S + value + ")"_S;});
 
 	const auto cppChar = ~"\\"_L > ~ometa::any() | ~ometa::any();
 	const auto cppLiteral = ometa::capture(~"'"_L > !"'"_L > ~cppChar > ~"'"_L
@@ -119,14 +119,14 @@ int main(int argc, char* argv[]) {
 
 	*choice = sequence > *(ometa::capture(_ > "|"_L > _) >= toSnippet > sequence >= ometa::concat) >= ometa::concat;
 
-	*ruleForwardDecl = identifier > ~"'"_L > ~_ > ~":"_L > ~_ > bracedCpp > ~_ > ~"->"_L > ~_ > bracedCpp > ~_ > ~";"_L >= ometa::action([](auto value){
+	*ruleForwardDecl = identifier > ~"^"_L > ~_ > ~":"_L > ~_ > bracedCpp > ~_ > ~"->"_L > ~_ > bracedCpp > ~_ > ~";"_L >= ometa::action([](auto value){
 			return "auto "_S + ometa::pick<1-1>(value) + " = ometa::declare<"
 				+ ometa::pick<2-1>(value) + ", " + ometa::pick<3-1>(value) + ">();";
 		});
 
 	*ruleDefinition = identifier > ~_ > ~":="_L > ~_ > ometa::ptr(choice) > ~_ > ~";"_L >= ometa::action([](auto value){ return "const auto "_S + ometa::pick<1-1>(value) + " = "_S + ometa::pick<2-1>(value) + ";"; });
 
-	*ruleRedefinition = identifier > ~"'"_L > ~_ > ~"=>"_L > ~_ > ometa::ptr(choice) > ~_ > ~";"_L >= ometa::action([](auto value){ return "*"_S + ometa::pick<1-1>(value) + " = "_S + ometa::pick<2-1>(value) + ";"; });
+	*ruleRedefinition = identifier > ~"^"_L > ~_ > ~"=>"_L > ~_ > ometa::ptr(choice) > ~_ > ~";"_L >= ometa::action([](auto value){ return "*"_S + ometa::pick<1-1>(value) + " = "_S + ometa::pick<2-1>(value) + ";"; });
 
 	std::cout << "setup: ";
 	toc(tStart);

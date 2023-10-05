@@ -38,7 +38,7 @@ int main(int argc, char* argv[]) {
 	identStart := {'A'}..{'Z'} | {'a'}..{'z'} | "_" | "::";
 	identContinue := identStart | {'0'}..{'9'};
 	identifier := <identStart identContinue*> -> toSnippet;
-	reference := identifier ~"'" -> {return "ometa::ptr("_S + $ + ")"_S;};
+	reference := identifier ~"^" -> {return "ometa::ptr("_S + $ + ")"_S;};
 
 	cppChar := ~"\\" ~. | ~.;
 	cppLiteral := <
@@ -49,18 +49,18 @@ int main(int argc, char* argv[]) {
 	valueRef := ~"$" -> {return "value"_S;};
 	indexedValueRef := ~"$" <{'0'}..{'9'}+> -> toSnippet -> {return "ometa::pick<"_S + $ + "-1>(value)"_S;};
 
-	cpp' : {std::string} -> {Snippet};
+	cpp^ : {std::string} -> {Snippet};
 
-	ruleForwardDecl' : {std::string} -> {Snippet};
-	ruleDefinition' : {std::string} -> {Snippet};
-	ruleRedefinition' : {std::string} -> {Snippet};
+	ruleForwardDecl^ : {std::string} -> {Snippet};
+	ruleDefinition^ : {std::string} -> {Snippet};
+	ruleRedefinition^ : {std::string} -> {Snippet};
 
-	bracedCpp := ~"{" cpp' ~"}";
+	bracedCpp := ~"{" cpp^ ~"}";
 	
-	cpp' => (
-		ruleForwardDecl'
-		| ruleDefinition'
-		| ruleRedefinition'
+	cpp^ => (
+		ruleForwardDecl^
+		| ruleDefinition^
+		| ruleRedefinition^
 		| identifier
 		| cppLiteral
 		| bracedCpp -> { return "{"_S + $ + "}"_S; }
@@ -82,10 +82,10 @@ int main(int argc, char* argv[]) {
 		return "ometa::range(("_S + $1 + "), ("_S + $2 + "))"_S;
 	};
 
-	choice' : {std::string} -> {Snippet};
-	parenthesized := ~"(" ~_ choice' ~_ ~")" ->
+	choice^ : {std::string} -> {Snippet};
+	parenthesized := ~"(" ~_ choice^ ~_ ~")" ->
 		{ return "("_S + $ + ")"_S; };
-	capture := ~"<" ~_ choice' ~_ ~">" ->
+	capture := ~"<" ~_ choice^ ~_ ~">" ->
 		{ return "ometa::capture("_S + $ + ")"_S; };
 
 	action :=
@@ -140,21 +140,21 @@ int main(int argc, char* argv[]) {
 		)) -> ometa::concat
 	)* -> ometa::concat;
 
-	choice' => sequence (
+	choice^ => sequence (
 		<_ "|" _> -> toSnippet sequence -> ometa::concat
 	)* -> ometa::concat;
 
-	ruleForwardDecl' => identifier ~"'" ~_ ~":" ~_
+	ruleForwardDecl^ => identifier ~"^" ~_ ~":" ~_
 		bracedCpp ~_ ~"->" ~_ bracedCpp ~_ ~";"
 		-> {
 			return "auto "_S + $1 + " = ometa::declare<"
 				+ $2 + ", " + $3 + ">();";
 		};
 
-	ruleDefinition' => identifier ~_ ~":=" ~_ choice' ~_ ~";"
+	ruleDefinition^ => identifier ~_ ~":=" ~_ choice^ ~_ ~";"
 		-> { return "const auto "_S + $1 + " = "_S + $2 + ";"; };
 
-	ruleRedefinition' => identifier ~"'" ~_ ~"=>" ~_ choice' ~_ ~";"
+	ruleRedefinition^ => identifier ~"^" ~_ ~"=>" ~_ choice^ ~_ ~";"
 		-> { return "*"_S + $1 + " = "_S + $2 + ";"; };
 
 	std::cout << "setup: ";

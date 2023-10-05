@@ -47,7 +47,9 @@ bracedExpression := "(" expression' ")"; // reference
 expression' => primary | bracedExpression; // definition
 ```
 
-I like how the prime' thing is subtle but visible. I dislike how it messes up C++ syntax highlighting tho and I don't want to implement a proper custom one (which is impossible for github). Maybe I will switch to @expression or expression@...
+I like how the `prime'` thing is subtle but visible. I dislike how it messes up C++ syntax highlighting tho and I don't want to implement a proper custom one (which is impossible for github). Maybe I will switch to `@expression` or `expression@`...
+
+Switched to `expression^` now that `^` is no longer used for actions (see below).
 
 ## Whitespace, the Final Frontier
 
