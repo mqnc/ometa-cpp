@@ -12,9 +12,14 @@
 using ometa::operator""_L;
 
 using Snippet = std::string;
-Snippet toSnippet(ometa::SourceView<std::string> src) {
-	return src.copyAs<Snippet>();
-}
+auto toSnippet = ometa::action([](auto src) {
+	if constexpr(std::is_same_v<decltype(src), Snippet>){
+		return src;
+	}
+	else{
+		return src.template copyAs<Snippet>();
+	}
+});
 auto operator""_S(const char* compare, size_t size) {
 	return Snippet(compare, size);
 }
@@ -85,7 +90,7 @@ int main(int argc, char* argv[]) {
 
 	action :=
 		identifier -> toSnippet
-		| bracedCpp -> { return "[](auto value){"_S + $ + "}"_S; };
+		| bracedCpp -> { return "ometa::action([](auto value){"_S + $ + "})"_S; };
 	predicate := ~"?" ~_ (
 		identifier -> toSnippet
 		| bracedCpp -> { return "[](auto value){"_S + $ + "}"_S; }
@@ -147,7 +152,7 @@ int main(int argc, char* argv[]) {
 		};
 
 	ruleDefinition' => identifier ~_ ~":=" ~_ choice' ~_ ~";"
-		-> { return "const auto "_S + $1 + " = "_S + $2 + ";"; };
+		-> { return "const auto - "_S + $1 + " = "_S + $2 + ";"; };
 
 	ruleRedefinition' => identifier ~"'" ~_ ~"=>" ~_ choice' ~_ ~";"
 		-> { return "*"_S + $1 + " = "_S + $2 + ";"; };

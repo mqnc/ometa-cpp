@@ -1,6 +1,7 @@
 #pragma once
 
 #include "parser.h"
+#include "defer.h"
 
 namespace ometa {
 
@@ -14,9 +15,6 @@ struct Predicate: public Parser<F> {
 	{}
 };
 
-template <typename Until, auto value>
-constexpr decltype(value) defer = value;
-
 template <typename P>
 auto predicate(P fn) {
 
@@ -27,7 +25,7 @@ auto predicate(P fn) {
 		) {
 			// we defer the instantiation of this call until TSource is known
 			// so the compiler doesn't complain if fn() cannot handle ignore
-			// and we actually never call it with ignore
+			// but we actually never call it with ignore
 			return fn(defer<TSource, ignore>)
 				? makeMaybeMatch(ignore, src) : fail;
 		};
