@@ -22,7 +22,7 @@ public:
 	F parseFn;
 
 #ifndef NDEBUG
-	std::string name = "";
+	mutable std::string name = "";
 #endif
 
 	Parser(F parseFn): parseFn {parseFn} {}

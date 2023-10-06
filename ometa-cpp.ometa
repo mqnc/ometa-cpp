@@ -13,12 +13,7 @@ using ometa::operator""_L;
 
 using Snippet = std::string;
 auto toSnippet = ometa::action([](auto src) {
-	if constexpr(std::is_same_v<decltype(src), Snippet>){
-		return src;
-	}
-	else{
-		return src.template copyAs<Snippet>();
-	}
+	return src.template copyAs<Snippet>();
 });
 auto operator""_S(const char* compare, size_t size) {
 	return Snippet(compare, size);
@@ -30,8 +25,6 @@ int main(int argc, char* argv[]) {
 		std::cout << "usage: " << argv[0] << " INPUT_FILE OUTPUT_FILE\n";
 		return EXIT_FAILURE;
 	}
-
-	auto tStart = tic();
 
 	_ := <(" " | "\t" | "\n")*> -> toSnippet;
 
@@ -90,10 +83,10 @@ int main(int argc, char* argv[]) {
 		{ return "ometa::capture("_S + $ + ")"_S; };
 
 	action :=
-		identifier -> toSnippet
+		identifier
 		| bracedCpp -> { return "ometa::action([](auto value){"_S + $ + "})"_S; };
 	predicate :=
-		identifier -> toSnippet
+		identifier
 		| predicateCpp -> { return "ometa::predicate([](auto value){"_S + $ + "})"_S; };
 
 	parameterizedAction := ~"->" {return " >= "_S;} ~_ action -> ometa::concat;
@@ -145,14 +138,10 @@ int main(int argc, char* argv[]) {
 		};
 
 	ruleDefinition^ => identifier ~_ ~":=" ~_ choice^ ~_ ~";"
-		-> { return "const auto "_S + $1 + " = "_S + $2 + ";"; };
+		-> { return "const auto "_S + $1 + " = "_S + $2 + "; OMETA_LOG("_S + $1 + ");"_S; };
 
 	ruleRedefinition^ => identifier ~"^" ~_ ~"=>" ~_ choice^ ~_ ~";"
-		-> { return "*"_S + $1 + " = "_S + $2 + ";"; };
-
-	std::cout << "setup: ";
-	toc(tStart);
-
+		-> { return "*"_S + $1 + " = "_S + $2 + "; OMETA_LOG(*"_S + $1 + ");"_S; };
 
 	auto code = ometa::readFile(argv[1]);
 

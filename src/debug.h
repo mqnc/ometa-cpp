@@ -88,6 +88,10 @@ void log(
 	if (event == LogEvent::enter) { logIndent++; }
 }
 
-#define LOG(p) (p).name = #p
+#ifndef NDEBUG
+	#define OMETA_LOG(p) (p).name = #p
+#else
+	#define OMETA_LOG(p)
+#endif
 
 }
