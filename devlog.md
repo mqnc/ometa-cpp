@@ -1,4 +1,14 @@
 
+## ToDo
+
+* figure out why `toSnippet` needs the branch
+* update predicate syntax
+* implement bindings in the syntax
+* implement macros
+* implement snippets with trees
+* update readme
+* preserve whitespaces
+
 ## The Agony of Choice
 
 First I implemented the prioritized choice so that `A | B | C` returns a `std::variant<TypeA, TypeB, TypeC>`. The choice factory became huge and ugly, mainly but not only because it should return `std::variant<TypeA, TypeB, TypeC>` instead of `std::variant<std::variant<TypeA, TypeB>, TypeC>`. However, the idiomatic way to deal with variants is to dispatch on them with `std::visit`, then you might as well handle each option right away before merging them with `|`:

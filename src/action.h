@@ -51,8 +51,8 @@ auto parameterizedAction(T child, Action<A, F> act) {
 	return Parser(parseFn);
 }
 
-template <typename F, typename A>
-auto operator>=(Parser<F> parser, A act) {
+template <typename F1, typename A, typename F2>
+auto operator>=(Parser<F1> parser, Action<A, F2> act) {
 	return parameterizedAction(parser, act);
 }
 

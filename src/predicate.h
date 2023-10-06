@@ -50,8 +50,8 @@ auto parameterizedPredicate(T child, Predicate<P, F> pred) {
 	return Parser(parseFn);
 }
 
-template <typename F, typename P>
-auto operator>(Parser<F> parser, P pred) {
+template <typename F1, typename P, typename F2>
+auto operator>(Parser<F1> parser, Predicate<P, F2> pred) {
 	return parameterizedPredicate(parser, pred);
 }
 

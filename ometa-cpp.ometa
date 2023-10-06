@@ -56,6 +56,7 @@ int main(int argc, char* argv[]) {
 	ruleRedefinition^ : {std::string} -> {Snippet};
 
 	bracedCpp := ~"{" cpp^ ~"}";
+	predicateCpp := ~"{" ~_ ~ "?" cpp^ ~"}";
 	
 	cpp^ => (
 		ruleForwardDecl^
@@ -91,20 +92,11 @@ int main(int argc, char* argv[]) {
 	action :=
 		identifier -> toSnippet
 		| bracedCpp -> { return "ometa::action([](auto value){"_S + $ + "})"_S; };
-	predicate := ~"?" ~_ (
+	predicate :=
 		identifier -> toSnippet
-		| bracedCpp -> { return "[](auto value){"_S + $ + "}"_S; }
-	);
+		| predicateCpp -> { return "ometa::predicate([](auto value){"_S + $ + "})"_S; };
 
-	freeActionOrPredicate := { return "(ometa::epsilon()"_S; }(
-		{return " >= "_S;} action
-		| {return " <= "_S;} predicate
-	) {return ")"_S;} -> ometa::concat;
-
-	boundActionOrPredicate := ~"->" ~_ (
-		{return " >= "_S;} action
-		| {return " <= "_S;} predicate
-	) -> ometa::concat;
+	parameterizedAction := ~"->" {return " >= "_S;} ~_ action -> ometa::concat;
 
 	primary :=
 		reference
@@ -114,7 +106,8 @@ int main(int argc, char* argv[]) {
 		| literal
 		| range
 		| capture
-		| freeActionOrPredicate
+		| predicate
+		| action
 		| parenthesized;
 
 	postfix := primary (
@@ -136,7 +129,7 @@ int main(int argc, char* argv[]) {
 	sequence := prefix (
 		(~_ (
 			{return " > "_S;} prefix -> ometa::concat
-			| boundActionOrPredicate
+			| parameterizedAction
 		)) -> ometa::concat
 	)* -> ometa::concat;
 
