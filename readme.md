@@ -69,14 +69,11 @@ myAny := .;
 myEpsilon := ();
 
 // generating semantic values:
-myValue := ^myLambda;
-myInlineValue := ^{return std::string("awa");};
-myDependentValue := A B C -> {return $1 + $2 + $3;}
+myValue := {return std::string("awa");};
+myParameterizedValue := A B C -> {return $1 + $2 + $3;}
 
 // semantic predicates:
-myPredicate := ^?myLambda;
-myInlinePredicate := ^?{return std::rand() % 2 == 0;};
-myDependentPredicate := A B C -> ?{return $1 + $2 + $3 > 10;};
+myPredicate := A B C {? return $1 + $2 + $3 > 10;};
 
 // ignore values:
 myPick := ~ignoreMe useJustMe ~ignoreMe -> {return $;};
@@ -85,9 +82,9 @@ myPick := ~ignoreMe useJustMe ~ignoreMe -> {return $;};
 myCapture := <A B C>;
 
 // recursion:
-expression' : {std::string} -> {int}; // forward declaration
-bracedExpression := "(" expression' ")"; // reference
-expression' => primary | bracedExpression; // definition
+expression^ : {std::string} -> {int}; // forward declaration
+bracedExpression := "(" expression^ ")"; // reference
+expression^ => primary | bracedExpression; // definition
 
 // bindings (todo):
 myBinding := firstThing:x secondThing:y -> {return $x + $y;};
