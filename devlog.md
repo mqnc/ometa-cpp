@@ -1,13 +1,15 @@
 
 ## ToDo
 
-* figure out why `toSnippet` needs the branch
-* update predicate syntax
 * implement bindings in the syntax
 * implement macros
 * implement snippets with trees
 * update readme
 * preserve whitespaces
+* selective debug log
+* prettify debug log
+* handle context
+* error handling
 
 ## The Agony of Choice
 
@@ -87,7 +89,7 @@ And that's not all. [OMeta/JS](https://github.com/alexwarth/ometa-js/blob/master
 
 We can solve this by actually making `A(B)` a macro call and `A (B)` a sequence, and similarly making `A? (f)` a sequence of an optional `A` followed by `(f)` and `A ?(f)` an `A` that is accepted if `f` is true (except we will use {} but that's not the point). However, significant whitespace doesn't feel like a good idea somehow. No language I know has significant whitespace, it's probably a whole nother can of worms.
 
-We could also solve it by just using some explicit sequence operator like `A, B`. But [PEG](https://en.wikipedia.org/wiki/Parsing_expression_grammar#Examples), [ANTLR](https://www.antlr.org/) and even the [Dragon Book](https://en.wikipedia.org/wiki/Compilers:_Principles,_Techniques,_and_Tools) use whitespaces for sequences. [EBNF](https://en.wikipedia.org/wiki/Extended_Backus%E2%80%93Naur_form) uses a commae... But I am actually also a friend of making my grammars reflect whitespaces (in the source they parse) explicitly like this:
+We could also solve it by just using some explicit sequence operator like `A, B`. But [PEG](https://en.wikipedia.org/wiki/Parsing_expression_grammar#Examples), [ANTLR](https://www.antlr.org/) and even the [Dragon Book](https://en.wikipedia.org/wiki/Compilers:_Principles,_Techniques,_and_Tools) use whitespaces for sequences. [EBNF](https://en.wikipedia.org/wiki/Extended_Backus%E2%80%93Naur_form) uses commae... But I am actually also a friend of making my grammars reflect whitespaces (in the source they parse) explicitly like this:
 
 ```cpp
 _ := (" " | "\n" | "\t")*

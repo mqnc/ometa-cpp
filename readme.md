@@ -69,14 +69,15 @@ myAny := .;
 myEpsilon := ();
 
 // generating semantic values:
-myValue := {return std::string("awa");};
-myParameterizedValue := A B C -> {return $1 + $2 + $3;}
+myValue := {std::string("awa")};
+myComplicatedValue := {if(true){return 1;} else{return 0;}};
+myParameterizedValue := A B C -> {$1 + $2 + $3}
 
 // semantic predicates:
-myPredicate := A B C {? return $1 + $2 + $3 > 10;};
+myPredicate := A B C {? $1 + $2 + $3 > 10};
 
 // ignore values:
-myPick := ~ignoreMe useJustMe ~ignoreMe -> {return $;};
+myPick := ~ignoreMe useJustMe ~ignoreMe -> {$};
 
 // capture source:
 myCapture := <A B C>;
@@ -87,7 +88,7 @@ bracedExpression := "(" expression^ ")"; // reference
 expression^ => primary | bracedExpression; // definition
 
 // bindings (todo):
-myBinding := firstThing:x secondThing:y -> {return $x + $y;};
+myBinding := firstThing:x secondThing:y -> {$x + $y};
 
 // macros (todo):
 myList[thing, sep] := thing (sep thing)*;
@@ -95,8 +96,9 @@ myAddition := myList[number, plus];
 ```
 
 * things in `{curly braces}` are written in C++ (with some extensions like `$` for `value`);
+* `{curly braces}` code can either be a single statement or a complete function body; the parser assumes the former if there is no `return` and no `;` inside (so lambdae cannot appear in the single statement notation).
 * all alternatives in a prioritized choice must return the same type
-* see `ometa.ometa` for details, it describes itself
+* see `ometa-cpp.ometa` for details, it describes itself
 
 ## Contribute
 

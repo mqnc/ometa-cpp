@@ -9,6 +9,9 @@
 #include <string>
 #include <ctime>
 
+#undef OMETA_LOG
+#define OMETA_LOG(p)
+
 using ometa::operator""_L;
 
 using Snippet = std::string;
@@ -31,7 +34,7 @@ int main(int argc, char* argv[]) {
 	identStart := {'A'}..{'Z'} | {'a'}..{'z'} | "_" | "::";
 	identContinue := identStart | {'0'}..{'9'};
 	identifier := <identStart identContinue*> -> toSnippet;
-	reference := identifier ~"^" -> {return "ometa::ptr("_S + $ + ")"_S;};
+	reference := identifier ~"^" -> {"ometa::ptr("_S + $ + ")"_S};
 
 	cppChar := ~"\\" ~. | ~.;
 	cppLiteral := <
@@ -39,57 +42,78 @@ int main(int argc, char* argv[]) {
 		| ~"\"" ~(!"\"" ~cppChar)* ~"\""
 	> -> toSnippet;
 
-	valueRef := ~"$" -> {return "value"_S;};
-	indexedValueRef := ~"$" <{'0'}..{'9'}+> -> toSnippet -> {return "ometa::pick<"_S + $ + "-1>(value)"_S;};
+	valueRef := ~"$" -> {"value"_S};
+	indexedValueRef := ~"$" <{'0'}..{'9'}+> -> toSnippet -> {"ometa::pick<"_S + $ + "-1>(value)"_S};
 
-	cpp^ : {std::string} -> {Snippet};
+	cppExpression^ : {std::string} -> {Snippet};
+	parenthesizedCppExpression := ~"(" cppExpression^ ~")";
+	bracketedCppExpression := ~"[" cppExpression^ ~"]";
+	bracedCppExpression := ~"{" cppExpression^ ~"}";
+	predicateCppExpression := ~"{" ~_ ~ "?" cppExpression^ ~"}";
+
+	cppExpression^ => (
+		identifier {? $ != "return"}
+		| cppLiteral
+		| parenthesizedCppExpression -> {"("_S + $ + ")"_S}
+		| bracketedCppExpression -> {"["_S + $ + "]"_S}
+		| indexedValueRef
+		| valueRef
+		| !")" !"]" !"}" !";" . -> toSnippet
+	)* -> ometa::concat;
+
+	cppCode^ : {std::string} -> {Snippet};
+	parenthesizedCppCode := ~"(" cppCode^ ~")";
+	bracketedCppCode := ~"[" cppCode^ ~"]";
+	bracedCppCode := ~"{" cppCode^ ~"}";
+	predicateCppCode := ~"{" ~_ ~ "?" cppCode^ ~"}";
 
 	ruleForwardDecl^ : {std::string} -> {Snippet};
 	ruleDefinition^ : {std::string} -> {Snippet};
 	ruleRedefinition^ : {std::string} -> {Snippet};
 
-	bracedCpp := ~"{" cpp^ ~"}";
-	predicateCpp := ~"{" ~_ ~ "?" cpp^ ~"}";
-	
-	cpp^ => (
+	cppCode^ => (
 		ruleForwardDecl^
 		| ruleDefinition^
 		| ruleRedefinition^
 		| identifier
 		| cppLiteral
-		| bracedCpp -> { return "{"_S + $ + "}"_S; }
+		| parenthesizedCppCode -> {"("_S + $ + ")"_S}
+		| bracketedCppCode -> {"["_S + $ + "]"_S}
+		| bracedCppCode -> {"{"_S + $ + "}"_S}
 		| indexedValueRef
 		| valueRef
-		| !"}" . -> toSnippet
+		| !")" !"]" !"}" . -> toSnippet
 	)* -> ometa::concat;
 
-	any := "." -> {return "ometa::any()"_S;};
-	epsilon := "()" -> {return "ometa::epsilon()"_S;};
+	any := "." -> {"ometa::any()"_S};
+	epsilon := "()" -> {"ometa::epsilon()"_S};
 
 	character :=
 		~"\\" ~("n" | "r" | "t" | "\"" | "\\")
 		| !"\\" ~.;
 	literal := <"\"" (!"\"" character)* "\""> -> toSnippet
-		{return "_L"_S;} -> ometa::concat;
+		{"_L"_S} -> ometa::concat;
 
-	range := bracedCpp ~_ ~".." ~_ bracedCpp -> {
-		return "ometa::range(("_S + $1 + "), ("_S + $2 + "))"_S;
+	range := bracedCppCode ~_ ~".." ~_ bracedCppCode -> {
+		"ometa::range(("_S + $1 + "), ("_S + $2 + "))"_S
 	};
 
 	choice^ : {std::string} -> {Snippet};
 	parenthesized := ~"(" ~_ choice^ ~_ ~")" ->
-		{ return "("_S + $ + ")"_S; };
+		{"("_S + $ + ")"_S};
 	capture := ~"<" ~_ choice^ ~_ ~">" ->
-		{ return "ometa::capture("_S + $ + ")"_S; };
+		{"ometa::capture("_S + $ + ")"_S};
 
 	action :=
 		identifier
-		| bracedCpp -> { return "ometa::action([](auto value){"_S + $ + "})"_S; };
+		| bracedCppExpression -> {"ometa::action([](auto value){return "_S + $ + ";})"_S}
+		| bracedCppCode -> {"ometa::action([](auto value){"_S + $ + "})"_S};
 	predicate :=
 		identifier
-		| predicateCpp -> { return "ometa::predicate([](auto value){"_S + $ + "})"_S; };
+		| predicateCppExpression -> {"ometa::predicate([](auto value){return "_S + $ + ";})"_S}
+		| predicateCppCode -> {"ometa::predicate([](auto value){"_S + $ + "})"_S};
 
-	parameterizedAction := ~"->" {return " >= "_S;} ~_ action -> ometa::concat;
+	parameterizedAction := ~"->" {" >= "_S} ~_ action -> ometa::concat;
 
 	primary :=
 		reference
@@ -104,24 +128,17 @@ int main(int argc, char* argv[]) {
 		| parenthesized;
 
 	postfix := primary (
-		"?" -> {return "-"_S;}
-		| "*" -> {return "*"_S;}
-		| "+" -> {return "+"_S;}
-	)? -> {
-		if ($2.size() == 0) {
-			return $1;
-		}
-		else {
-			return $2[0] + $1;
-		}
-	};
+		"?" -> {"-"_S}
+		| "*" -> {"*"_S}
+		| "+" -> {"+"_S}
+	)? -> { $2.size() == 0 ? $1 : $2[0] + $1 };
 
 	prefix := <("&" | "!" | "~")?> -> toSnippet
 		~_ postfix -> ometa::concat;
 
 	sequence := prefix (
 		(~_ (
-			{return " > "_S;} prefix -> ometa::concat
+			{" > "_S} prefix -> ometa::concat
 			| parameterizedAction
 		)) -> ometa::concat
 	)* -> ometa::concat;
@@ -131,21 +148,21 @@ int main(int argc, char* argv[]) {
 	)* -> ometa::concat;
 
 	ruleForwardDecl^ => identifier ~"^" ~_ ~":" ~_
-		bracedCpp ~_ ~"->" ~_ bracedCpp ~_ ~";"
+		bracedCppExpression ~_ ~"->" ~_ bracedCppExpression ~_ ~";"
 		-> {
-			return "auto "_S + $1 + " = ometa::declare<"
-				+ $2 + ", " + $3 + ">();";
+			"auto "_S + $1 + " = ometa::declare<"
+				+ $2 + ", " + $3 + ">();"
 		};
 
 	ruleDefinition^ => identifier ~_ ~":=" ~_ choice^ ~_ ~";"
-		-> { return "const auto "_S + $1 + " = "_S + $2 + "; OMETA_LOG("_S + $1 + ");"_S; };
+		-> {"const auto "_S + $1 + " = "_S + $2 + "; OMETA_LOG("_S + $1 + ");"_S};
 
 	ruleRedefinition^ => identifier ~"^" ~_ ~"=>" ~_ choice^ ~_ ~";"
-		-> { return "*"_S + $1 + " = "_S + $2 + "; OMETA_LOG(*"_S + $1 + ");"_S; };
+		-> {"*"_S + $1 + " = "_S + $2 + "; OMETA_LOG(*"_S + $1 + ");"_S};
 
 	auto code = ometa::readFile(argv[1]);
 
-	auto result = cpp->parse(code);
+	auto result = cppCode->parse(code);
 	if (result) {
 		try {
 			auto backup = ometa::readFile(argv[2]);
