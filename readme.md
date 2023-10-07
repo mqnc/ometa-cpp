@@ -26,7 +26,7 @@ diff -s ../ometa-cpp.ometa.cpp ../test.cpp
 
 ## Why not just use XYZ?
 
-I recommend that you use [cpp-peglib](https://github.com/yhirose/cpp-peglib), [PEGTL](https://github.com/taocpp/PEGTL), [lexy](https://lexy.foonathan.net/) or [Boost Spirit](https://github.com/boostorg/spirit) instead. Those are all way more battle-tested. They also served a lot as inspiration, kudos to them.
+I recommend that you use [cpp-peglib](https://github.com/yhirose/cpp-peglib), [PEGTL](https://github.com/taocpp/PEGTL), [lexy](https://lexy.foonathan.net/), [PackCC](https://github.com/arithy/packcc) or [Boost Spirit](https://github.com/boostorg/spirit) instead. Those are all way more battle-tested. They also served a lot as inspiration, kudos to them.
 
 Main focus in the development was for this to be a fun hobby project and for things to be done in a simple and proper-feeling way. In most other projects, the parse functions return a bool, values are computed separately and the functions get read/write access to some global context. Here, parse functions return `std::optional<Match>`, where `Match` contains the semantic value and a source pointer to the end of the match. Context can be extended and passed on to nested parse calls as readonly, so backtracking is automatically solved. Also, everything is templated and typesafe. Your source doesn't have to be a string, it can be any kind of sequence of things (that is a [`std::forward_range`](https://en.cppreference.com/w/cpp/ranges/forward_range)).
 
