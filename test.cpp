@@ -107,7 +107,7 @@ int main() {
 	assert(list.parse("abc+abc+abc")->pick<"t0">() == "abc");
 	assert(list.parse("abc+abc+abc")->pick<"ts">()[0].pick<0>() == "+");
 
-	auto expression = declare<std::string_view, SourceView<std::string_view>>();
+	auto expression = declare<std::string_view, View<std::string_view>>();
 
 	*expression = capture("atom"_L)
 		| capture("("_L > ptr(expression) > ")"_L);
@@ -119,6 +119,8 @@ int main() {
 	auto paramd = [=](auto x, auto y) { return abc > x > y; };
 	auto paramTest = paramd(def, ghi);
 	assert(paramTest.parse("abcdefghi"));
+
+	
 
 	std::cout << "done!\n";
 

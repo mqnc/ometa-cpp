@@ -11,7 +11,7 @@ auto choice(T1 child1, T2 child2) {
 
 	auto parseFn = [child1, child2]<forward_range TSource>
 		(
-			SourceView<TSource> src,
+			View<TSource> src,
 			auto ctx
 		) {
 			using Result1Type = decltype(child1.parseOn(src, ctx));

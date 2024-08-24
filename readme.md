@@ -20,8 +20,8 @@ mkdir build
 cd build
 cmake ..
 make ometa-cpp
-./ometa-cpp ../ometa-cpp.ometa ../test.cpp
-diff -s ../ometa-cpp.ometa.cpp ../test.cpp
+./ometa-cpp ../ometa-cpp.ometa ../self-transpiled.cpp
+diff -s ../ometa-cpp.ometa.cpp ../self-transpiled.cpp
 ```
 
 ## Why not just use XYZ?

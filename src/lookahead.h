@@ -12,7 +12,7 @@ auto lookAhead(T child, Polarity polarity) {
 
 	auto parseFn = [child, polarity]<forward_range TSource>
 		(
-			SourceView<TSource> src,
+			View<TSource> src,
 			auto ctx
 		) {
 

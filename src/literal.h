@@ -5,6 +5,7 @@
 #include <algorithm>
 
 #include "parser.h"
+#include "snippet.h"
 
 namespace ometa {
 
@@ -12,7 +13,7 @@ auto literal(auto compare) {
 
 	auto parseFn = [compare]<forward_range TSource>
 		(
-			SourceView<TSource> src,
+			View<TSource> src,
 			auto ctx
 		) {
 			(void) ctx;
@@ -20,8 +21,8 @@ auto literal(auto compare) {
 			auto equalUntil = std::ranges::mismatch(src, compare);
 
 			return equalUntil.in2 == compare.end() ? [&] {
-					auto next = SourceView<TSource>(equalUntil.in1, src.end());
-					auto matched = SourceView<TSource>(src.begin(), equalUntil.in1);
+					auto next = View<TSource>(equalUntil.in1, src.end());
+					auto matched = View<TSource>(src.begin(), equalUntil.in1);
 					return makeMaybeMatch(matched, next);
 				}() : fail;
 		};
@@ -34,7 +35,7 @@ auto literal(const char* compare) {
 }
 
 auto operator""_L(const char* compare, size_t size) {
-	return literal<std::string>(std::string(compare, size));
+	return literal(std::string_view(compare, size));
 }
 
 }

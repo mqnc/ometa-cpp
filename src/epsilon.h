@@ -9,7 +9,7 @@ auto epsilon() {
 
 	auto parseFn = []<forward_range TSource>
 		(
-			SourceView<TSource> src,
+			View<TSource> src,
 			auto ctx
 		) {
 			(void) ctx;

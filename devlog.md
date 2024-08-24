@@ -11,6 +11,10 @@
 * handle context
 * error handling
 
+* make . <> "" return snippets by default
+* have a convenient way for snippet literals in C++ sections
+* implement == and != for snippet trees
+
 ## The Agony of Choice
 
 First I implemented the prioritized choice so that `A | B | C` returns a `std::variant<TypeA, TypeB, TypeC>`. The choice factory became huge and ugly, mainly but not only because it should return `std::variant<TypeA, TypeB, TypeC>` instead of `std::variant<std::variant<TypeA, TypeB>, TypeC>`. However, the idiomatic way to deal with variants is to dispatch on them with `std::visit`, then you might as well handle each option right away before merging them with `|`:

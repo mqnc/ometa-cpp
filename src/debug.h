@@ -3,7 +3,7 @@
 #include <iostream>
 #include <sstream>
 #include <string>
-#include "sourceview.h"
+#include "view.h"
 
 namespace ometa {
 
@@ -24,8 +24,8 @@ template <forward_range TSource>
 void log(
 	std::string name,
 	LogEvent event,
-	SourceView<TSource> src,
-	SourceView<TSource> next = {}
+	View<TSource> src,
+	View<TSource> next = {}
 ) {
 
 	if (event == LogEvent::accept || event == LogEvent::reject) {
@@ -88,7 +88,7 @@ void log(
 	if (event == LogEvent::enter) { logIndent++; }
 }
 
-#ifndef NDEBUG
+#ifdef DEBUG_PRINTS
 	#define OMETA_LOG(p) (p).name = #p
 #else
 	#define OMETA_LOG(p)

@@ -3,7 +3,7 @@
 #include <ostream>
 
 #include "empty.h"
-#include "sourceview.h"
+#include "view.h"
 #include "tag.h"
 
 namespace ometa {
@@ -14,7 +14,7 @@ template <
 	>
 struct Match {
 	TValue value;
-	SourceView<TSource> next;
+	View<TSource> next;
 };
 
 template <
@@ -34,7 +34,7 @@ template <
 	>
 inline MaybeMatch<TValue, TSource> makeMaybeMatch(
 	TValue value,
-	SourceView<TSource> next
+	View<TSource> next
 ) {
 	return Match<TValue, TSource> {
 		value, next

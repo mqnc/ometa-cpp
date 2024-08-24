@@ -9,26 +9,26 @@ namespace ometa {
 
 using std::ranges::forward_range;
 
-template <forward_range TSource>
-class SourceView: public std::ranges::view_interface<SourceView<TSource>> {
+template <forward_range TData>
+class View: public std::ranges::view_interface<View<TData>> {
 public:
-	using source_type = TSource;
-	using iterator_type = decltype(std::ranges::cbegin(std::declval<TSource&>()));
-	using sentinel_type = decltype(std::ranges::cend(std::declval<TSource&>()));
+	using data_type = TData;
+	using iterator_type = decltype(std::ranges::cbegin(std::declval<TData&>()));
+	using sentinel_type = decltype(std::ranges::cend(std::declval<TData&>()));
 
-	SourceView() = default;
+	View() = default;
 
-	SourceView(const TSource& src)
+	View(const TData& src)
 		: m_begin(std::ranges::cbegin(src)), m_end(std::ranges::cend(src)) {}
 
-	SourceView(iterator_type begin, sentinel_type end)
+	View(iterator_type begin, sentinel_type end)
 		: m_begin(begin), m_end(end) {}
 
 	auto begin() const { return m_begin; }
 
 	auto end() const { return m_end; }
 
-	auto next() { return SourceView(++m_begin, m_end); }
+	auto next() { return View(++m_begin, m_end); }
 
 	template <typename T>
 	void copyInto(T& buffer) const {
@@ -57,10 +57,11 @@ private:
 	sentinel_type m_end;
 };
 
-SourceView(const char*)->SourceView<std::string_view>;
+View(const char*)->View<std::string_view>;
+View(const std::string&)->View<std::string_view>;
 
-template <forward_range TSource>
-std::ostream& operator<<(std::ostream& os, const SourceView<TSource> src)
+template <forward_range TData>
+std::ostream& operator<<(std::ostream& os, const View<TData> src)
 {
 	for (const auto& item: src) {
 		os << item;

@@ -25,7 +25,7 @@ auto repetition(T child, size_t min, size_t max) {
 
 	auto parseFn = [child, min, max]<forward_range TSource>
 		(
-			SourceView<TSource> src,
+			View<TSource> src,
 			auto ctx
 		) {
 

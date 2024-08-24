@@ -8,13 +8,13 @@ auto any() {
 
 	auto parseFn = []<forward_range TSource>
 		(
-			SourceView<TSource> src,
+			View<TSource> src,
 			auto ctx
 		) {
 			(void) ctx;
 			return src.begin() != src.end() ?
 				makeMaybeMatch(
-					SourceView<TSource>(
+					View<TSource>(
 						src.begin(),
 						src.begin() + 1
 						),

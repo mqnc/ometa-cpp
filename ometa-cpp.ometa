@@ -14,12 +14,13 @@
 
 using ometa::operator""_L;
 
-using Snippet = std::string;
+//using Snippet = std::string;
+using Snippet = ometa::Snippet<std::string_view>;
 auto toSnippet = ometa::action([](auto src) {
-	return src.template copyAs<Snippet>();
+	return Snippet{ometa::View<std::string_view>(src)};
 });
-auto operator""_S(const char* compare, size_t size) {
-	return Snippet(compare, size);
+auto operator""_S(const char* str, size_t len) {
+	return Snippet(std::string_view(str, len));
 }
 
 int main(int argc, char* argv[]) {
@@ -45,14 +46,14 @@ int main(int argc, char* argv[]) {
 	valueRef := ~"$" -> {"value"_S};
 	indexedValueRef := ~"$" <{'0'}..{'9'}+> -> toSnippet -> {"ometa::pick<"_S + $ + "-1>(value)"_S};
 
-	cppExpression^ : {std::string} -> {Snippet};
+	cppExpression^ : {std::string_view} -> {Snippet};
 	parenthesizedCppExpression := ~"(" cppExpression^ ~")";
 	bracketedCppExpression := ~"[" cppExpression^ ~"]";
 	bracedCppExpression := ~"{" cppExpression^ ~"}";
 	predicateCppExpression := ~"{" ~_ ~ "?" cppExpression^ ~"}";
 
 	cppExpression^ => (
-		identifier {? $ != "return"}
+		identifier {? value && value->template collect<std::string>() != "return"}
 		| cppLiteral
 		| parenthesizedCppExpression -> {"("_S + $ + ")"_S}
 		| bracketedCppExpression -> {"["_S + $ + "]"_S}
@@ -61,15 +62,15 @@ int main(int argc, char* argv[]) {
 		| !")" !"]" !"}" !";" . -> toSnippet
 	)* -> ometa::concat;
 
-	cppCode^ : {std::string} -> {Snippet};
+	cppCode^ : {std::string_view} -> {Snippet};
 	parenthesizedCppCode := ~"(" cppCode^ ~")";
 	bracketedCppCode := ~"[" cppCode^ ~"]";
 	bracedCppCode := ~"{" cppCode^ ~"}";
 	predicateCppCode := ~"{" ~_ ~ "?" cppCode^ ~"}";
 
-	ruleForwardDecl^ : {std::string} -> {Snippet};
-	ruleDefinition^ : {std::string} -> {Snippet};
-	ruleRedefinition^ : {std::string} -> {Snippet};
+	ruleForwardDecl^ : {std::string_view} -> {Snippet};
+	ruleDefinition^ : {std::string_view} -> {Snippet};
+	ruleRedefinition^ : {std::string_view} -> {Snippet};
 
 	cppCode^ => (
 		ruleForwardDecl^
@@ -98,7 +99,7 @@ int main(int argc, char* argv[]) {
 		"ometa::range(("_S + $1 + "), ("_S + $2 + "))"_S
 	};
 
-	choice^ : {std::string} -> {Snippet};
+	choice^ : {std::string_view} -> {Snippet};
 	parenthesized := ~"(" ~_ choice^ ~_ ~")" ->
 		{"("_S + $ + ")"_S};
 	capture := ~"<" ~_ choice^ ~_ ~">" ->
@@ -150,8 +151,8 @@ int main(int argc, char* argv[]) {
 	ruleForwardDecl^ => identifier ~"^" ~_ ~":" ~_
 		bracedCppExpression ~_ ~"->" ~_ bracedCppExpression ~_ ~";"
 		-> {
-			"auto "_S + $1 + " = ometa::declare<"
-				+ $2 + ", " + $3 + ">();"
+			"auto "_S + $1 + " = ometa::declare<"_S
+				+ $2 + ", "_S + $3 + ">();"_S
 		};
 
 	ruleDefinition^ => identifier ~_ ~":=" ~_ choice^ ~_ ~";"
@@ -174,7 +175,9 @@ int main(int argc, char* argv[]) {
 		}
 		catch (...) {}
 
-		ometa::writeFile(argv[2], *result);
+		std::string resultBuffer;
+		result->collect(resultBuffer);
+		ometa::writeFile(argv[2], resultBuffer);
 	}
 	else {
 		std::cout << "fail\n";

@@ -20,7 +20,7 @@ auto action(A fn) {
 
 	auto parseFn = [fn]<forward_range TSource>
 		(
-			SourceView<TSource> src,
+			View<TSource> src,
 			auto ctx
 		) {
 			// we defer the instantiation of this call until TSource is known
@@ -37,7 +37,7 @@ auto parameterizedAction(T child, Action<A, F> act) {
 
 	auto parseFn = [child, act]<forward_range TSource>
 		(
-			SourceView<TSource> src,
+			View<TSource> src,
 			auto ctx
 		) {
 

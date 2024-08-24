@@ -9,7 +9,7 @@ auto capture(T child) {
 
 	auto parseFn = [child]<forward_range TSource>
 		(
-			SourceView<TSource> src,
+			View<TSource> src,
 			auto ctx
 		) {
 
@@ -17,7 +17,7 @@ auto capture(T child) {
 
 			return result.has_value() ?
 				makeMaybeMatch(
-					SourceView<TSource>(
+					View<TSource>(
 						src.begin(),
 						result->next.begin()
 						),

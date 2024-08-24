@@ -27,7 +27,7 @@ auto ignoreValue(T child) {
 
 	auto parseFn = [child]<forward_range TSource>
 		(
-			SourceView<TSource> src,
+			View<TSource> src,
 			auto ctx
 		) {
 

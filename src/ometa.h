@@ -16,3 +16,4 @@
 #include "action.h"
 #include "recursion.h"
 #include "helpers.h"
+#include "snippet.h"

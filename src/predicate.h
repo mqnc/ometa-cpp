@@ -20,7 +20,7 @@ auto predicate(P fn) {
 
 	auto parseFn = [fn]<forward_range TSource>
 		(
-			SourceView<TSource> src,
+			View<TSource> src,
 			auto ctx
 		) {
 			// we defer the instantiation of this call until TSource is known
@@ -38,7 +38,7 @@ auto parameterizedPredicate(T child, Predicate<P, F> pred) {
 
 	auto parseFn = [child, pred]<forward_range TSource>
 		(
-			SourceView<TSource> src,
+			View<TSource> src,
 			auto ctx
 		) {
 
