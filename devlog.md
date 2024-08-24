@@ -11,7 +11,6 @@
 * handle context
 * error handling
 
-* make . <> "" return snippets by default
 * have a convenient way for snippet literals in C++ sections
 * implement == and != for snippet trees
 

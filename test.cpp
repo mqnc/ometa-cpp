@@ -120,8 +120,6 @@ int main() {
 	auto paramTest = paramd(def, ghi);
 	assert(paramTest.parse("abcdefghi"));
 
-	
-
 	std::cout << "done!\n";
 
 	return 0;

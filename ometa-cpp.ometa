@@ -14,11 +14,7 @@
 
 using ometa::operator""_L;
 
-//using Snippet = std::string;
 using Snippet = ometa::Snippet<std::string_view>;
-auto toSnippet = ometa::action([](auto src) {
-	return Snippet{ometa::View<std::string_view>(src)};
-});
 auto operator""_S(const char* str, size_t len) {
 	return Snippet(std::string_view(str, len));
 }
@@ -30,21 +26,21 @@ int main(int argc, char* argv[]) {
 		return EXIT_FAILURE;
 	}
 
-	_ := <(" " | "\t" | "\n")*> -> toSnippet;
+	_ := <(" " | "\t" | "\n")*>;
 
 	identStart := {'A'}..{'Z'} | {'a'}..{'z'} | "_" | "::";
 	identContinue := identStart | {'0'}..{'9'};
-	identifier := <identStart identContinue*> -> toSnippet;
+	identifier := <identStart identContinue*>;
 	reference := identifier ~"^" -> {"ometa::ptr("_S + $ + ")"_S};
 
 	cppChar := ~"\\" ~. | ~.;
 	cppLiteral := <
 		~"'" !"'" ~cppChar ~"'"
 		| ~"\"" ~(!"\"" ~cppChar)* ~"\""
-	> -> toSnippet;
+	>;
 
 	valueRef := ~"$" -> {"value"_S};
-	indexedValueRef := ~"$" <{'0'}..{'9'}+> -> toSnippet -> {"ometa::pick<"_S + $ + "-1>(value)"_S};
+	indexedValueRef := ~"$" <{'0'}..{'9'}+> -> {"ometa::pick<"_S + $ + "-1>(value)"_S};
 
 	cppExpression^ : {std::string_view} -> {Snippet};
 	parenthesizedCppExpression := ~"(" cppExpression^ ~")";
@@ -59,7 +55,7 @@ int main(int argc, char* argv[]) {
 		| bracketedCppExpression -> {"["_S + $ + "]"_S}
 		| indexedValueRef
 		| valueRef
-		| !")" !"]" !"}" !";" . -> toSnippet
+		| !")" !"]" !"}" !";" .
 	)* -> ometa::concat;
 
 	cppCode^ : {std::string_view} -> {Snippet};
@@ -83,7 +79,7 @@ int main(int argc, char* argv[]) {
 		| bracedCppCode -> {"{"_S + $ + "}"_S}
 		| indexedValueRef
 		| valueRef
-		| !")" !"]" !"}" . -> toSnippet
+		| !")" !"]" !"}" .
 	)* -> ometa::concat;
 
 	any := "." -> {"ometa::any()"_S};
@@ -92,7 +88,7 @@ int main(int argc, char* argv[]) {
 	character :=
 		~"\\" ~("n" | "r" | "t" | "\"" | "\\")
 		| !"\\" ~.;
-	literal := <"\"" (!"\"" character)* "\""> -> toSnippet
+	literal := <"\"" (!"\"" character)* "\"">
 		{"_L"_S} -> ometa::concat;
 
 	range := bracedCppCode ~_ ~".." ~_ bracedCppCode -> {
@@ -134,7 +130,7 @@ int main(int argc, char* argv[]) {
 		| "+" -> {"+"_S}
 	)? -> { $2.size() == 0 ? $1 : $2[0] + $1 };
 
-	prefix := <("&" | "!" | "~")?> -> toSnippet
+	prefix := <("&" | "!" | "~")?>
 		~_ postfix -> ometa::concat;
 
 	sequence := prefix (
@@ -145,7 +141,7 @@ int main(int argc, char* argv[]) {
 	)* -> ometa::concat;
 
 	choice^ => sequence (
-		<_ "|" _> -> toSnippet sequence -> ometa::concat
+		<_ "|" _> sequence -> ometa::concat
 	)* -> ometa::concat;
 
 	ruleForwardDecl^ => identifier ~"^" ~_ ~":" ~_

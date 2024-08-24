@@ -22,7 +22,7 @@ auto literal(auto compare) {
 
 			return equalUntil.in2 == compare.end() ? [&] {
 					auto next = View<TSource>(equalUntil.in1, src.end());
-					auto matched = View<TSource>(src.begin(), equalUntil.in1);
+					auto matched = Snippet{View<TSource>(src.begin(), equalUntil.in1)};
 					return makeMaybeMatch(matched, next);
 				}() : fail;
 		};
