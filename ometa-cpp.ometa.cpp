@@ -145,12 +145,7 @@ int main(int argc, char* argv[]) {
 		}
 		catch (...) {}
 
-		std::string resultBuffer;
-		resultBuffer.reserve(result->size());
-		for (const auto& c: *result) {
-			resultBuffer.push_back(c);
-		}
-		ometa::writeFile(argv[2], resultBuffer);
+		ometa::writeFile(argv[2], *result);
 	}
 	else {
 		std::cout << "fail\n";

@@ -17,7 +17,8 @@ inline std::string readFile(const std::string& filename) {
 		(std::istreambuf_iterator<char>()));
 }
 
-inline void writeFile(const std::string& filename, const std::string& content) {
+template <typename T>
+inline void writeFile(const std::string& filename, const T& content) {
 	std::ofstream ofs(filename);
 	if (!ofs) {
 		throw std::runtime_error(filename + " could not be written");
