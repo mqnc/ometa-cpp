@@ -14,9 +14,9 @@
 
 using ometa::operator""_L;
 
-using Snippet = ometa::Snippet<std::string_view>;
+using ViewTree = ometa::ViewTree<std::string_view>;
 auto operator""_S(const char* str, size_t len) {
-	return Snippet(std::string_view(str, len));
+	return ViewTree(std::string_view(str, len));
 }
 
 int main(int argc, char* argv[]) {
@@ -42,14 +42,14 @@ int main(int argc, char* argv[]) {
 	valueRef := ~"$" -> {"value"_S};
 	indexedValueRef := ~"$" <{'0'}..{'9'}+> -> {"ometa::pick<"_S + $ + "-1>(value)"_S};
 
-	cppExpression^ : {std::string_view} -> {Snippet};
+	cppExpression^ : {std::string_view} -> {ViewTree};
 	parenthesizedCppExpression := ~"(" cppExpression^ ~")";
 	bracketedCppExpression := ~"[" cppExpression^ ~"]";
 	bracedCppExpression := ~"{" cppExpression^ ~"}";
 	predicateCppExpression := ~"{" ~_ ~ "?" cppExpression^ ~"}";
 
 	cppExpression^ => (
-		identifier {? value && value->template collect<std::string>() != "return"}
+		identifier {? $ && *$ != "return"}
 		| cppLiteral
 		| parenthesizedCppExpression -> {"("_S + $ + ")"_S}
 		| bracketedCppExpression -> {"["_S + $ + "]"_S}
@@ -58,15 +58,15 @@ int main(int argc, char* argv[]) {
 		| !")" !"]" !"}" !";" .
 	)* -> ometa::concat;
 
-	cppCode^ : {std::string_view} -> {Snippet};
+	cppCode^ : {std::string_view} -> {ViewTree};
 	parenthesizedCppCode := ~"(" cppCode^ ~")";
 	bracketedCppCode := ~"[" cppCode^ ~"]";
 	bracedCppCode := ~"{" cppCode^ ~"}";
 	predicateCppCode := ~"{" ~_ ~ "?" cppCode^ ~"}";
 
-	ruleForwardDecl^ : {std::string_view} -> {Snippet};
-	ruleDefinition^ : {std::string_view} -> {Snippet};
-	ruleRedefinition^ : {std::string_view} -> {Snippet};
+	ruleForwardDecl^ : {std::string_view} -> {ViewTree};
+	ruleDefinition^ : {std::string_view} -> {ViewTree};
+	ruleRedefinition^ : {std::string_view} -> {ViewTree};
 
 	cppCode^ => (
 		ruleForwardDecl^
@@ -95,7 +95,7 @@ int main(int argc, char* argv[]) {
 		"ometa::range(("_S + $1 + "), ("_S + $2 + "))"_S
 	};
 
-	choice^ : {std::string_view} -> {Snippet};
+	choice^ : {std::string_view} -> {ViewTree};
 	parenthesized := ~"(" ~_ choice^ ~_ ~")" ->
 		{"("_S + $ + ")"_S};
 	capture := ~"<" ~_ choice^ ~_ ~">" ->
@@ -172,7 +172,10 @@ int main(int argc, char* argv[]) {
 		catch (...) {}
 
 		std::string resultBuffer;
-		result->collect(resultBuffer);
+		resultBuffer.reserve(result->size());
+		for (const auto& c: *result) {
+			resultBuffer.push_back(c);
+		}
 		ometa::writeFile(argv[2], resultBuffer);
 	}
 	else {

@@ -14,9 +14,9 @@
 
 using ometa::operator""_L;
 
-using Snippet = ometa::Snippet<std::string_view>;
+using ViewTree = ometa::ViewTree<std::string_view>;
 auto operator""_S(const char* str, size_t len) {
-	return Snippet(std::string_view(str, len));
+	return ViewTree(std::string_view(str, len));
 }
 
 int main(int argc, char* argv[]) {
@@ -40,13 +40,13 @@ int main(int argc, char* argv[]) {
 	const auto valueRef = ~"$"_L >= ometa::action([](auto value){return "value"_S;}); OMETA_LOG(valueRef);
 	const auto indexedValueRef = ~"$"_L > ometa::capture(+ometa::range(('0'), ('9'))) >= ometa::action([](auto value){return "ometa::pick<"_S + value + "-1>(value)"_S;}); OMETA_LOG(indexedValueRef);
 
-	auto cppExpression = ometa::declare<std::string_view, Snippet>();
+	auto cppExpression = ometa::declare<std::string_view, ViewTree>();
 	const auto parenthesizedCppExpression = ~"("_L > ometa::ptr(cppExpression) > ~")"_L; OMETA_LOG(parenthesizedCppExpression);
 	const auto bracketedCppExpression = ~"["_L > ometa::ptr(cppExpression) > ~"]"_L; OMETA_LOG(bracketedCppExpression);
 	const auto bracedCppExpression = ~"{"_L > ometa::ptr(cppExpression) > ~"}"_L; OMETA_LOG(bracedCppExpression);
 	const auto predicateCppExpression = ~"{"_L > ~_ > ~"?"_L > ometa::ptr(cppExpression) > ~"}"_L; OMETA_LOG(predicateCppExpression);
 
-	*cppExpression = *(identifier > ometa::predicate([](auto value){return  value && value->template collect<std::string>() != "return";})
+	*cppExpression = *(identifier > ometa::predicate([](auto value){return  value && *value != "return";})
 		| cppLiteral
 		| parenthesizedCppExpression >= ometa::action([](auto value){return "("_S + value + ")"_S;})
 		| bracketedCppExpression >= ometa::action([](auto value){return "["_S + value + "]"_S;})
@@ -54,15 +54,15 @@ int main(int argc, char* argv[]) {
 		| valueRef
 		| !")"_L > !"]"_L > !"}"_L > !";"_L > ometa::any()) >= ometa::concat; OMETA_LOG(*cppExpression);
 
-	auto cppCode = ometa::declare<std::string_view, Snippet>();
+	auto cppCode = ometa::declare<std::string_view, ViewTree>();
 	const auto parenthesizedCppCode = ~"("_L > ometa::ptr(cppCode) > ~")"_L; OMETA_LOG(parenthesizedCppCode);
 	const auto bracketedCppCode = ~"["_L > ometa::ptr(cppCode) > ~"]"_L; OMETA_LOG(bracketedCppCode);
 	const auto bracedCppCode = ~"{"_L > ometa::ptr(cppCode) > ~"}"_L; OMETA_LOG(bracedCppCode);
 	const auto predicateCppCode = ~"{"_L > ~_ > ~"?"_L > ometa::ptr(cppCode) > ~"}"_L; OMETA_LOG(predicateCppCode);
 
-	auto ruleForwardDecl = ometa::declare<std::string_view, Snippet>();
-	auto ruleDefinition = ometa::declare<std::string_view, Snippet>();
-	auto ruleRedefinition = ometa::declare<std::string_view, Snippet>();
+	auto ruleForwardDecl = ometa::declare<std::string_view, ViewTree>();
+	auto ruleDefinition = ometa::declare<std::string_view, ViewTree>();
+	auto ruleRedefinition = ometa::declare<std::string_view, ViewTree>();
 
 	*cppCode = *(ometa::ptr(ruleForwardDecl)
 		| ometa::ptr(ruleDefinition)
@@ -87,7 +87,7 @@ int main(int argc, char* argv[]) {
 		"ometa::range(("_S + ometa::pick<1-1>(value) + "), ("_S + ometa::pick<2-1>(value) + "))"_S
 	;}); OMETA_LOG(range);
 
-	auto choice = ometa::declare<std::string_view, Snippet>();
+	auto choice = ometa::declare<std::string_view, ViewTree>();
 	const auto parenthesized = ~"("_L > ~_ > ometa::ptr(choice) > ~_ > ~")"_L >= ometa::action([](auto value){return "("_S + value + ")"_S;}); OMETA_LOG(parenthesized);
 	const auto capture = ~"<"_L > ~_ > ometa::ptr(choice) > ~_ > ~">"_L >= ometa::action([](auto value){return "ometa::capture("_S + value + ")"_S;}); OMETA_LOG(capture);
 
@@ -146,7 +146,10 @@ int main(int argc, char* argv[]) {
 		catch (...) {}
 
 		std::string resultBuffer;
-		result->collect(resultBuffer);
+		resultBuffer.reserve(result->size());
+		for (const auto& c: *result) {
+			resultBuffer.push_back(c);
+		}
 		ometa::writeFile(argv[2], resultBuffer);
 	}
 	else {

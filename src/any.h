@@ -1,7 +1,7 @@
 #pragma once
 
 #include "parser.h"
-#include "snippet.h"
+#include "viewtree.h"
 
 namespace ometa {
 
@@ -15,7 +15,7 @@ auto any() {
 			(void) ctx;
 			return src.begin() != src.end() ?
 				makeMaybeMatch(
-					Snippet{View<TSource>(
+					ViewTree{View<TSource>(
 						src.begin(),
 						src.begin() + 1
 						)},

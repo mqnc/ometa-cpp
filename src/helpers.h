@@ -2,7 +2,7 @@
 #include <string>
 #include <fstream>
 #include <ranges>
-#include "tree.h"
+#include "valuetree.h"
 #include "repetition.h"
 
 namespace ometa {

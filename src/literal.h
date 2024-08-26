@@ -5,7 +5,7 @@
 #include <algorithm>
 
 #include "parser.h"
-#include "snippet.h"
+#include "viewtree.h"
 
 namespace ometa {
 
@@ -22,7 +22,7 @@ auto literal(auto compare) {
 
 			return equalUntil.in2 == compare.end() ? [&] {
 					auto next = View<TSource>(equalUntil.in1, src.end());
-					auto matched = Snippet{View<TSource>(src.begin(), equalUntil.in1)};
+					auto matched = ViewTree{View<TSource>(src.begin(), equalUntil.in1)};
 					return makeMaybeMatch(matched, next);
 				}() : fail;
 		};

@@ -10,6 +10,8 @@
 * prettify debug log
 * handle context
 * error handling
+* UTF8
+* maybe propagate an ignore_value flag
 
 * have a convenient way for snippet literals in C++ sections
 * implement == and != for snippet trees

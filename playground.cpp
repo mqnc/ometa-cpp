@@ -7,22 +7,28 @@
 
 #include "src/ometa.h"
 
-using Snippet = ometa::Snippet<std::string_view>;
+using ViewTree = ometa::ViewTree<std::string_view>;
 auto operator""_S(const char* str, size_t len) {
-	return Snippet(std::string_view(str, len));
+	return ViewTree(std::string_view(str, len));
 }
 
 int main() {
 
-	auto s1 = "Hello "_S;
-	auto s2 = "World!"_S;
-	std::string s3 = "awa";
+	std::string src = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 
-	auto v = Snippet{ometa::View<std::string_view>(s3)};
+	auto v1 = ViewTree(ometa::View(std::string_view(src).substr(5, 10)));
+	auto v2 = ViewTree(ometa::View(std::string_view(src).substr(20, 3)));
+	auto v3 = ViewTree(ometa::View(std::string_view(src).substr(30, 1)));
 
-	auto s12 = s1 + s2 + v;
+	auto conc = v1 + v2 + v3;
 
-	auto str = s12.collect<std::string>();
+	int i = 0;
+	for (const auto& view: conc) {
+		std::cout << view << " " << std::flush;
+		if (i++ > 100) { break; }
+	}
+	std::cout << conc.size() << std::endl;
 
-	std::cout << str << "\n";
+	return 0;
+
 }
