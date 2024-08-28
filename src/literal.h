@@ -34,7 +34,7 @@ auto literal(const char* compare) {
 	return literal(std::string_view(compare));
 }
 
-auto operator""_L(const char* compare, size_t size) {
+auto operator""_lit_(const char* compare, size_t size) {
 	return literal(std::string_view(compare, size));
 }
 

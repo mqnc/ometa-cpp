@@ -3,7 +3,6 @@
 
 * implement bindings in the syntax
 * implement macros
-* implement snippets with trees
 * update readme
 * preserve whitespaces
 * selective debug log
@@ -13,8 +12,7 @@
 * UTF8
 * maybe propagate an ignore_value flag
 
-* have a convenient way for snippet literals in C++ sections
-* implement == and != for snippet trees
+* have a convenient way for viewtree literals in C++ sections (or provide tree + string)
 
 ## The Agony of Choice
 
@@ -198,3 +196,37 @@ This doesn't work if checkA can't handle `ignore` as input argument. The first l
 I already tried making the `Predicate` class not inheriting from `Parser` but implicitly casting to one but this cast doesn't always happen. We can't call a `parse` method on it for instance.
 
 `defer` to the rescue! I already only saw syntactically hideous solutions to this misery, when I clutched to the last straw: When we call the predicate lambda in the predicate parser, we run its argument (`ignore`) through a template that also requires the type of the source code as a template argument. This way, the thing doesn't get instantiated if the source type is not known, which only becomes known when the whole predicate parser is actually put into action without arguments.
+
+## Snippets
+
+Most likely you want to puzzle strings together as the output. Just using std::strings and +ing them will cause a lot of data being copied around. Instead, we use trees of views that can be mixed and matched. In the end, we just iterate through the whole tree and output all the views. However, I wasn't able to find a syntactically sweet way to do this.
+
+* `"abc"_S` for `ometa::ViewTree<std::string_view>("abc")` works but is a bit ugly and annoying.
+
+* `"abc"S` would be less annoying but causes `warning: user-defined literal suffixes not starting with '_' are reserved;`. Well, actually, I can convert `S` to `_S` during transpiling... but it still looks shit somehow. Maybe there is a less ugly character.
+
+* `'abc'` would have been nice since multi-character literals have implementation-defined behavior anyway and are thus discouraged and we can just use the syntax for our purpose. However, `'a'` should actually still be a `char` :/
+
+* Creating assimilating `operator+`es like `std::string` is a bit nice.
+```cpp
+ViewTree + ViewTree -> ViewTree
+ViewTree + const char* -> ViewTree
+const char* + ViewTree
+```
+`ometa::any`, `ometa::capture` and `ometa::range` all return `ViewTree`s and you will likely puzzle strings around those results, so you will almost never have to manually convert a string literal to a `ViewTree`. However, it's all fun and games until you get used to that and encounter a situation where it stays a string literal:
+```
+ViewTree("abc") + "def" + "ghi"; // works
+"def" + "ghi"; // does not work
+ometa::action([](auto value){return "abc";}); // also returns a const char*
+```
+so I think manually declaring a literal to be a `ViewTree` is better.
+
+Using neither `"double quotes"` nor `'single quotes'` and for example `` `backticks` `` completely messes up standard C++ syntax highlighting again...
+
+`"abc"_` is a last option but I somehow also don't like it.
+
+I can also just convert all `"abc"` literals to `ViewTree`s but that also doesn't feel right.
+
+I got it!: `'"abc"'`
+
+I'm still not ultimately satisfied but I and people will have to learn to love it.

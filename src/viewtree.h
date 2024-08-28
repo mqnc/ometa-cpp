@@ -13,9 +13,9 @@ class ViewTree {
 public:
 	using TChildren = std::array<std::shared_ptr<ViewTree<TData>>, 2>;
 
+private:
 	std::variant<Empty, View<TData>, TChildren> value;
-
-	ViewTree(TChildren children): value(children) {}
+public:
 
 	bool isEmpty() const { return std::holds_alternative<Empty>(value); }
 	bool isLeaf() const { return std::holds_alternative<View<TData>>(value); }
@@ -26,20 +26,13 @@ public:
 public:
 	ViewTree(): value(Empty {}) {}
 	ViewTree(View<TData> view): value(view) {}
+	ViewTree(const TData& data): value(View(data)) {}
+	ViewTree(TChildren children): value(children) {}
 	ViewTree(const ViewTree<TData>& other): value(other.value) {}
 	ViewTree(ViewTree<TData>&& other): value(std::move(other.value)) {}
 	ViewTree<TData>& operator=(const ViewTree<TData>& other) {
 		if (this != &other) { value = other.value; }
 		return *this;
-	}
-
-	ViewTree<TData> operator+(ViewTree<TData> other) {
-		if (isEmpty()) { return other; }
-		if (other.isEmpty()) { return *this; }
-		return TChildren({
-			std::make_shared<ViewTree<TData>>(*this),
-			std::make_shared<ViewTree<TData>>(other)
-		});
 	}
 
 	size_t size() const {
@@ -71,10 +64,10 @@ public:
 		}
 
 		Iterator& operator++() {
-			if(currentView.begin() != currentView.end()) {
+			if (currentView.begin() != currentView.end()) {
 				currentView = currentView.next();
 			}
-			while(currentView.begin() == currentView.end()){
+			while (currentView.begin() == currentView.end()) {
 				if (stack.empty()) {
 					currentViewTree = nullptr;
 					break;
@@ -108,6 +101,28 @@ public:
 	}
 
 };
+
+auto operator""_tree_(const char* str, size_t len) {
+	return ViewTree<std::string_view>(std::string_view(str, len));
+}
+
+template <typename TData>
+ViewTree<TData> operator+(const ViewTree<TData>& lhs, const ViewTree<TData>& rhs) {
+	if (lhs.isEmpty()) { return rhs; }
+	if (rhs.isEmpty()) { return lhs; }
+	return typename ViewTree<TData>::TChildren({
+		std::make_shared<ViewTree<TData>>(lhs),
+		std::make_shared<ViewTree<TData>>(rhs)
+	});
+}
+
+ViewTree<std::string_view> operator+(const ViewTree<std::string_view>& lhs, const char* rhs) {
+	return lhs + ViewTree<std::string_view>(rhs);
+}
+
+ViewTree<std::string_view> operator+(const char* lhs, const ViewTree<std::string_view>& rhs) {
+	return ViewTree<std::string_view>(lhs) + rhs;
+}
 
 template <typename TData>
 std::ostream& operator<<(std::ostream& os, const ViewTree<TData>& tree) {
@@ -145,7 +160,5 @@ template <typename TOther, typename TData>
 bool operator==(const TOther& lhs, const ViewTree<TData>& rhs) {
 	return rhs == lhs;
 }
-
-
 
 }

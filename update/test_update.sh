@@ -1,7 +1,15 @@
 set -e
 
+# create those temporarily so cmake does not complain
+cp -n ../ometa-cpp.ometa.cpp src/new_parser_in_old_syntax.ometa.cpp
+cp -n ../ometa-cpp.ometa.cpp src/new_parser_in_new_syntax.ometa.cpp
+
 cd build
 cmake ..
+
+# remove them again, going to generate them
+rm ../src/new_parser_in_old_syntax.ometa.cpp
+rm ../src/new_parser_in_new_syntax.ometa.cpp
 
 echo "building old_parser_in_old_syntax"
 make old_parser_in_old_syntax
