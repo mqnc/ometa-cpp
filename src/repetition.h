@@ -7,14 +7,7 @@
 namespace ometa {
 
 template <typename T>
-class RepetitionValue:public std::deque<T>{
-	public:
-
-	template <size_t i>
-	auto pick(){
-		return (*this)[i];
-	};
-};
+using RepetitionValue = std::deque<T>;
 template <typename T>
 concept RepetitionValueType = std::is_same_v<
 	T, RepetitionValue<typename T::value_type>

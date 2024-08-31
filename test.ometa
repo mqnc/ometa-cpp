@@ -35,12 +35,12 @@ int main() {
 	EXPECT(not range.parse("n"));
 
 	sequence := abc def ghi;
+	sequence_0 := sequence -> {$0};
 	sequence_1 := sequence -> {$1};
 	sequence_2 := sequence -> {$2};
-	sequence_3 := sequence -> {$3};
-	EXPECT(sequence_1.parse("abcdefghi") == "abc");
-	EXPECT(sequence_2.parse("abcdefghi") == "def");
-	EXPECT(sequence_3.parse("abcdefghi") == "ghi");
+	EXPECT(sequence_0.parse("abcdefghi") == "abc");
+	EXPECT(sequence_1.parse("abcdefghi") == "def");
+	EXPECT(sequence_2.parse("abcdefghi") == "ghi");
 	EXPECT(not sequence.parse("abcdefghX"));
 
 	choice := abc | def | ghi;
@@ -58,25 +58,25 @@ int main() {
 	EXPECT(negativeLookAhead.parse("XXX"));
 
 	optional := abc? def;
+	optional_0 := optional -> {$0};
 	optional_1 := optional -> {$1};
-	optional_2 := optional -> {$2};
 	EXPECT(optional.parse("abcdef"));
-	EXPECT(optional_1.parse("abcdef").value().size() == 1);
-	EXPECT(optional_1.parse("abcdef").value()[0] == "abc");
-	EXPECT(optional_2.parse("abcdef") == "def");
+	EXPECT(optional_0.parse("abcdef").value().size() == 1);
+	EXPECT(optional_0.parse("abcdef").value()[0] == "abc");
+	EXPECT(optional_1.parse("abcdef") == "def");
 	EXPECT(optional.parse("def"));
-	EXPECT(optional_1.parse("def").value().size() == 0);
-	EXPECT(optional_2.parse("def") == "def");
+	EXPECT(optional_0.parse("def").value().size() == 0);
+	EXPECT(optional_1.parse("def") == "def");
 	EXPECT(not optional.parse("XXX"));
 
 	zeroOrMore := abc* def;
+	zeroOrMore_0 := zeroOrMore -> {$0};
 	zeroOrMore_1 := zeroOrMore -> {$1};
-	zeroOrMore_2 := zeroOrMore -> {$2};
 	EXPECT(zeroOrMore.parse("abcabcdef"));
-	EXPECT(zeroOrMore_1.parse("abcabcdef").value().size() == 2);
-	EXPECT(zeroOrMore_1.parse("abcabcdef").value()[1] == "abc");
-	EXPECT(zeroOrMore_1.parse("abcdef"));
-	EXPECT(zeroOrMore_1.parse("def"));
+	EXPECT(zeroOrMore_0.parse("abcabcdef").value().size() == 2);
+	EXPECT(zeroOrMore_0.parse("abcabcdef").value()[1] == "abc");
+	EXPECT(zeroOrMore_0.parse("abcdef"));
+	EXPECT(zeroOrMore_0.parse("def"));
 	EXPECT(not zeroOrMore.parse("XXX"));
 	// auto zom = *abc > def;
 	// assert(zom.parse("abcabcdef"));
