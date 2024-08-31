@@ -27,7 +27,7 @@ void log(
 	View<TSource> src,
 	View<TSource> next = {}
 ) {
-
+	
 	if (event == LogEvent::accept || event == LogEvent::reject) {
 		logIndent--;
 	}

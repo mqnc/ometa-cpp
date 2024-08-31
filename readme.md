@@ -35,7 +35,7 @@ Main focus in the development was for this to be a fun hobby project and for thi
 * no left recursion
 * Proper-feelingness probably comes at the cost of performance.
 * Development in this template jungle is a hell of torture and despair, error messages by the compiler span pages and are mostly not helpful.
-* Judging from experience, I will probably lose interest in this project soon and then it's no longer maintained. But at this point, it is probably complete and free of bugs 😌.
+* Judging from experience, I will probably lose interest in this project soon and then it's no longer maintained. But at that point, it is probably complete and free of bugs 😌.
 
 ## Usage
 

@@ -10,9 +10,7 @@
 #include "match.h"
 #include "tag.h"
 
-#ifdef DEBUG_PRINTS
-#	include "debug.h"
-#endif
+#include "debug.h"
 
 namespace ometa {
 

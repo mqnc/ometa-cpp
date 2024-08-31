@@ -14,9 +14,9 @@ int main() {
 	assert(any().parse("1"));
 	assert(not any().parse(""));
 
-	auto abc = "abc"_L;
-	auto def = "def"_L;
-	auto ghi = "ghi"_L;
+	auto abc = "abc"_lit_;
+	auto def = "def"_lit_;
+	auto ghi = "ghi"_lit_;
 
 	auto lit = abc;
 	assert(*lit.parse("abcd") == "abc");
@@ -103,14 +103,14 @@ int main() {
 	});
 	assert(not prd0.parse("XXX"));
 
-	auto list = abc.as<"t0">() > (*("+"_L > abc)).as<"ts">();
+	auto list = abc.as<"t0">() > (*("+"_lit_ > abc)).as<"ts">();
 	assert(list.parse("abc+abc+abc")->pick<"t0">() == "abc");
 	assert(list.parse("abc+abc+abc")->pick<"ts">()[0].pick<0>() == "+");
 
-	auto expression = declare<std::string_view, View<std::string_view>>();
+	auto expression = declare<std::string_view, ViewTree<std::string_view>>();
 
-	*expression = capture("atom"_L)
-		| capture("("_L > ptr(expression) > ")"_L);
+	*expression = capture("atom"_lit_)
+		| capture("("_lit_ > ptr(expression) > ")"_lit_);
 
 	assert(*expression->parse("atom") == "atom");
 	assert(*expression->parse("(atom)") == "(atom)");

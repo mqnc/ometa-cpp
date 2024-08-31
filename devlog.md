@@ -10,9 +10,8 @@
 * handle context
 * error handling
 * UTF8
-* maybe propagate an ignore_value flag
-
-* have a convenient way for viewtree literals in C++ sections (or provide tree + string)
+* maybe propagate an ignore_value flag (or maybe not, we might want the side effects)
+* do some projects like a lua, clang and json5 parser, note errors and catch them with awesome eigen error reports
 
 ## The Agony of Choice
 
@@ -211,7 +210,7 @@ Most likely you want to puzzle strings together as the output. Just using std::s
 ```cpp
 ViewTree + ViewTree -> ViewTree
 ViewTree + const char* -> ViewTree
-const char* + ViewTree
+const char* + ViewTree -> ViewTree
 ```
 `ometa::any`, `ometa::capture` and `ometa::range` all return `ViewTree`s and you will likely puzzle strings around those results, so you will almost never have to manually convert a string literal to a `ViewTree`. However, it's all fun and games until you get used to that and encounter a situation where it stays a string literal:
 ```
