@@ -1,8 +1,6 @@
 
 ## ToDo
 
-* implement bindings in the syntax
-* implement macros
 * update readme
 * preserve whitespaces
 * selective debug log
@@ -12,6 +10,7 @@
 * UTF8
 * maybe propagate an ignore_value flag (or maybe not, we might want the side effects)
 * do some projects like a lua, clang and json5 parser, note errors and catch them with awesome eigen error reports
+* it is inconsistent that repetition access is 0-based while pick access is 1-based
 
 ## The Agony of Choice
 

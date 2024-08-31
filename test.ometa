@@ -1,0 +1,150 @@
+
+#include "src/ometa.h"
+
+#include <cassert>
+#include <iostream>
+#include <sstream>
+
+#include <map>
+
+#define EXPECT(condition) \
+	if(!(condition)) { \
+		std::cerr << "line " << __LINE__ << " failed: " #condition; \
+	}
+
+void getType(auto x);
+
+int main() {
+
+	any := .;
+	EXPECT(any.parse("A"));
+	EXPECT(any.parse("A") == "A");
+	EXPECT(not any.parse(""));
+
+	abc := "abc";
+	def := "def";
+	ghi := "ghi";
+
+	literal := abc;
+	EXPECT(literal.parse("abcd") == "abc");
+	EXPECT(not literal.parse("abX"));
+	EXPECT(not literal.parse(""));
+
+	range := {'a'}..{'m'};
+	EXPECT(range.parse("m") == "m");
+	EXPECT(not range.parse("n"));
+
+	sequence := abc def ghi;
+	sequence_1 := sequence -> {$1};
+	sequence_2 := sequence -> {$2};
+	sequence_3 := sequence -> {$3};
+	EXPECT(sequence_1.parse("abcdefghi") == "abc");
+	EXPECT(sequence_2.parse("abcdefghi") == "def");
+	EXPECT(sequence_3.parse("abcdefghi") == "ghi");
+	EXPECT(not sequence.parse("abcdefghX"));
+
+	choice := abc | def | ghi;
+	EXPECT(choice.parse("abc") == "abc");
+	EXPECT(choice.parse("def") == "def");
+	EXPECT(choice.parse("ghi") == "ghi");
+	EXPECT(not choice.parse("XXX"));
+
+	lookAhead := &abc;
+	EXPECT(lookAhead.parse("abc"));
+	EXPECT(not lookAhead.parse("XXX"));
+
+	negativeLookAhead := !abc;
+	EXPECT(not negativeLookAhead.parse("abc"));
+	EXPECT(negativeLookAhead.parse("XXX"));
+
+	optional := abc? def;
+	optional_1 := optional -> {$1};
+	optional_2 := optional -> {$2};
+	EXPECT(optional.parse("abcdef"));
+	EXPECT(optional_1.parse("abcdef").value().size() == 1);
+	EXPECT(optional_1.parse("abcdef").value()[0] == "abc");
+	EXPECT(optional_2.parse("abcdef") == "def");
+	EXPECT(optional.parse("def"));
+	EXPECT(optional_1.parse("def").value().size() == 0);
+	EXPECT(optional_2.parse("def") == "def");
+	EXPECT(not optional.parse("XXX"));
+
+	zeroOrMore := abc* def;
+	zeroOrMore_1 := zeroOrMore -> {$1};
+	zeroOrMore_2 := zeroOrMore -> {$2};
+	EXPECT(zeroOrMore.parse("abcabcdef"));
+	EXPECT(zeroOrMore_1.parse("abcabcdef").value().size() == 2);
+	EXPECT(zeroOrMore_1.parse("abcabcdef").value()[1] == "abc");
+	EXPECT(zeroOrMore_1.parse("abcdef"));
+	EXPECT(zeroOrMore_1.parse("def"));
+	EXPECT(not zeroOrMore.parse("XXX"));
+	// auto zom = *abc > def;
+	// assert(zom.parse("abcabcdef"));
+	// assert(zom.parse("abcabcdef")->pick<0>().size() == 2);
+	// assert(zom.parse("abcabcdef")->pick<0>()[1] == "abc");
+	// assert(zom.parse("abcabcdef")->pick<0>().pick<1>() == "abc");
+	// assert(zom.parse("abcdef"));
+	// assert(zom.parse("def"));
+	// assert(not zom.parse("XXX"));
+
+	// auto oom = +abc > def;
+	// assert(oom.parse("abcabcdef"));
+	// assert(oom.parse("abcdef"));
+	// assert(not oom.parse("def"));
+	// assert(not oom.parse("XXX"));
+
+	// auto cap = capture(oom);
+	// assert(cap.parse("abcabcdef---") == "abcabcdef");
+
+	// auto act1 = action([](auto matched) {
+	// 	assert(matched == ignore);
+	// 	return 0;
+	// });
+	// assert(*act1.parse("abc") == 0);
+
+	// auto act2 = action([](auto matched) {
+	// 	assert(matched == "abc");
+	// 	return 123;
+	// });	
+	// assert(*(abc >= act2).parse("abc") == 123);
+
+	// auto prd = predicate([](auto matched) {
+	// 	assert(matched == ignore);
+	// 	return true;
+	// });
+	// assert(prd.parse("abc"));
+
+	// auto prd1 = abc > predicate([](auto matched) {
+	// 	assert(*matched == "abc");
+	// 	return true;
+	// });
+
+	// assert(*prd1.parse("abc") == "abc");
+
+	// auto prd0 = abc > predicate([](auto matched) {
+	// 	assert(not matched);
+	// 	return false;
+	// });
+	// assert(not prd0.parse("XXX"));
+
+	// auto list = abc.as<"t0">() > (*("+"_lit_ > abc)).as<"ts">();
+	// assert(list.parse("abc+abc+abc")->pick<"t0">() == "abc");
+	// assert(list.parse("abc+abc+abc")->pick<"ts">()[0].pick<0>() == "+");
+
+	// auto expression = declare<std::string_view, ViewTree<std::string_view>>();
+
+	// *expression = capture("atom"_lit_)
+	// 	| capture("("_lit_ > ptr(expression) > ")"_lit_);
+
+	// assert(*expression->parse("atom") == "atom");
+	// assert(*expression->parse("(atom)") == "(atom)");
+	// assert(*expression->parse("((atom))") == "((atom))");
+
+	// auto paramd = [=](auto x, auto y) { return abc > x > y; };
+	// auto paramTest = paramd(def, ghi);
+	// assert(paramTest.parse("abcdefghi"));
+
+	std::cout << "done!\n";
+
+	return 0;
+}
