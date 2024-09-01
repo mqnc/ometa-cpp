@@ -81,7 +81,7 @@ int main(int argc, char* argv[]) {
 
 	const auto parameterizedAction = ~"->"_lit_ > ometa::action([](auto value){return " >= "_tree_;}) > ~_ > action >= ometa::concat; OMETA_LOG(parameterizedAction);
 
-	const auto macroCall = identifier > ~_ > ~"["_lit_ > ometa::action([](auto value){return "("_tree_;}) > ~_ > ometa::ptr(expression) > ~_ > *(~","_lit_ > ~_ > ometa::ptr(expression)) > ~_ > ~"]"_lit_ > ometa::action([](auto value){return ")"_tree_;}) >= ometa::concat; OMETA_LOG(macroCall);
+	const auto macroCall = identifier > ~_ > ~"["_lit_ > ometa::action([](auto value){return "("_tree_;}) > ~_ > ometa::ptr(expression) > ~_ > *(","_lit_ > ometa::action([](auto value){return " "_tree_;}) > ~_ > ometa::ptr(expression) >= ometa::concat) > ~_ > ~"]"_lit_ > ometa::action([](auto value){return ")"_tree_;}) >= ometa::concat; OMETA_LOG(macroCall);
 
 	const auto primary = reference| macroCall| any| epsilon| literal| range| capture| predicate| action| parenthesized; OMETA_LOG(primary);
 
@@ -117,7 +117,7 @@ int main(int argc, char* argv[]) {
 
 	*ruleRedefinition = identifier > ~"^"_lit_ > ~_ > ~"=>"_lit_ > ~_ > ometa::ptr(expression) > ~_ > ~";"_lit_ >= ometa::action([](auto value){return "*"_tree_ + ometa::pick<0>(value) + " = "_tree_ + ometa::pick<1>(value) + "; OMETA_LOG(*"_tree_ + ometa::pick<0>(value) + ");"_tree_;}); OMETA_LOG(*ruleRedefinition);
 
-	const auto macroParameterList = ~"["_lit_ > ~_ > ometa::action([](auto value){return "auto "_tree_;}) > identifier > ~_ > *(~","_lit_ > ~_ > identifier >= ometa::action([](auto value){return "auto "_tree_ + value;})) > ~_ > ~"]"_lit_ >= ometa::concat; OMETA_LOG(macroParameterList);
+	const auto macroParameterList = ~"["_lit_ > ~_ > ometa::action([](auto value){return "auto "_tree_;}) > identifier > ~_ > *(~","_lit_ > ~_ > identifier >= ometa::action([](auto value){return ", auto "_tree_ + value;})) > ~_ > ~"]"_lit_ >= ometa::concat; OMETA_LOG(macroParameterList);
 	*macroDefinition = identifier > ~_ > macroParameterList > ~_ > ~":="_lit_ > ~_ > ometa::ptr(expression) > ~_ > ~";"_lit_ >= ometa::action([](auto value){return 
 			"const auto "_tree_ + ometa::pick<0>(value) + " = [=]("_tree_ + ometa::pick<1>(value) + "){return "_tree_ + ometa::pick<2>(value) + ";};"_tree_
 		;}); OMETA_LOG(*macroDefinition);

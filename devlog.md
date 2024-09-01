@@ -11,6 +11,29 @@
 * maybe propagate an ignore_value flag (or maybe not, we might want the side effects)
 * do some projects like a lua, clang and json5 parser, note errors and catch them with awesome eigen error reports
 
+```
+binding := abc:t0 ("+" abc)*:ts;
+binding_ts_0_0 := binding -> {$ts[0]} -> {$0};
+```
+bit ugly that we dont have a syntactically sugary way to use pick on something other than $
+
+
+```
+	primary :=
+		reference
+		//| macroCall
+		| any
+		| epsilon
+```
+that didn't translate, something must be wrong with whitespace
+
+```
+	macroCall := identifier ~_ ~"[" {'"("'} ~_
+		expression^ ~_ ("," {'" "'} ~_ expression^)*
+		~_ ~"]" {'")"'} -> ometa::concat;
+```
+concat fails on trees within repetitions
+
 ## The Agony of Choice
 
 First I implemented the prioritized choice so that `A | B | C` returns a `std::variant<TypeA, TypeB, TypeC>`. The choice factory became huge and ugly, mainly but not only because it should return `std::variant<TypeA, TypeB, TypeC>` instead of `std::variant<std::variant<TypeA, TypeB>, TypeC>`. However, the idiomatic way to deal with variants is to dispatch on them with `std::visit`, then you might as well handle each option right away before merging them with `|`:

@@ -78,71 +78,62 @@ int main() {
 	EXPECT(zeroOrMore_0.parse("abcdef"));
 	EXPECT(zeroOrMore_0.parse("def"));
 	EXPECT(not zeroOrMore.parse("XXX"));
-	// auto zom = *abc > def;
-	// assert(zom.parse("abcabcdef"));
-	// assert(zom.parse("abcabcdef")->pick<0>().size() == 2);
-	// assert(zom.parse("abcabcdef")->pick<0>()[1] == "abc");
-	// assert(zom.parse("abcabcdef")->pick<0>().pick<1>() == "abc");
-	// assert(zom.parse("abcdef"));
-	// assert(zom.parse("def"));
-	// assert(not zom.parse("XXX"));
 
-	// auto oom = +abc > def;
-	// assert(oom.parse("abcabcdef"));
-	// assert(oom.parse("abcdef"));
-	// assert(not oom.parse("def"));
-	// assert(not oom.parse("XXX"));
+	oneOrMore := abc+ def;
+	EXPECT(oneOrMore.parse("abcabcdef"));
+	EXPECT(oneOrMore.parse("abcdef"));
+	EXPECT(not oneOrMore.parse("def"));
+	EXPECT(not oneOrMore.parse("XXX"));
 
-	// auto cap = capture(oom);
-	// assert(cap.parse("abcabcdef---") == "abcabcdef");
+	capture := <abc+ def>;
+	EXPECT(capture.parse("abcabcdef---") == "abcabcdef");
 
-	// auto act1 = action([](auto matched) {
-	// 	assert(matched == ignore);
-	// 	return 0;
-	// });
-	// assert(*act1.parse("abc") == 0);
+	actionWithoutInput := {
+		EXPECT($ == ometa::ignore);
+		return 123;
+	};
+	EXPECT(actionWithoutInput.parse("abc") == 123);
 
-	// auto act2 = action([](auto matched) {
-	// 	assert(matched == "abc");
-	// 	return 123;
-	// });	
-	// assert(*(abc >= act2).parse("abc") == 123);
+	actionWithInput := abc -> {
+		EXPECT($ == "abc");
+		return 456;
+	};
+	EXPECT(actionWithInput.parse("abc") == 456);
 
-	// auto prd = predicate([](auto matched) {
-	// 	assert(matched == ignore);
-	// 	return true;
-	// });
-	// assert(prd.parse("abc"));
+	predicateWithoutInput := {?
+		EXPECT($ == ometa::ignore);
+		return true;
+	};
+	EXPECT(predicateWithoutInput.parse("abc"));
 
-	// auto prd1 = abc > predicate([](auto matched) {
-	// 	assert(*matched == "abc");
-	// 	return true;
-	// });
+	predicateWithInput := abc {?
+		EXPECT($ == "abc");
+		return true;
+	};
+	EXPECT(predicateWithInput.parse("abc"));
+	EXPECT(predicateWithInput.parse("abc") == "abc");
 
-	// assert(*prd1.parse("abc") == "abc");
+	rejectingPredicate := abc {?
+		EXPECT(not $);
+		return false;
+	};
+	EXPECT(not rejectingPredicate.parse("XXX"));
 
-	// auto prd0 = abc > predicate([](auto matched) {
-	// 	assert(not matched);
-	// 	return false;
-	// });
-	// assert(not prd0.parse("XXX"));
+	binding := abc:t0 ("+" abc)*:ts;
+	binding_t0 := binding -> {$t0};
+	EXPECT(binding_t0.parse("abc+abc+abc") == "abc");
+	binding_ts_0_0 := binding -> {$ts[0]} -> {$0};
+	EXPECT(binding_ts_0_0.parse("abc+abc+abc") == "+");
 
-	// auto list = abc.as<"t0">() > (*("+"_lit_ > abc)).as<"ts">();
-	// assert(list.parse("abc+abc+abc")->pick<"t0">() == "abc");
-	// assert(list.parse("abc+abc+abc")->pick<"ts">()[0].pick<0>() == "+");
+	recursion^ : {std::string_view} -> {ometa::ViewTree<std::string_view>};
+	recursion^ => abc | <"(" recursion^ ")">;
+	EXPECT(recursion->parse("abc") == "abc");
+	EXPECT(recursion->parse("(abc)") == "(abc)");
+	EXPECT(recursion->parse("((abc))") == "((abc))");
 
-	// auto expression = declare<std::string_view, ViewTree<std::string_view>>();
-
-	// *expression = capture("atom"_lit_)
-	// 	| capture("("_lit_ > ptr(expression) > ")"_lit_);
-
-	// assert(*expression->parse("atom") == "atom");
-	// assert(*expression->parse("(atom)") == "(atom)");
-	// assert(*expression->parse("((atom))") == "((atom))");
-
-	// auto paramd = [=](auto x, auto y) { return abc > x > y; };
-	// auto paramTest = paramd(def, ghi);
-	// assert(paramTest.parse("abcdefghi"));
+	macro[x, y, z] := z y x -> ometa::concat;
+	parametrizedMacro := macro[abc, def, ghi];
+	EXPECT(parametrizedMacro.parse("ghidefabc") == "ghidefabc");
 
 	std::cout << "done!\n";
 

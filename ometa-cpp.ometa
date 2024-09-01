@@ -116,7 +116,7 @@ int main(int argc, char* argv[]) {
 	parameterizedAction := ~"->" {'" >= "'} ~_ action -> ometa::concat;
 
 	macroCall := identifier ~_ ~"[" {'"("'} ~_
-		expression^ ~_ (~"," ~_ expression^)*
+		expression^ ~_ ("," {'" "'} ~_ expression^ -> ometa::concat)*
 		~_ ~"]" {'")"'} -> ometa::concat;
 
 	primary :=
@@ -176,7 +176,7 @@ int main(int argc, char* argv[]) {
 		-> {'"*"' + $0 + '" = "' + $1 + '"; OMETA_LOG(*"' + $0 + '");"'};
 
 	macroParameterList := ~"[" ~_ {'"auto "'} identifier ~_
-		(~"," ~_ identifier -> {'"auto "' + $})* ~_ ~"]"
+		(~"," ~_ identifier -> {'", auto "' + $})* ~_ ~"]"
 		-> ometa::concat;
 	macroDefinition^ => identifier ~_ macroParameterList ~_ ~":=" ~_ expression^ ~_ ~";"
 		-> {

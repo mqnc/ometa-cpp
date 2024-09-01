@@ -57,7 +57,7 @@ public:
 	}
 
 	template <Tag tag>
-	auto as() {
+	auto as() const{
 
 		auto parseFn = [this]<forward_range TSource>
 			(
