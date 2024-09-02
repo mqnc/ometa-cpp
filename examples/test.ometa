@@ -1,18 +1,10 @@
 
 #include "src/ometa.h"
 
-#include <cassert>
-#include <iostream>
-#include <sstream>
-
-#include <map>
-
 #define EXPECT(condition) \
 	if(!(condition)) { \
-		std::cerr << "line " << __LINE__ << " failed: " #condition; \
+		std::cerr << "line " << __LINE__ << " failed: " #condition << "\n"; \
 	}
-
-void getType(auto x);
 
 int main() {
 
@@ -134,6 +126,21 @@ int main() {
 	macro[x, y, z] := z y x -> ometa::concat;
 	parametrizedMacro := macro[abc, def, ghi];
 	EXPECT(parametrizedMacro.parse("ghidefabc") == "ghidefabc");
+
+	std::string src = "0123456789abcdefghijklmnopqrstuvwxyz";
+	auto tree1 = ometa::ViewTree(ometa::View(std::string_view(src).substr(5, 5)));
+	auto tree2 = ometa::ViewTree(ometa::View(std::string_view(src).substr(20, 3)));
+	auto tree3 = ometa::ViewTree(ometa::View(std::string_view(src).substr(30, 1)));
+	auto tree4 = ometa::ViewTree(ometa::View(std::string_view(src).substr(0, 0)));
+	auto tree1234 = tree1 + tree2 + tree3 + tree4;
+	EXPECT(tree1234 == "56789klmu");
+
+	std::vector<int> intSrc = {0, 1, 2, 3, 4, 5, 6, 7, 8, 9};
+	auto lit123 = ometa::literal(std::vector<int>{1, 2, 3});
+	auto lit567 = ometa::literal(std::vector<int>{5, 6, 7});
+	lit_123_567 := . lit123* . lit567+ -> ometa::concat;
+	auto expected_result = std::vector<int>{0, 1, 2, 3, 4, 5, 6, 7};
+	EXPECT(lit_123_567.parse(intSrc) == expected_result);
 
 	std::cout << "done!\n";
 

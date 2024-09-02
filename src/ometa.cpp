@@ -1,6 +1,6 @@
 
 
-#include "src/ometa.h"
+#include "ometa.h"
 
 #include <cassert>
 #include <iostream>

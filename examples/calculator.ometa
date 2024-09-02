@@ -1,0 +1,60 @@
+
+#include "src/ometa.h"
+#include <cmath>
+
+int main(int argc, char* argv[]) {
+
+	if (argc != 2) {
+		std::cout << "usage: " << argv[0] << " 5+4*3^(2+1-0)\n";
+		return EXIT_FAILURE;
+	}
+
+	auto parseInt = ometa::action([](const auto& input) {
+		std::string str;
+		str.reserve(input.size());
+		for(auto c : input) {
+			str.push_back(c);
+		}
+		return std::stoi(std::string(str));
+	});
+
+	number := <("+" | "-")? {'0'}..{'9'}+> -> parseInt;
+
+	expression^ : {std::string_view} -> {int};
+	atom := number | ~"(" expression^ ~")";
+
+	auto rfoldPower = ometa::rfold([](auto prev, auto op, auto temp) {
+		auto result = pow(prev, temp);
+		std::cout << prev << op << temp << "=" << result << "\n";
+		return result;
+	});
+
+	power := atom ("^" atom)* -> rfoldPower;
+
+	auto lfoldProduct = ometa::lfold([](auto temp, auto op, auto next) {
+		auto result = op == "*" ? temp * next : temp / next;
+		std::cout << temp << op << next << "=" << result << "\n";
+		return result;
+	});
+
+	product := power (("*" | "/") power)* -> lfoldProduct;
+
+	auto lfoldSum = ometa::lfold([](auto temp, auto op, auto next) {
+		auto result = op == "+" ? temp + next : temp - next;
+		std::cout << temp << op << next << "=" << result << "\n";
+		return result;
+	});
+
+	sum := product (("+" | "-") product)* -> lfoldSum;
+
+	expression^ => sum;
+
+	auto result = expression->parse(argv[1]);
+
+	if(result) {
+		std::cout << argv[1] << "=" << *result << "\n";
+		return EXIT_SUCCESS;
+	} else {
+		return EXIT_FAILURE;
+	}
+}

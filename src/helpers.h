@@ -63,8 +63,8 @@ auto insert = action([](auto value) {
 	return epsilon() >= constant(value);
 });
 
-auto lfold = action([](auto combine) {
-	return [combine](auto value) {
+auto lfold = [](auto combine) {
+	return action([combine](auto value) {
 
 		auto temp = value.template pick<0>();
 		auto steps = value.template pick<1>();
@@ -76,11 +76,11 @@ auto lfold = action([](auto combine) {
 		}
 
 		return temp;
-	};
-});
+	});
+};
 
-auto rfold = action([](auto combine) {
-	return [combine](auto value) {
+auto rfold = [](auto combine) {
+	return action([combine](auto value) {
 
 		auto steps = value.template pick<1>();
 		if (steps.size() == 0) {
@@ -100,8 +100,8 @@ auto rfold = action([](auto combine) {
 		temp = combine(prev, op, temp);
 
 		return temp;
-	};
-});
+	});
+};
 
 }
 
