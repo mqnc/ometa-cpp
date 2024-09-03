@@ -3,11 +3,11 @@
 
 Compiler compiler for C++, inspired by [OMeta](https://en.wikipedia.org/wiki/OMeta). Recursive descent [PEG](https://en.wikipedia.org/wiki/Parsing_expression_grammar) parser with extensions for generating output.
 
-Directly embed your parsing rules into C++, transpile with `ometa` to less pretty but pure C++ and then compile it with a proper C++ compiler.
+Directly embed your parsing rules into C++, transpile with `ometa-cpp` to less pretty but pure C++ and then compile it with a proper C++ compiler.
 
 ## Project Status
 
-Still very much in development, barely self-hosting.
+Still very much in development, self-hosting.
 
 ## Installation
 
@@ -19,9 +19,8 @@ cd ometa-cpp
 mkdir build
 cd build
 cmake ..
-make ometa-cpp
-./ometa-cpp ../ometa-cpp.ometa ../self-transpiled.cpp
-diff -s ../ometa-cpp.ometa.cpp ../self-transpiled.cpp
+make all
+make verify-self-transpilation
 ```
 
 ## Why not just use XYZ?
@@ -87,10 +86,10 @@ expression^ : {std::string} -> {int}; // forward declaration
 bracedExpression := "(" expression^ ")"; // reference
 expression^ => primary | bracedExpression; // definition
 
-// bindings (todo):
+// bindings:
 myBinding := firstThing:x secondThing:y -> {$x + $y};
 
-// macros (todo):
+// macros:
 myList[thing, sep] := thing (sep thing)*;
 myAddition := myList[number, plus];
 ```
@@ -98,7 +97,7 @@ myAddition := myList[number, plus];
 * things in `{curly braces}` are written in C++ (with some extensions like `$` for `value`);
 * `{curly braces}` code can either be a single statement or a complete function body; the parser assumes the former if there is no `return` and no `;` inside (so lambdae cannot appear in the single statement notation).
 * all alternatives in a prioritized choice must return the same type
-* see `ometa-cpp.ometa` for details, it describes itself
+* see `ometa.ometa` for details, it describes itself
 
 ## Contribute
 
