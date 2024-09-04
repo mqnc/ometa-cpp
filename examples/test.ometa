@@ -1,5 +1,5 @@
 
-#include "src/ometa.h"
+#include "ometa.h"
 
 #define EXPECT(condition) \
 	if(!(condition)) { \
