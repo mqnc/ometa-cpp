@@ -26,7 +26,7 @@ auto predicate(P fn) {
 			// we defer the instantiation of this call until TSource is known
 			// so the compiler doesn't complain if fn() cannot handle ignore
 			// but we actually never call it with ignore
-			return fn(defer<TSource, ignore>)
+			return fn(defer<TSource, ignore>, ctx)
 				? makeMaybeMatch(ignore, src) : fail;
 		};
 
@@ -44,7 +44,7 @@ auto parameterizedPredicate(T child, Predicate<P, F> pred) {
 
 			auto result = child.parseOn(src, ctx);
 
-			return pred.fn(unwrap(result)) ? result : fail;
+			return pred.fn(unwrap(result), ctx) ? result : fail;
 		};
 
 	return Parser(parseFn);

@@ -26,7 +26,7 @@ auto action(A fn) {
 			// we defer the instantiation of this call until TSource is known
 			// so the compiler doesn't complain if fn() cannot handle ignore
 			// but we actually never call it with ignore
-			return makeMaybeMatch(fn(defer<TSource, ignore>), src);
+			return makeMaybeMatch(fn(defer<TSource, ignore>, ctx), src);
 		};
 
 	return Action(fn, parseFn);
@@ -44,7 +44,7 @@ auto parameterizedAction(T child, Action<A, F> act) {
 			auto result = child.parseOn(src, ctx);
 
 			return result.has_value() ?
-				makeMaybeMatch(act.fn(result->value), result->next)
+				makeMaybeMatch(act.fn(result->value, ctx), result->next)
 				: fail;
 		};
 

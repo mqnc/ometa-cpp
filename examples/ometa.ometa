@@ -106,12 +106,12 @@ int main(int argc, char* argv[]) {
 
 	action :=
 		identifier
-		| bracedCppExpression -> {'"ometa::action([](auto value){return "' + $ + '";})"'}
-		| bracedCppCode -> {'"ometa::action([](auto value){"' + $ + '"})"'};
+		| bracedCppExpression -> {'"ometa::action([](auto value, const auto& context){return "' + $ + '";})"'}
+		| bracedCppCode -> {'"ometa::action([](auto value, const auto& context){"' + $ + '"})"'};
 	predicate :=
 		identifier
-		| predicateCppExpression -> {'"ometa::predicate([](auto value){return "' + $ + '";})"'}
-		| predicateCppCode -> {'"ometa::predicate([](auto value){"' + $ + '"})"'};
+		| predicateCppExpression -> {'"ometa::predicate([](auto value, const auto& context){return "' + $ + '";})"'}
+		| predicateCppCode -> {'"ometa::predicate([](auto value, const auto& context){"' + $ + '"})"'};
 
 	parameterizedAction := ~"->" {'" >= "'} ~_ action -> ometa::concat;
 
