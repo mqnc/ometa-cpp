@@ -21,7 +21,7 @@ auto action(A fn) {
 	auto parseFn = [fn]<forward_range TSource>
 		(
 			View<TSource> src,
-			auto ctx
+			const auto& ctx
 		) {
 			// we defer the instantiation of this call until TSource is known
 			// so the compiler doesn't complain if fn() cannot handle ignore
@@ -38,7 +38,7 @@ auto parameterizedAction(T child, Action<A, F> act) {
 	auto parseFn = [child, act]<forward_range TSource>
 		(
 			View<TSource> src,
-			auto ctx
+			const auto& ctx
 		) {
 
 			auto result = child.parseOn(src, ctx);

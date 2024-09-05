@@ -19,7 +19,7 @@ auto repetition(T child, size_t min, size_t max) {
 	auto parseFn = [child, min, max]<forward_range TSource>
 		(
 			View<TSource> src,
-			auto ctx
+			const auto& ctx
 		) {
 
 			using return_element_type = decltype(child.parseOn(src, ctx)->value);

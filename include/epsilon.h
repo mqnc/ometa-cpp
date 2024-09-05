@@ -10,7 +10,7 @@ auto epsilon() {
 	auto parseFn = []<forward_range TSource>
 		(
 			View<TSource> src,
-			auto ctx
+			const auto& ctx
 		) {
 			(void) ctx;
 			return makeMaybeMatch(empty, src);

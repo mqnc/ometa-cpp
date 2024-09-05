@@ -27,7 +27,7 @@ public:
 
 	// to be called internally by parent parsers
 	template <forward_range TSource>
-	auto parseOn(View<TSource> src, auto ctx) const {
+	auto parseOn(View<TSource> src, const auto& ctx) const {
 #ifndef DEBUG_PRINTS
 		return parseFn(src, ctx);
 #else
@@ -62,7 +62,7 @@ public:
 		auto parseFn = [this]<forward_range TSource>
 			(
 				View<TSource> src,
-				auto ctx
+				const auto& ctx
 			) {
 				auto result = this->parseOn(src, ctx);
 				return (result) ?
@@ -81,7 +81,7 @@ public:
 #else
 	auto operator[](std::string name) {
 		auto parseFn = [this]<forward_range TSource>(
-						   View<TSource> src, auto ctx
+						   View<TSource> src, const auto& ctx
 					   ) {
 			return this->parseOn(src, ctx);
 		};

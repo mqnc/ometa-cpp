@@ -23,7 +23,7 @@ auto ptr = []<typename F>(std::shared_ptr<Parser<F>> target) {
 	auto parseFn = [target]<forward_range TSource>
 		(
 			View<TSource> src,
-			auto ctx
+			const auto& ctx
 		) {
 			return target->parseOn(src, ctx);
 		};

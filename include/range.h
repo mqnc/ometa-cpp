@@ -11,7 +11,7 @@ auto range(T1 a, T2 b) {
 	auto parseFn = [a, b]<forward_range TSource>
 		(
 			View<TSource> src,
-			auto ctx
+			const auto& ctx
 		) {
 			(void) ctx;
 			return a <= *src.begin() && *src.begin() <= b ?
