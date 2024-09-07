@@ -14,6 +14,7 @@
 #include "valuetree.h"
 #include "predicate.h"
 #include "action.h"
+#include "context.h"
 #include "recursion.h"
 #include "helpers.h"
 #include "viewtree.h"
