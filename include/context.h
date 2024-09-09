@@ -5,7 +5,8 @@
 #include <vector>
 #include <utility>
 #include <type_traits>
-#include "taggedtuple.h"
+#include <tuple>
+#include "tag.h"
 
 namespace ometa {
 
@@ -53,15 +54,16 @@ public:
 	}
 
 	const V& at(const K& key) const {
-		const V& bucket = entries.at(key);
-		return bucket.back();
+		const auto& bucket = entries.at(key);
+		return bucket.top();
 	}
 
 	size_t getVersion() const { return order.size(); }
 
 	void backtrack(size_t targetVersion) {
 		while (getVersion() > targetVersion) {
-			const auto& key = order.pop();
+			const auto& key = order.top();
+			order.pop();
 			entries[key].pop();
 			if (entries[key].size() == 0) {
 				entries.erase(key);
@@ -71,54 +73,57 @@ public:
 
 };
 
-template <typename... TaggedValues>
-class Context {
-	std::tuple<TaggedValues...> data;
-
-    template <size_t Index, Tag T, typename TupleElement>
-    auto& getTaggedHelper(TupleElement& elem) {
-        if constexpr (T == TupleElement::getTag()) {
-            return elem.value;
-        } else {
-            return getTaggedHelper<Index + 1, T>(std::get<Index + 1>(data));
-        }
-    }
-
-	template <size_t Index = 0, typename Tuple, typename VersionTuple>
-	void getVersionHelper(const Tuple& data, VersionTuple& versions) const {
-		if constexpr (Index < std::tuple_size_v<Tuple>) {
-			std::get<Index>(versions) = std::get<Index>(data)->getVersion();
-			getVersionHelper<Index + 1>(data, versions);
-		}
-	}
-
-	template <size_t Index = 0, typename Tuple, typename VersionTuple>
-	void backtrackHelper(Tuple& data, const VersionTuple& versions) {
-		if constexpr (Index < std::tuple_size_v<Tuple>) {
-			std::get<Index>(data).backtrack(std::get<Index>(versions));
-			backtrackHelper<Index + 1>(data, versions);
-		}
-	}
-
+template <typename... Members>
+class Context: public Members... {
 public:
-	Context(TaggedValues... values): data(values...) {}
-
-	using VersionType = std::tuple<decltype(std::declval<TaggedValues>()->getVersion())...>;
-
-    template <Tag T>
-    auto& get() {
-        return getTaggedHelper<0, T>(std::get<0>(data));
-    }
-
-	auto getVersion() const {
-		VersionType versions;
-		getVersionHelper(data, versions);
-		return versions;
-	}
-
-	void backtrack(const VersionType& versions) {
-		backtrackHelper(data, versions);
-	}
+	Context(Members... members): Members(members)... {}
 };
+
+template <Tag tag, typename T>
+decltype(auto) get(Tagged<tag, T>& m) {
+	return (m.value);
+}
+
+template <typename F, typename... Members>
+constexpr decltype(auto) apply(
+	F f, Context<Members...>& ctx
+) {
+	return std::make_tuple(
+		f(static_cast<Members&>(ctx))...
+	);
+}
+
+template <typename F, typename... Members, typename... Ts, std::size_t... Is>
+constexpr void invoke_impl(
+    F f, Context<Members...>& ctx, std::tuple<Ts...>& args, std::index_sequence<Is...>
+) {
+    (f(static_cast<Members&>(ctx), std::get<Is>(args)), ...);
+}
+
+template <typename F, typename... Members, typename... Ts>
+constexpr void invoke(
+    F f, Context<Members...>& ctx, std::tuple<Ts...>& args
+) {
+    invoke_impl(f, ctx, args, std::index_sequence_for<Ts...>{});
+}
+
+auto getVersion(auto& ctx) {
+	return apply(
+		[](const auto& field) {
+			return field->getVersion();
+		},
+		ctx
+	);
+}
+
+void backtrack(auto& ctx, auto& version) {
+	invoke(
+		[](auto& field, auto targetVersion) {
+			field->backtrack(targetVersion);
+		}, 
+		ctx,
+		version
+	);
+}
 
 }
