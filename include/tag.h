@@ -41,6 +41,10 @@ struct Tagged {
 	const TValue* operator->() const { return &value; }
 	TValue& operator*() { return value; }
 	const TValue& operator*() const { return value; }
+	auto& operator=(const TValue& newValue) {
+		value = newValue;
+		return *this;
+	}
 };
 
 template <Tag tag, typename TValue>

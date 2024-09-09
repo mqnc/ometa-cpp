@@ -96,3 +96,5 @@ add_custom_target(verify-update
 		${PROJECT_BINARY_DIR}/transpiled/new_parser_self_transpiled.ometa.cpp
 )
 set_target_properties(verify-update PROPERTIES EXCLUDE_FROM_ALL TRUE)
+
+add_executable(playground playground.cpp)

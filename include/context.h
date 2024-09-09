@@ -1,79 +1,124 @@
 #pragma once
 
-#include "parser.h"
-#include "defer.h"
+#include <unordered_map>
+#include <stack>
+#include <vector>
+#include <utility>
+#include <type_traits>
+#include "taggedtuple.h"
 
 namespace ometa {
 
-template <typename C, typename F>
-struct ContextModifier: public Parser<F> {
-	C fn;
-
-	ContextModifier(C fn, F parseFn):
-		fn {fn},
-		Parser<F> {parseFn}
-	{}
+template <typename T>
+class ContextValue {
+	T value;
+public:
+	void operator=(const T& newValue) { value = newValue; }
+	const T& operator*() const { return value; }
+	size_t getVersion() const { return value; }
+	void backtrack(T targetVersion) { value = targetVersion; }
 };
 
-template <typename C>
-auto contextModifier(C fn) {
+template <typename T>
+class LoggingContextValue {
+	size_t version = 0;
+	std::stack<T, std::vector<T>> value;
+public:
+	void operator=(const T& newValue) {
+		value.push(newValue);
+		version++;
+	}
+	const T& operator*() const { return value.top(); }
+	size_t getVersion() const { return version; }
+	void backtrack(size_t targetVersion) {
+		while (version > targetVersion) {
+			value.pop();
+			version--;
+		}
+	}
+};
 
-	auto parseFn = []<forward_range TSource>
-		(
-			View<TSource> src,
-			const auto& ctx
-		) {
-			(void) ctx;
-			return makeMaybeMatch(ignore, src);
-		};
+template <typename K, typename V>
+class ContextTable {
+	std::unordered_map<K, std::stack<V, std::vector<V>>> entries;
+	std::stack<K> order;
 
-	return ContextModifier(fn, parseFn);
-}
+public:
 
-template <typename T, typename C, typename F>
-auto parametrizedContextModifier(T child, ContextModifier<C, F> mod) {
+	void insert(const std::pair<K, V>& entry) {
+		const auto& [key, value] = entry;
+		auto [bucket, _] = entries.insert({key, {}}); // does not overwrite an existing entry
+		bucket->second.push(value);
+		order.push(key);
+	}
 
-	auto parseFn = [child, mod]<forward_range TSource>
-		(
-			View<TSource> src,
-			const auto& ctx
-		) {
-			const auto newCtx = mod.fn(src, ctx);
+	const V& at(const K& key) const {
+		const V& bucket = entries.at(key);
+		return bucket.back();
+	}
 
-			return child.parseOn(src, newCtx);
-		};
+	size_t getVersion() const { return order.size(); }
 
-	return Parser(parseFn);
-}
+	void backtrack(size_t targetVersion) {
+		while (getVersion() > targetVersion) {
+			const auto& key = order.pop();
+			entries[key].pop();
+			if (entries[key].size() == 0) {
+				entries.erase(key);
+			}
+		}
+	}
 
-template <typename C, typename F1, typename F2>
-auto operator<=(ContextModifier<C, F2> mod, Parser<F1> parser) {
-	return parametrizedContextModifier(parser, mod);
-}
+};
 
+template <typename... TaggedValues>
+class Context {
+	std::tuple<TaggedValues...> data;
 
-template <typename T1, typename T2>
-auto valueToContext(T1 child1, T2 child2) {
+    template <size_t Index, Tag T, typename TupleElement>
+    auto& getTaggedHelper(TupleElement& elem) {
+        if constexpr (T == TupleElement::getTag()) {
+            return elem.value;
+        } else {
+            return getTaggedHelper<Index + 1, T>(std::get<Index + 1>(data));
+        }
+    }
 
-	auto parseFn = [child1, child2]<forward_range TSource>
-		(
-			View<TSource> src,
-			const auto& ctx
-		) {
-			auto result1 = child1.parseOn(src, ctx);
-			const auto& newCtx = result1->value;
-			auto result2 = child2.parseOn(result1->next, newCtx);
-			return result2->value
-		};
+	template <size_t Index = 0, typename Tuple, typename VersionTuple>
+	void getVersionHelper(const Tuple& data, VersionTuple& versions) const {
+		if constexpr (Index < std::tuple_size_v<Tuple>) {
+			std::get<Index>(versions) = std::get<Index>(data)->getVersion();
+			getVersionHelper<Index + 1>(data, versions);
+		}
+	}
 
-	return Parser(parseFn);
-}
+	template <size_t Index = 0, typename Tuple, typename VersionTuple>
+	void backtrackHelper(Tuple& data, const VersionTuple& versions) {
+		if constexpr (Index < std::tuple_size_v<Tuple>) {
+			std::get<Index>(data).backtrack(std::get<Index>(versions));
+			backtrackHelper<Index + 1>(data, versions);
+		}
+	}
 
-template <typename F1, typename F2>
-auto operator<(Parser<F1> parser1, Parser<F2> parser2) {
-	return valueToContext(parser1, parser2);
-}
+public:
+	Context(TaggedValues... values): data(values...) {}
 
+	using VersionType = std::tuple<decltype(std::declval<TaggedValues>()->getVersion())...>;
 
+    template <Tag T>
+    auto& get() {
+        return getTaggedHelper<0, T>(std::get<0>(data));
+    }
+
+	auto getVersion() const {
+		VersionType versions;
+		getVersionHelper(data, versions);
+		return versions;
+	}
+
+	void backtrack(const VersionType& versions) {
+		backtrackHelper(data, versions);
+	}
+};
 
 }

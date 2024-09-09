@@ -1,4 +1,8 @@
 
+# DevLog
+
+I'm gonna write down my trains of thought here so once this project is super famous, people can understand certain decisions. Also so I can understand certain decisions once I pick the project back up after five years of losing interest. The individual thought trains are chronological within themselves but it can happen that a decision that is noted in the middle of one train overthrows a final decision of another train somewhere else (below or above) in the document. So the readme and the test should be the reference. 
+
 ## ToDo
 
 * update readme
@@ -250,3 +254,164 @@ I can also just convert all `"abc"` literals to `ViewTree`s but that also doesn'
 I got it!: `'"abc"'`
 
 I'm still not ultimately satisfied but I and people will have to learn to love it.
+
+## Putting Things into Context
+
+My original thought was: Semantic values are for moving data from child nodes to parent nodes (all the things that the parser eventually spits out) and the context is there for moving data from parent nodes to child nodes (symbol table, line and column, etc.). So I have implemented nodes that let you modify the context. However, I have made the context a const reference, so the context modifier needs to pass on a new context (that can point to the old context). This way, it cannot happen that a node edits the context and that change is not reverted in case of backtracking. All clean and proper and functional and beautiful and Haskellesque. Instead of modifying context, data should be passed back up through values.
+
+However, I have noticed that there was a problem.
+
+Action nodes look like this:
+
+```cpp
+(rule -> action)
+// under the hood, simplified:
+{
+	auto ruleValue = rule.parseOn(src, context);
+	auto actionValue = action(ruleValue, context);
+	return actionValue;
+}
+```
+
+while predicates look like this:
+
+```cpp
+(rule predicate)
+// under the hood, simplified:
+{
+	auto ruleValue = rule.parseOn(src, context);
+	auto success = predicate(ruleValue, context);
+	return success ? result : fail;
+}
+```
+
+and the new context modifier looks like this:
+
+```cpp
+@contextModifier rule // wasn't sure about the syntax yet
+// under the hood, simplified:
+{
+	auto newContext = contextModifier(src, parentContext);
+	auto ruleValue = rule.parse(src, newContext);
+	return ruleValue;
+}
+```
+
+See it? There is no way for values to influence the context.
+
+Then I was thinking, do we actually need contexts? Let's say we want to parse XML where the closing tag depends on the opening tag. This can still be done with values alone:
+
+```cpp
+block := openingTag:o block closingTag:c {? $o==$c}
+// heavily simplified, the recursion and the identical tagging of nested blocks need to be taken care of
+```
+
+But I think it would definitely be much more complicated or maybe impossible to implement symbol tables like this.
+
+My next idea was to join the values of earlier nodes in a sequence with the context, meaning:
+
+```cpp
+A B C
+// under the hood, simplified:
+{
+	auto AValue = A.parseOn(src, parentContext);
+	auto BContext = join(parentContext, AValue);
+	auto BValue = B.parseOn(src, BContext); // actually src should be src + what A consumed
+	auto CContext = join(BContext, BValue);
+	auto CValue = C.parseOn(src, CContext);
+	return CValue;
+}
+```
+
+However, this also changes the type of the context which has to be considered when declaring recursive rules and later defining them. Complicated and annoying, I probably already lose half the user base because this has to be considered for the values.
+
+Then I thought, maybe we can have a special magic operator that turns a value into context:
+
+```cpp
+A @ B // wasn't sure about the syntax yet
+// hood:
+{
+	auto AValue = A.parseOn(src, parentContext);
+	auto BContext = AValue;
+	auto BValue = B.parseOn(src, BContext);
+	return BValue;
+}
+```
+
+Buuut can we have symbol tables now? Lettuce see. We want to be able to pasrse:
+```cpp
+a=1
+b=2
+c=a+b
+```
+and throw if we encounter an unknown variable.
+
+```cpp
+statement := identifier "=" term ("+" term)* "\n"
+term := number | knownIdentifier
+code := statement*
+```
+
+`knownIdentifier` and hence `term` and hence `statement` need all previous identifiers handed to them via context. Where do we put the magic operator? We need to squeeze it into the repetition of statement...
+
+```cpp
+code := statement @ statement @ statement ...
+     := (statement @)* ?!
+```
+
+So this either needs to be done by default in repetition or there has to be an extra repetition, maybe `@*` and also `@+`? So then context becomes the parent context joined with a deque of all previous values?
+
+It all feels awkward and also causes more type juggling.
+
+Maybe it would be better to actually allow modifying the context. Then it can also have the same type across all rules. However, a mutable context does not mix well with backtracking. Imagine the following contrived language:
+
+```cpp
+a=1
+b=2
+c=3 <- ignore
+d=4
+```
+
+which we parse with the following grammar with a map as context:
+
+```cpp
+assignment := identifier:i "=" number:n -> {context[$i] = $n} "\n"
+commentMarker := " <- ignore\n"
+comment := (!commentMarker .)* commentMarker
+line := assignment | comment
+code := line*
+```
+
+The problem is that the `assignment` rule mutates the context, then gets to the point where it expects a line break and then maybe fails and backtracks (as with line 3), then checking the comment branch. But the change to the context remains. This can be prevented by making a backup of the context before every rule invokation and reverting to it in case of backtracking. This can even be done automatically in the parser parent class:
+
+```cpp
+	auto parseOn(src, auto& ctx) const {
+		auto backup = ctx.copy();
+		auto result = parseFn(src, ctx);
+		if(! result.has_value()){
+			ctx = backup;
+		}
+		return result;
+	}
+```
+
+However, this would require a metric ton of copying (0.984207 imperial tons). Another option would be to leave this to the discipline of the programmer, which feels very C++ (in a bad way) but most languages are constructed in a way that does not make much backtracking necessary, so this is probably likely not a very problematic issue maybe. Then again, having a parser that allows for infinite backtracking but then discouraging it has a bit C preprocessor vibes (in a bad way).
+
+Or maybe we create yet another class which accumulates changes to the context and either applies them or ignores them, but this would require iterating through the whole context log everytime we require its current actual state. On the other hand, would it be much different with immutable contexts? It wouldn't. The idea of immutable context pointing to a chain of parent contexts is essentially also a linked list with all its O(n) indexing performance.
+
+Here's the new idea after a night of "sleep": A context is a kind of multimap where an entry also knows its insertion index (i.e. the size of the multimap before the entry was inserted). The key is for instance the symbol name. Backtracking now works like this:
+
+```cpp
+	auto parseOn(src, auto& ctx) const {
+		size_t contextSizeWhenThisNodeWasInvoked = ctx.size();
+		auto result = parseFn(src, ctx);
+		if(! result.has_value()){
+			ctx.eraseAllElementsWithIndexAbove(contextSizeWhenThisNodeWasInvoked);
+		}
+		return result;
+	}
+```
+
+All children of this node may only add new entries to the context (although an entry can also instruct to regard this symbol as deleted). When reading in the context, only the latest entry of a symbol is considered.
+
+What is the best way to implement this? `multimap` or `unordered_multimap` are not really usable since `find()` returns a random element with a key, not the last one and also `erase()` erases all elements with a key. We can use `unordered_map<Key, stack<Entry>>` and store the insertion order in an extra `stack<Key>`. Now, if we want to backtrack, we keep popping keys from the order stack and from the corresponding symbol stack. This is it! This feels good! Assuming that entries are usually not overwritten and backtracking will usually not remove more than one element, this should be very efficient. 
