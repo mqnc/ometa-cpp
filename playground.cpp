@@ -16,7 +16,7 @@ int main() {
 	get<"column">(myContext) = 1001;
 	get<"symbols">(myContext).insert({"a", "10001"});
 
-	auto version = getVersion(myContext);
+	auto version = myContext.backup();
 
 	std::cout << "\nInitial versions:" << std::endl;
 	std::cout << *get<"line">(myContext) << std::endl;
@@ -35,7 +35,7 @@ int main() {
 	std::cout << get<"symbols">(myContext).at("a") << std::endl;
 	std::cout << get<"symbols">(myContext).at("b") << std::endl;
 
-	backtrack(myContext, version);
+	myContext.backtrack(version);
 
 	std::cout << "\nrestored versions:" << std::endl;
 	std::cout << *get<"line">(myContext) << std::endl;

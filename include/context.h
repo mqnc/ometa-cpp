@@ -7,8 +7,19 @@
 #include <type_traits>
 #include <tuple>
 #include "tag.h"
+#include "empty.h"
 
 namespace ometa {
+
+template <typename T>
+class UnsafeContextValue {
+	T value;
+public:
+	void operator=(const T& newValue) { value = newValue; }
+	const T& operator*() const { return value; }
+	Empty backup() const {}
+	void backtrack(Empty) {}
+};
 
 template <typename T>
 class ContextValue {
@@ -16,7 +27,7 @@ class ContextValue {
 public:
 	void operator=(const T& newValue) { value = newValue; }
 	const T& operator*() const { return value; }
-	size_t getVersion() const { return value; }
+	size_t backup() const { return value; }
 	void backtrack(T targetVersion) { value = targetVersion; }
 };
 
@@ -30,7 +41,7 @@ public:
 		version++;
 	}
 	const T& operator*() const { return value.top(); }
-	size_t getVersion() const { return version; }
+	size_t backup() const { return version; }
 	void backtrack(size_t targetVersion) {
 		while (version > targetVersion) {
 			value.pop();
@@ -58,10 +69,10 @@ public:
 		return bucket.top();
 	}
 
-	size_t getVersion() const { return order.size(); }
+	size_t backup() const { return order.size(); }
 
 	void backtrack(size_t targetVersion) {
-		while (getVersion() > targetVersion) {
+		while (backup() > targetVersion) {
 			const auto& key = order.top();
 			order.pop();
 			entries[key].pop();
@@ -74,15 +85,9 @@ public:
 };
 
 template <typename... Members>
-class Context: public Members... {
-public:
-	Context(Members... members): Members(members)... {}
-};
+class Context;
 
-template <Tag tag, typename T>
-decltype(auto) get(Tagged<tag, T>& m) {
-	return (m.value);
-}
+namespace detail{
 
 template <typename F, typename... Members>
 constexpr decltype(auto) apply(
@@ -107,10 +112,10 @@ constexpr void invoke(
     invoke_impl(f, ctx, args, std::index_sequence_for<Ts...>{});
 }
 
-auto getVersion(auto& ctx) {
+auto backup(auto& ctx) {
 	return apply(
 		[](const auto& field) {
-			return field->getVersion();
+			return field->backup();
 		},
 		ctx
 	);
@@ -124,6 +129,27 @@ void backtrack(auto& ctx, auto& version) {
 		ctx,
 		version
 	);
+}
+
+}
+
+template <typename... Members>
+class Context: public Members... {
+public:
+	Context(Members... members): Members(members)... {}
+
+	auto backup() {
+		return detail::backup(*this);
+	}
+
+	auto backtrack(auto& version) {
+		detail::backtrack(*this, version);
+	}
+};
+
+template <Tag tag, typename T>
+decltype(auto) get(Tagged<tag, T>& m) {
+	return (m.value);
 }
 
 }
