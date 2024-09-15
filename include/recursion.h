@@ -11,9 +11,9 @@ namespace ometa {
 template <typename TSource, typename TValue, typename TContext = Empty>
 auto declare() {
 	return std::make_shared<
-		Parser<std::function<MaybeMatch<TValue, TSource>(View<TSource>, TContext)>>
+		Parser<std::function<MaybeMatch<TValue, TSource>(View<TSource>, TContext&)>>
 	>(
-		[](View<TSource> src, TContext ctx) -> MaybeMatch<TValue, TSource> {
+		[](View<TSource> src, TContext& ctx) -> MaybeMatch<TValue, TSource> {
 			throw std::runtime_error("forward-declared parser not initialized");
 		}
 	);
@@ -23,7 +23,7 @@ auto ptr = []<typename F>(std::shared_ptr<Parser<F>> target) {
 	auto parseFn = [target]<forward_range TSource>
 		(
 			View<TSource> src,
-			const auto& ctx
+			auto& ctx
 		) {
 			return target->parseOn(src, ctx);
 		};

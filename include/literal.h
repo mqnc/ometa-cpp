@@ -14,7 +14,7 @@ auto literal(auto compare) {
 	auto parseFn = [compare]<forward_range TSource>
 		(
 			View<TSource> src,
-			const auto& ctx
+			auto& ctx
 		) {
 			(void) ctx;
 

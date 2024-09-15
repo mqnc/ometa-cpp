@@ -21,7 +21,7 @@ auto predicate(P fn) {
 	auto parseFn = [fn]<forward_range TSource>
 		(
 			View<TSource> src,
-			const auto& ctx
+			auto& ctx
 		) {
 			// we defer the instantiation of this call until TSource is known
 			// so the compiler doesn't complain if fn() cannot handle ignore
@@ -39,7 +39,7 @@ auto parameterizedPredicate(T child, Predicate<P, F> pred) {
 	auto parseFn = [child, pred]<forward_range TSource>
 		(
 			View<TSource> src,
-			const auto& ctx
+			auto& ctx
 		) {
 
 			auto result = child.parseOn(src, ctx);

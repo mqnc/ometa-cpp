@@ -13,20 +13,24 @@ namespace ometa {
 
 template <typename T>
 class UnsafeContextValue {
-	T value;
+	T value{};
 public:
-	void operator=(const T& newValue) { value = newValue; }
-	const T& operator*() const { return value; }
+	UnsafeContextValue() = default;
+	UnsafeContextValue(const T& value): value(value) {}
+	void set(const T& newValue) { value = newValue; }
+	const T& get() const { return value; }
 	Empty backup() const {}
 	void backtrack(Empty) {}
 };
 
 template <typename T>
 class ContextValue {
-	T value;
+	T value{};
 public:
-	void operator=(const T& newValue) { value = newValue; }
-	const T& operator*() const { return value; }
+	ContextValue() = default;
+	ContextValue(const T& value): value(value) {}
+	void set(const T& newValue) { value = newValue; }
+	const T& get() const { return value; }
 	size_t backup() const { return value; }
 	void backtrack(T targetVersion) { value = targetVersion; }
 };
@@ -34,13 +38,15 @@ public:
 template <typename T>
 class LoggingContextValue {
 	size_t version = 0;
-	std::stack<T, std::vector<T>> value;
+	std::stack<T, std::vector<T>> value{};
 public:
-	void operator=(const T& newValue) {
+	LoggingContextValue() = default;
+	LoggingContextValue(const T& value): value({value}) {}
+	void set(const T& newValue) {
 		value.push(newValue);
 		version++;
 	}
-	const T& operator*() const { return value.top(); }
+	const T& get() const { return value.top(); }
 	size_t backup() const { return version; }
 	void backtrack(size_t targetVersion) {
 		while (version > targetVersion) {

@@ -12,6 +12,7 @@ I'm gonna write down my trains of thought here so once this project is super fam
 * handle context
 * error handling
 * UTF8
+* cpp comments
 * maybe propagate an ignore_value flag (or maybe not, we might want the side effects)
 * do some projects like a lua, clang and json5 parser, note errors and catch them with awesome eigen error reports
 

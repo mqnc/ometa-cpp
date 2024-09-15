@@ -5,7 +5,6 @@ int main() {
     using namespace ometa;
 	using namespace std;
 
-
 	auto myContext = Context(
 		makeTagged<"line">(ContextValue<int>{}),
 		makeTagged<"column">(LoggingContextValue<int>{}),

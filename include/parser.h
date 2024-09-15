@@ -14,6 +14,13 @@
 
 namespace ometa {
 
+template <typename T>
+constexpr bool has_backup_method() {
+	return requires(T t) {
+		t.backup();
+	};
+}
+
 template <typename F>
 class Parser {
 public:
@@ -27,26 +34,54 @@ public:
 
 	// to be called internally by parent parsers
 	template <forward_range TSource>
-	auto parseOn(View<TSource> src, const auto& ctx) const {
-#ifndef DEBUG_PRINTS
-		return parseFn(src, ctx);
-#else
-		if (name == "") {
-			return parseFn(src, ctx);
-		}
-		else {
+	auto parseOn(View<TSource> src, auto& ctx) const {
+
+#ifdef DEBUG_PRINTS
+		if (name != "") {
 			log(name, LogEvent::enter, src);
-			auto result = parseFn(src, ctx);
-			auto evt = result ? LogEvent::accept : LogEvent::reject;
-			log(name, evt, src, result->next);
-			return result;
 		}
 #endif
+
+		if constexpr (has_backup_method<decltype(ctx)>()) {
+			auto backup = ctx.backup();
+			auto result = parseFn(src, ctx);
+			if (!result) {
+				ctx.backtrack(backup);
+			}
+#ifdef DEBUG_PRINTS
+			if (name != "") {
+				auto evt = result ? LogEvent::accept : LogEvent::reject;
+				log(name, evt, src, result->next);
+			}
+#endif
+			return result;
+		}
+		else {
+#ifdef DEBUG_PRINTS
+			if (name != "") {
+				auto result = parseFn(src, ctx);
+				auto evt = result ? LogEvent::accept : LogEvent::reject;
+				log(name, evt, src, result->next);
+				return result;
+			}
+			else {
+				return parseFn(src, ctx);
+			}
+#else
+			return parseFn(src, ctx);
+#endif
+		}
+
 	}
 
 	// to be called from the outside to start the parsing process
-	template <typename TCtx = Empty>
-	auto parse(const auto& src, TCtx ctx = empty) const {
+	auto parse(const auto& src) const {
+		auto result = parseOn(View(src), empty);
+		return unwrap(result);
+	}
+
+	template <typename TCtx>
+	auto parse(const auto& src, TCtx& ctx) const {
 		auto result = parseOn(View(src), ctx);
 		return unwrap(result);
 	}
@@ -57,12 +92,12 @@ public:
 	}
 
 	template <Tag tag>
-	auto as() const{
+	auto as() const {
 
 		auto parseFn = [this]<forward_range TSource>
 			(
 				View<TSource> src,
-				const auto& ctx
+				auto& ctx
 			) {
 				auto result = this->parseOn(src, ctx);
 				return (result) ?

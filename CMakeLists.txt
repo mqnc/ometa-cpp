@@ -51,7 +51,7 @@ add_custom_target(verify-self-transpilation ALL
 # -> new-parser-from-old-source
 add_custom_command(
 	OUTPUT ${PROJECT_BINARY_DIR}/transpiled/new_parser_from_old_source.ometa.cpp
-	DEPENDS ometa-cpp
+	DEPENDS ometa-cpp ${PROJECT_SOURCE_DIR}/update/new_parser_from_old_source.ometa
 	COMMAND ${PROJECT_BINARY_DIR}/ometa-cpp
 		${PROJECT_SOURCE_DIR}/update/new_parser_from_old_source.ometa
 		${PROJECT_BINARY_DIR}/transpiled/new_parser_from_old_source.ometa.cpp
@@ -66,7 +66,7 @@ target_include_directories(new-parser-from-old-source PRIVATE ${PROJECT_SOURCE_D
 # -> new-parser-from-new-source
 add_custom_command(
 	OUTPUT ${PROJECT_BINARY_DIR}/transpiled/new_parser_from_new_source.ometa.cpp
-	DEPENDS new-parser-from-old-source
+	DEPENDS new-parser-from-old-source ${PROJECT_SOURCE_DIR}/update/new_parser_from_new_source.ometa
 	COMMAND ${PROJECT_BINARY_DIR}/new-parser-from-old-source
 		${PROJECT_SOURCE_DIR}/update/new_parser_from_new_source.ometa
 		${PROJECT_BINARY_DIR}/transpiled/new_parser_from_new_source.ometa.cpp

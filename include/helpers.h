@@ -27,13 +27,13 @@ inline void writeFile(const std::string& filename, const T& content) {
 }
 
 auto constant = [](auto value) {
-	return action([value](auto, const auto&) {
+	return action([value](auto, auto&) {
 		return value;
 	});
 };
 
 template <size_t i>
-auto select = action([](auto value, const auto&) {
+auto select = action([](auto value, auto&) {
 	return pick<i>(value);
 });
 
@@ -55,16 +55,16 @@ auto concatImpl = [](T value) {
 	}
 };
 
-auto concat = action([]<typename T>(T value, const auto&) {
+auto concat = action([]<typename T>(T value, auto&) {
 	return concatImpl<T>(value);
 });
 
-auto insert = action([](auto value, const auto&) {
+auto insert = action([](auto value, auto&) {
 	return epsilon() >= constant(value);
 });
 
 auto lfold = [](auto combine) {
-	return action([combine](auto value, const auto&) {
+	return action([combine](auto value, auto&) {
 
 		auto temp = value.template pick<0>();
 		auto steps = value.template pick<1>();
@@ -80,7 +80,7 @@ auto lfold = [](auto combine) {
 };
 
 auto rfold = [](auto combine) {
-	return action([combine](auto value, const auto&) {
+	return action([combine](auto value, auto&) {
 
 		auto steps = value.template pick<1>();
 		if (steps.size() == 0) {

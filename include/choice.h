@@ -12,7 +12,7 @@ auto choice(T1 child1, T2 child2) {
 	auto parseFn = [child1, child2]<forward_range TSource>
 		(
 			View<TSource> src,
-			const auto& ctx
+			auto& ctx
 		) {
 			using Result1Type = decltype(child1.parseOn(src, ctx));
 			using Result2Type = decltype(child2.parseOn(src, ctx));
