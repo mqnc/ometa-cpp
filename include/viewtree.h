@@ -5,6 +5,7 @@
 #include <memory>
 #include <array>
 #include <stack>
+#include <string_view>
 
 namespace ometa {
 
@@ -42,6 +43,7 @@ public:
 	}
 
 	class Iterator {
+
 		const ViewTree<TData>* currentViewTree = nullptr;
 		View<TData> currentView;
 		std::stack<const ViewTree<TData>*> stack;
@@ -139,7 +141,7 @@ template <typename TData, typename TOther>
 bool operator==(const ViewTree<TData>& lhs, const TOther& rhs) {
 	if (lhs.size() != rhs.size()) return false;
 	auto it = lhs.begin();
-	for (auto& elem: rhs) {
+	for (const auto& elem: rhs) {
 		if (elem != *it) return false;
 		++it;
 	}
@@ -151,14 +153,27 @@ bool operator==(const ViewTree<TData>& lhs, const char* rhs) {
 	return lhs == std::string_view(rhs);
 }
 
-template <typename TData1, typename TData2>
-bool operator==(const ViewTree<TData1>& lhs, const ViewTree<TData2>& rhs) {
-	return lhs == rhs;
+// template <typename TData1, typename TData2>
+// bool operator==(const ViewTree<TData1>& lhs, const ViewTree<TData2>& rhs) {
+// 	return lhs == rhs;
+// }
+
+// template <typename TOther, typename TData>
+// bool operator==(const TOther& lhs, const ViewTree<TData>& rhs) {
+// 	return rhs == lhs;
+// }
+
 }
 
-template <typename TOther, typename TData>
-bool operator==(const TOther& lhs, const ViewTree<TData>& rhs) {
-	return rhs == lhs;
-}
-
+namespace std {
+	// so a ViewTree<std::string_view> can be a key in a map
+	template<>
+    struct hash<ometa::ViewTree<std::string_view>> {
+        std::size_t operator()(const ometa::ViewTree<std::string_view>& tree) const {
+            std::string s;
+			s.reserve(tree.size());
+			for (const char c : tree){s += c;}
+			return std::hash<std::string>{}(s);
+        }
+    };
 }
