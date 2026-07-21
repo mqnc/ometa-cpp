@@ -5,14 +5,9 @@ I'm gonna write down my trains of thought here so once this project is super fam
 
 ## ToDo
 
-My last action was implementing contexts. It worked in the end but the syntax is still a bit ugly and maybe it's better if it was like this:
+My last action was working on contexts. Check that section.
 
-@ := {
-	variables: string->string;
-	line: int;
-};
-
-or something. Next steps would be to rewrite all the examples using all the new features (mainly bindings and context) and also implement some famous parsers, mainly json, json5, lua5.3 and g++ or clang ast output.
+Next steps would be to rewrite all the examples using all the new features (mainly bindings and context) and also implement some famous parsers, mainly json, json5, lua5.3 and g++ or clang ast output.
 
 * update readme
 * preserve whitespaces
@@ -47,6 +42,28 @@ that didn't translate, something must be wrong with whitespace
 		~_ ~"]" {'")"'} -> ometa::concat;
 ```
 concat fails on trees within repetitions
+
+## Contexts
+
+Contexts are like global storage for a parser. It gets handed down to subparsers and everyone can make changes to it. If the parser backtracks, so will the context. This is implemented via a `snapshot = backup()` and a `backtrack(snapshot)` method on the context classes.
+
+Contexts worked in the end but the syntax is still a bit ugly and maybe it's better if it was like this:
+
+@ := {
+	variables: string->string;
+	line: int;
+};
+
+or something.
+
+I now have the current options for context:
+* PersistentContextValue: a singular value that gets permanently overwritten with every successful parse and does not backtrack
+* ContextValue: a singular value that returns itself upon call to backup() and that resets itself upon call to backtrack()
+* LoggingContextValue: a singular value that contains a stack, pushing new values onto it and popping when backtracking
+* ContextTable: a map of stacks
+* Context: a tuple of other context types
+
+Thing is, why would I ever need a stack embedded inside the context when the parser can store the actual value via snapshot on the actual program stack? Uuuuh, because the table would be much more expensive in terms of storage and copying if I always copied the whole table.
 
 ## The Agony of Choice
 

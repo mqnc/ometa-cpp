@@ -9,7 +9,7 @@ int main(int argc, char* argv[]) {
 		return EXIT_FAILURE;
 	}
 
-	auto parseInt = ometa::action([](const auto& input) {
+	auto parseInt = ometa::action([](const auto& input, const auto& context) {
 		std::string str;
 		str.reserve(input.size());
 		for(auto c : input) {

@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.5)
 project(ometacpp)
 set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_COMPILER clang++-16)
+set(CMAKE_CXX_COMPILER clang++)
 set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O0 -ferror-limit=1 -ftemplate-backtrace-limit=0")
 set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -O0 -ferror-limit=1 -ftemplate-backtrace-limit=0")
 
@@ -97,4 +97,4 @@ add_custom_target(verify-update
 )
 set_target_properties(verify-update PROPERTIES EXCLUDE_FROM_ALL TRUE)
 
-add_executable(playground playground.cpp)
+# add_executable(playground playground.cpp)
