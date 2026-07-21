@@ -70,10 +70,10 @@ myEpsilon := ();
 // generating semantic values:
 myValue := {std::string("awa")};
 myComplicatedValue := {if(true){return 1;} else{return 0;}};
-myParameterizedValue := A B C -> {$1 + $2 + $3}
+myParameterizedValue := A B C -> {$0 + $1 + $2}
 
 // semantic predicates:
-myPredicate := A B C {? $1 + $2 + $3 > 10};
+myPredicate := A B C {? $0 + $1 + $2 > 10};
 
 // ignore values:
 myPick := ~ignoreMe useJustMe ~ignoreMe -> {$};
