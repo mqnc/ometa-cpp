@@ -12,11 +12,11 @@
 namespace ometa {
 
 template <typename T>
-class UnsafeContextValue {
-	T value{};
+class PersistentContextValue {
+	T value {};
 public:
-	UnsafeContextValue() = default;
-	UnsafeContextValue(const T& value): value(value) {}
+	PersistentContextValue() = default;
+	PersistentContextValue(const T& value): value(value) {}
 	void set(const T& newValue) { value = newValue; }
 	const T& get() const { return value; }
 	Empty backup() const {}
@@ -25,20 +25,20 @@ public:
 
 template <typename T>
 class ContextValue {
-	T value{};
+	T value {};
 public:
 	ContextValue() = default;
 	ContextValue(const T& value): value(value) {}
 	void set(const T& newValue) { value = newValue; }
 	const T& get() const { return value; }
-	size_t backup() const { return value; }
+	T backup() const { return value; }
 	void backtrack(T targetVersion) { value = targetVersion; }
 };
 
 template <typename T>
 class LoggingContextValue {
 	size_t version = 0;
-	std::stack<T, std::vector<T>> value{};
+	std::stack<T, std::vector<T>> value {};
 public:
 	LoggingContextValue() = default;
 	LoggingContextValue(const T& value): value({value}) {}
@@ -80,12 +80,33 @@ public:
 	void backtrack(size_t targetVersion) {
 		while (backup() > targetVersion) {
 			const auto& key = order.top();
-			order.pop();
 			entries[key].pop();
 			if (entries[key].size() == 0) {
 				entries.erase(key);
 			}
+			order.pop();
 		}
+	}
+
+	const size_t size() const { return entries.size(); }
+
+	class iterator {
+		using MapIterator = typename std::unordered_map<K, std::stack<V, std::vector<V>>>::iterator;
+		MapIterator current;
+	public:
+		iterator(MapIterator iter): current(iter) {}
+		std::pair<const K&, const V&> operator*() const {return {current->first, current->second.top()};}
+		iterator& operator++() { ++current; return *this;}
+		bool operator==(const iterator& other) const { return current == other.current; }
+		bool operator!=(const iterator& other) const { return current != other.current; }
+	};
+
+	iterator begin() {
+		return iterator(entries.begin());
+	}
+
+	iterator end() {
+		return iterator(entries.end());
 	}
 
 };
@@ -93,10 +114,10 @@ public:
 template <typename... Members>
 class Context;
 
-namespace detail{
+namespace detail {
 
 template <typename F, typename... Members>
-constexpr decltype(auto) apply(
+constexpr decltype(auto) map_fn_over_members(
 	F f, Context<Members...>& ctx
 ) {
 	return std::make_tuple(
@@ -105,21 +126,21 @@ constexpr decltype(auto) apply(
 }
 
 template <typename F, typename... Members, typename... Ts, std::size_t... Is>
-constexpr void invoke_impl(
-    F f, Context<Members...>& ctx, std::tuple<Ts...>& args, std::index_sequence<Is...>
+constexpr void apply_fn_to_members_with_args_impl(
+	F f, Context<Members...>& ctx, std::tuple<Ts...>& args, std::index_sequence<Is...>
 ) {
-    (f(static_cast<Members&>(ctx), std::get<Is>(args)), ...);
+	(f(static_cast<Members&>(ctx), std::get<Is>(args)), ...);
 }
 
 template <typename F, typename... Members, typename... Ts>
-constexpr void invoke(
-    F f, Context<Members...>& ctx, std::tuple<Ts...>& args
+constexpr void apply_fn_to_members_with_args(
+	F f, Context<Members...>& ctx, std::tuple<Ts...>& args
 ) {
-    invoke_impl(f, ctx, args, std::index_sequence_for<Ts...>{});
+	apply_fn_to_members_with_args_impl(f, ctx, args, std::index_sequence_for<Ts...> {});
 }
 
 auto backup(auto& ctx) {
-	return apply(
+	return map_fn_over_members(
 		[](const auto& field) {
 			return field->backup();
 		},
@@ -128,10 +149,10 @@ auto backup(auto& ctx) {
 }
 
 void backtrack(auto& ctx, auto& version) {
-	invoke(
+	apply_fn_to_members_with_args(
 		[](auto& field, auto targetVersion) {
 			field->backtrack(targetVersion);
-		}, 
+		},
 		ctx,
 		version
 	);

@@ -1,4 +1,5 @@
 
+#include <iostream>
 #include "ometa.h"
 
 #define EXPECT(condition) \
@@ -142,16 +143,23 @@ int main() {
 	auto expected_result = std::vector<int>{0, 1, 2, 3, 4, 5, 6, 7};
 	EXPECT(lit_123_567.parse(intSrc) == expected_result);
 
-	// @variables: std::string_view -> std::string_view;
-	// auto context = ometa::Context(variables);
-	// identifier := {'a'}..{'z'};
-	// number := {'0'}..{'9'};
-	// assignment := identifier:i "=" number:n -> {@variables.insert({$i, $n});} "\n";
-	// commentMarker := " <- ignore\n";
-	// comment := (!commentMarker .)* commentMarker;
-	// line := assignment | comment;
-	// code := line*;
-	// auto result = code.parse("a=1\nb=2 <- ignore\nc=3\n", context);
+	using ViewTree = ometa::ViewTree<std::string_view>;
+	@variables: ViewTree -> ViewTree;
+	auto context = ometa::Context(variables);
+	identifier := {'a'}..{'z'};
+	number := {'0'}..{'9'};
+	assignment := identifier:i "=" number:n -> {@variables.insert({$i, $n});} ~";";
+	commentMarker := "X;";
+	comment := (!commentMarker .)* commentMarker -> {ometa::ignore};
+	statement := assignment | comment;
+	code := statement*;
+	auto result = code.parse("a=1;b=2X;c=3;", context);
+	EXPECT(@variables.at('"a"') == "1");
+	EXPECT(@variables.at('"c"') == "3");
+	EXPECT(@variables.size() == 2);
+	for(const auto& [key, value]: @variables) {
+		EXPECT(key == "a" && value == "1" || key == "c" && value == "3");
+	}
 
 
 	std::cout << "done!\n";

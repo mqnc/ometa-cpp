@@ -23,10 +23,21 @@ auto action(A fn) {
 			View<TSource> src,
 			auto& ctx
 		) {
-			// we defer the instantiation of this call until TSource is known
+			// We defer the instantiation of this call until TSource is known
 			// so the compiler doesn't complain if fn() cannot handle ignore
-			// but we actually never call it with ignore
-			return makeMaybeMatch(fn(defer<TSource, ignore>, ctx), src);
+			// but we actually never call it with ignore.
+
+			constexpr bool actionHasReturn = !std::is_same_v<std::invoke_result_t<
+				decltype(fn), decltype(defer<TSource, ignore>), decltype(ctx)
+			>, void>;
+
+			if constexpr(actionHasReturn){
+				return makeMaybeMatch(fn(defer<TSource, ignore>, ctx), src);
+			}
+			else{
+				fn(defer<TSource, ignore>, ctx);
+				return makeMaybeMatch(ignore, src);
+			}
 		};
 
 	return Action(fn, parseFn);
@@ -43,9 +54,20 @@ auto parameterizedAction(T child, Action<A, F> act) {
 
 			auto result = child.parseOn(src, ctx);
 
-			return result.has_value() ?
-				makeMaybeMatch(act.fn(result->value, ctx), result->next)
-				: fail;
+			constexpr bool actionHasReturn = !std::is_same_v<std::invoke_result_t<
+				decltype(act.fn), decltype(result->value), decltype(ctx)
+			>, void>;
+
+			if constexpr(actionHasReturn){
+				return result.has_value() ?
+					makeMaybeMatch(act.fn(result->value, ctx), result->next)
+					: fail;
+			}
+			else{
+				return result.has_value() ?
+					(act.fn(result->value, ctx), makeMaybeMatch(ignore, result->next))
+					: fail;
+			}
 		};
 
 	return Parser(parseFn);

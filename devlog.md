@@ -5,6 +5,15 @@ I'm gonna write down my trains of thought here so once this project is super fam
 
 ## ToDo
 
+My last action was implementing contexts. It worked in the end but the syntax is still a bit ugly and maybe it's better if it was like this:
+
+@ := {
+	variables: string->string;
+	line: int;
+};
+
+or something. Next steps would be to rewrite all the examples using all the new features (mainly bindings and context) and also implement some famous parsers, mainly json, json5, lua5.3 and g++ or clang ast output.
+
 * update readme
 * preserve whitespaces
 * selective debug log
