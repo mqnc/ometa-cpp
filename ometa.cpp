@@ -54,7 +54,7 @@ int main(int argc, char* argv[]) {
 			+ "(ometa::ContextValue<"_tree_ + ometa::pick<1>(value) + ">{"_tree_
 			+ (ometa::pick<2>(value).size() > 0 ? ometa::pick<2>(value)[0] : ""_tree_) + "});"_tree_
 		;}); OMETA_LOG(contextValue);
-	const auto contextReference = ~"@"_lit_ > identifier >= ometa::action([](auto value, auto& context){return "ometa::get<\""_tree_ + value + "\">(context)"_tree_;}); OMETA_LOG(contextReference);
+	const auto contextReference = ~"@"_lit_ > identifier >= ometa::action([](auto value, auto& context){return "ometa::pick<\""_tree_ + value + "\">(context)"_tree_;}); OMETA_LOG(contextReference);
 
 	*cppExpression = *(identifier > ometa::predicate([](auto value, auto& context){return  value && *value != "return";})| contextReference| viewTreeLiteral| cppLiteral| parenthesizedCppExpression >= ometa::action([](auto value, auto& context){return "("_tree_ + value + ")"_tree_;})
 		| bracketedCppExpression >= ometa::action([](auto value, auto& context){return "["_tree_ + value + "]"_tree_;})

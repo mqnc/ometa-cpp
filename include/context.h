@@ -175,7 +175,7 @@ public:
 };
 
 template <Tag tag, typename T>
-decltype(auto) get(Tagged<tag, T>& m) {
+decltype(auto) pick(Tagged<tag, T>& m) {
 	return (m.value);
 }
 
