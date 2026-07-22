@@ -59,6 +59,10 @@ add_custom_command(
 add_executable(new-parser-from-old-source EXCLUDE_FROM_ALL
 	${PROJECT_BINARY_DIR}/transpiled/new_parser_from_old_source.ometa.cpp)
 target_include_directories(new-parser-from-old-source PRIVATE ${PROJECT_SOURCE_DIR}/include)
+add_executable(new-parser-from-old-source-debug EXCLUDE_FROM_ALL
+	${PROJECT_BINARY_DIR}/transpiled/new_parser_from_old_source.ometa.cpp)
+target_include_directories(new-parser-from-old-source-debug PRIVATE ${PROJECT_SOURCE_DIR}/include)
+target_compile_definitions(new-parser-from-old-source-debug PUBLIC DEBUG_PRINTS)
 
 # new-parser-from-old-source:
 #    new_parser_from_new_source.ometa
