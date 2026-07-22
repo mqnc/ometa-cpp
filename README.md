@@ -15,12 +15,11 @@ Make sure you have clang installed. If there is the slightest bug in the code, g
 
 ```
 git clone https://github.com/mqnc/ometa-cpp
-cd ometa-cpp
-mkdir build
-cd build
-cmake ..
-make all
-make verify-self-transpilation
+sh scripts/build_ometa-cpp.sh
+./build.py my_parser.ometa -o my_parser
+
+sh scripts/run_test.sh
+sh scripts/verify_self_transpilation.sh
 ```
 
 ## Why not just use XYZ?
