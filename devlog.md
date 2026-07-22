@@ -5,6 +5,11 @@ I'm gonna write down my trains of thought here so once this project is super fam
 
 ## ToDo
 
+Getting back to this after 2 years... the syntax looks very cluttered. I think it needs some improvements:
+* I think I never actually use the captured whitespace so _ should return ignore already and I should never write ~_, I can also have some extra ws for captured whitespace
+* '"blah"' is just too much, it should be \`blah\`
+* most string literals are ignored, maybe we can use 'blah' for ignored and "blah" for significant
+
 My last action was working on contexts. Check that section.
 
 Next steps would be to rewrite all the examples using all the new features (mainly bindings and context) and also implement some famous parsers, mainly json, json5, lua5.3 and g++ or clang ast output.
@@ -19,6 +24,7 @@ Next steps would be to rewrite all the examples using all the new features (main
 * cpp comments
 * maybe propagate an ignore_value flag (or maybe not, we might want the side effects)
 * do some projects like a lua, clang and json5 parser, note errors and catch them with awesome eigen error reports
+* memoize (aka packrat parsing); however, need to be aware that context can change parsing result
 
 ```
 binding := abc:t0 ("+" abc)*:ts;
@@ -26,6 +32,10 @@ binding_ts_0_0 := binding -> {$ts[0]} -> {$0};
 ```
 bit ugly that we dont have a syntactically sugary way to use pick on something other than $
 
+```
+{@column.set(@column.get()+1); return $0;};
+```
+sucks that we have to return something here; just `{@column.set(@column.get()+1)}` will be interpreted as needing to be returned
 
 ```
 	primary :=
@@ -37,13 +47,20 @@ bit ugly that we dont have a syntactically sugary way to use pick on something o
 that didn't translate, something must be wrong with whitespace
 
 ```
+contextItemDeclaration ~_ ("," {'"\n"'} ~_ contextItemDeclaration -> ometa::concat)* -> ometa::concat;
+```
+sucks that we need to concat the inner part first (probably the same problem as the next)
+
+```
 	macroCall := identifier ~_ ~"[" {'"("'} ~_
 		expression^ ~_ ("," {'" "'} ~_ expression^)*
 		~_ ~"]" {'")"'} -> ometa::concat;
 ```
 concat fails on trees within repetitions
 
-## Contexts
+we cant have manual line and column management...
+
+## Putting Things into Context
 
 Contexts are like global storage for a parser. It gets handed down to subparsers and everyone can make changes to it. If the parser backtracks, so will the context. This is implemented via a `snapshot = backup()` and a `backtrack(snapshot)` method on the context classes.
 
@@ -54,7 +71,13 @@ Contexts worked in the end but the syntax is still a bit ugly and maybe it's bet
 	line: int;
 };
 
+context: @{
+    variables: string->string;
+    line: int;
+}
+
 or something.
+updated this, see tests.
 
 I now have the current options for context:
 * PersistentContextValue: a singular value that gets permanently overwritten with every successful parse and does not backtrack

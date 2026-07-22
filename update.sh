@@ -6,9 +6,9 @@ case "$1" in
 	prepare)
 		echo "preparing update..."
 		mkdir update
-		cp -r -n include update/include
-		cp -n examples/ometa.ometa update/new_parser_from_old_source.ometa
-		cp -n examples/ometa.ometa update/new_parser_from_new_source.ometa
+		cp -r --update=none include update/include
+		cp --update=none examples/ometa.ometa update/new_parser_from_old_source.ometa
+		cp --update=none examples/ometa.ometa update/new_parser_from_new_source.ometa
 		;;
 
 	test)

@@ -82,9 +82,9 @@ myPick := ~ignoreMe useJustMe ~ignoreMe -> {$};
 myCapture := <A B C>;
 
 // recursion:
-expression^ : {std::string} -> {int}; // forward declaration
-bracedExpression := "(" expression^ ")"; // reference
-expression^ => primary | bracedExpression; // definition
+myExpression^ : {std::string} -> {int}; // forward declaration
+bracedExpression := "(" myExpression^ ")"; // reference
+myExpression^ => primary | bracedExpression; // definition
 
 // bindings:
 myBinding := firstThing:x secondThing:y -> {$x + $y};
@@ -92,6 +92,17 @@ myBinding := firstThing:x secondThing:y -> {$x + $y};
 // macros:
 myList[thing, sep] := thing (sep thing)*;
 myAddition := myList[number, plus];
+
+// context:
+myContext@ : constants: {ViewTree} -> {ViewTree}, line: {int} = {1}, column: {int} = {1};
+myContext@constants.insert({'"awa"', 5});
+
+identifier := {'a'}..{'z'};
+number := {'0'}..{'9'};
+definition := identifier:i "=" number:n -> {@constants.insert({$i, $n});};
+
+// parsing:
+auto myTopSemanticValue = myStartRule.parse(myInput, myContext);
 ```
 
 * things in `{curly braces}` are written in C++ (with some extensions like `$` for `value`);

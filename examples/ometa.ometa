@@ -13,10 +13,6 @@ using ViewTree = ometa::ViewTree<std::string_view>;
 
 int main(int argc, char* argv[]) {
 
-	@line: int = 0;
-	@column: int = 0;
-	@symbols: std::string -> std::string;
-
 	if(argc != 3){
 		std::cout << "usage: " << argv[0] << " INPUT_FILE OUTPUT_FILE\n";
 		return EXIT_FAILURE;
@@ -48,20 +44,25 @@ int main(int argc, char* argv[]) {
 	bracketedCppExpression := ~"[" cppExpression^ ~"]";
 	bracedCppExpression := ~"{" cppExpression^ ~"}";
 	predicateCppExpression := ~"{" ~_ ~ "?" cppExpression^ ~"}";
-	cppType := <( (identifier | "::" | "<" | ">") ~_)+>;
 
-	contextTable := ~"@" identifier ~_ ~":" ~_ cppType ~_ ~"->" ~_ cppType ~_ ~";"
+	contextTableDeclaration := identifier ~_ ~":" ~_ bracedCppExpression ~_ ~"->" ~_ bracedCppExpression
 		-> {
-			'"auto "' + $0 + '" = ometa::makeTagged<\""' + $0 + '"\">"'
-			+ '"(ometa::ContextTable<"' + $1 + '", "' + $2 + '">{});"'
-		};
-	contextValue := ~"@" identifier ~_ ~":" ~_ cppType (~_ ~"=" ~_ cppExpression^)? ~_ ~";"
+            '"\tometa::makeTagged<\""' + $0 + '"\">"'
+            + '"(ometa::ContextTable<"' + $1 + '", "' + $2 + '">{})"'
+        };
+	contextValueDeclaration := identifier ~_ ~":" ~_ bracedCppExpression (~_ ~"=" ~_ bracedCppExpression)?
 		-> {
-			'"auto "' + $0 + '" = ometa::makeTagged<\""' + $0 + '"\">"'
+            '"\tometa::makeTagged<\""' + $0 + '"\">"'
 			+ '"(ometa::ContextValue<"' + $1 + '">{"'
-			+ ($2.size() > 0 ? $2[0] : '""') + '"});"'
+			+ ($2.size() > 0 ? $2[0] : '""') + '"})"'
 		};
+    contextItemDeclaration := contextTableDeclaration | contextValueDeclaration;
+    contextItemDeclarationList := contextItemDeclaration ~_ ("," {'"\n"'} ~_ contextItemDeclaration -> ometa::concat)* -> ometa::concat;
+    contextDeclaration := identifier ~"@" ~_ ~":" ~_ contextItemDeclarationList ~_ ~";"
+        -> {'"auto "' + $0 + '" = ometa::Context(\n"' + $1 + '"\n);"'};
+
 	contextReference := ~"@" identifier -> {'"ometa::pick<\""' + $ + '"\">(context)"'};
+    outsideContextReference := identifier ~"@" identifier -> {'"ometa::pick<\""' + $1 + '"\">("' + $0 + '")"'};
 
 	cppExpression^ => (
 		identifier {? $ && *$ != "return"}
@@ -93,9 +94,9 @@ int main(int argc, char* argv[]) {
 		| ruleDefinition^
 		| ruleRedefinition^
 		| macroDefinition^
-		| contextTable
-		| contextValue
+		| contextDeclaration
 		| contextReference
+        | outsideContextReference
 		| identifier
 		| viewTreeLiteral
 		| cppLiteral
