@@ -12,6 +12,7 @@ echo "building new parser from old syntax..."
 echo "building new parser from new syntax..."
 ./build.py -o build/new_parser_from_new_syntax \
     --transpiler build/new_parser_from_old_syntax \
+    --ometa-include update/include \
     --cpp build/new_parser_from_new_syntax.ometa.cpp \
     update/new_parser_from_new_syntax.ometa
 
@@ -22,6 +23,7 @@ diff -s build/new_parser_from_old_syntax.ometa.cpp \
 echo "building tests with new parser..."
 ./build.py -o build/test_new_parser \
     --transpiler build/new_parser_from_new_syntax \
+    --ometa-include update/include \
     --cpp build/test.ometa.cpp \
     examples/test.ometa
 

@@ -27,6 +27,10 @@ parser.add_argument(
     "--transpiler", default="build/ometa-cpp", help="Transpiler executable (default: build/ometa-cpp)."
 )
 
+parser.add_argument(
+    "--ometa-include", default="include", help="Standard OMeta include directory (default: include)."
+)
+
 parser.add_argument("--debug", action="store_true", help="Compile with debug flags.")
 
 parser.add_argument(
@@ -66,7 +70,7 @@ else:
 cmd = [
     "clang++",
     "-std=c++20",
-    "-Iinclude",
+    "-I" + args.ometa_include,
     "-ferror-limit=1",
     "-ftemplate-backtrace-limit=0",
 ]
