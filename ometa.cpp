@@ -18,7 +18,7 @@ int main(int argc, char* argv[]) {
 		return EXIT_FAILURE;
 	}
 
-    const auto whitespace = ometa::capture(*(" "_lit_| "\t"_lit_| "\n"_lit_)); OMETA_LOG(whitespace);
+	const auto whitespace = ometa::capture(*(" "_lit_| "\t"_lit_| "\n"_lit_)); OMETA_LOG(whitespace);
 	const auto _ = ~whitespace; OMETA_LOG(_);
 
 	const auto identStart = ometa::range(('A'), ('Z'))| ometa::range(('a'), ('z'))| "_"_lit_| "::"_lit_; OMETA_LOG(identStart);
@@ -27,9 +27,9 @@ int main(int argc, char* argv[]) {
 	const auto reference = identifier > ~"^"_lit_ >= ometa::action([](auto value, auto& context){return "ometa::ptr("_tree_ + value + ")"_tree_;}); OMETA_LOG(reference);
 
 	const auto cppChar = ~"\\"_lit_ > ~ometa::any()| ~ometa::any(); OMETA_LOG(cppChar);
-	const auto cppLiteral = ometa::capture(~"'"_lit_ > ~*(!"'"_lit_ > ~cppChar) > ~"'"_lit_| ~"\""_lit_ > ~*(!"\""_lit_ > ~cppChar) > ~"\""_lit_); OMETA_LOG(cppLiteral);
+	const auto cppLiteral = ometa::capture(~"\'"_lit_ > ~*(!"'"_lit_ > ~cppChar) > ~"\'"_lit_| ~"\""_lit_ > ~*(!"\""_lit_ > ~cppChar) > ~"\""_lit_); OMETA_LOG(cppLiteral);
 	
-	const auto viewTreeLiteral = ~"'"_lit_ > ometa::capture("\""_lit_ > ~*(!"'"_lit_ > !"\""_lit_ > ~cppChar) > ~"\""_lit_) > ~"'"_lit_ > ometa::action([](auto value, auto& context){return "_tree_"_tree_;}) >= ometa::concat; OMETA_LOG(viewTreeLiteral);
+	const auto viewTreeLiteral = ~"\'"_lit_ > ometa::capture("\""_lit_ > ~*(!"'"_lit_ > !"\""_lit_ > ~cppChar) > ~"\""_lit_) > ~"\'"_lit_ > ometa::action([](auto value, auto& context){return "_tree_"_tree_;}) >= ometa::concat; OMETA_LOG(viewTreeLiteral);
 
 	const auto valueReference = ~"$"_lit_ >= ometa::action([](auto value, auto& context){return "value"_tree_;}); OMETA_LOG(valueReference);
 	const auto indexedValueReference = ~"$"_lit_ > ometa::capture(+ometa::range(('0'), ('9'))) >= ometa::action([](auto value, auto& context){return "ometa::pick<"_tree_ + value + ">(value)"_tree_;}); OMETA_LOG(indexedValueReference);
@@ -42,20 +42,20 @@ int main(int argc, char* argv[]) {
 	const auto predicateCppExpression = ~"{"_lit_ > _ > ~"?"_lit_ > ometa::ptr(cppExpression) > ~"}"_lit_; OMETA_LOG(predicateCppExpression);
 
 	const auto contextTableDeclaration = identifier > _ > ~":"_lit_ > _ > bracedCppExpression > _ > ~"->"_lit_ > _ > bracedCppExpression >= ometa::action([](auto value, auto& context){return 
-            "\tometa::makeTagged<\""_tree_ + ometa::pick<0>(value) + "\">"_tree_
-            + "(ometa::ContextTable<"_tree_ + ometa::pick<1>(value) + ", "_tree_ + ometa::pick<2>(value) + ">{})"_tree_
-        ;}); OMETA_LOG(contextTableDeclaration);
+			"\tometa::makeTagged<\""_tree_ + ometa::pick<0>(value) + "\">"_tree_
+			+ "(ometa::ContextTable<"_tree_ + ometa::pick<1>(value) + ", "_tree_ + ometa::pick<2>(value) + ">{})"_tree_
+		;}); OMETA_LOG(contextTableDeclaration);
 	const auto contextValueDeclaration = identifier > _ > ~":"_lit_ > _ > bracedCppExpression > -(_ > ~"="_lit_ > _ > bracedCppExpression) >= ometa::action([](auto value, auto& context){return 
-            "\tometa::makeTagged<\""_tree_ + ometa::pick<0>(value) + "\">"_tree_
+			"\tometa::makeTagged<\""_tree_ + ometa::pick<0>(value) + "\">"_tree_
 			+ "(ometa::ContextValue<"_tree_ + ometa::pick<1>(value) + ">{"_tree_
 			+ (ometa::pick<2>(value).size() > 0 ? ometa::pick<2>(value)[0] : ""_tree_) + "})"_tree_
 		;}); OMETA_LOG(contextValueDeclaration);
-    const auto contextItemDeclaration = contextTableDeclaration| contextValueDeclaration; OMETA_LOG(contextItemDeclaration);
-    const auto contextItemDeclarationList = contextItemDeclaration > _ > *(","_lit_ > ometa::action([](auto value, auto& context){return "\n"_tree_;}) > _ > contextItemDeclaration >= ometa::concat) >= ometa::concat; OMETA_LOG(contextItemDeclarationList);
-    const auto contextDeclaration = identifier > ~"@"_lit_ > _ > ~":"_lit_ > _ > contextItemDeclarationList > _ > ~";"_lit_ >= ometa::action([](auto value, auto& context){return "auto "_tree_ + ometa::pick<0>(value) + " = ometa::Context(\n"_tree_ + ometa::pick<1>(value) + "\n);"_tree_;}); OMETA_LOG(contextDeclaration);
+	const auto contextItemDeclaration = contextTableDeclaration| contextValueDeclaration; OMETA_LOG(contextItemDeclaration);
+	const auto contextItemDeclarationList = contextItemDeclaration > _ > *(","_lit_ > ometa::action([](auto value, auto& context){return "\n"_tree_;}) > _ > contextItemDeclaration >= ometa::concat) >= ometa::concat; OMETA_LOG(contextItemDeclarationList);
+	const auto contextDeclaration = identifier > ~"@"_lit_ > _ > ~":"_lit_ > _ > contextItemDeclarationList > _ > ~";"_lit_ >= ometa::action([](auto value, auto& context){return "auto "_tree_ + ometa::pick<0>(value) + " = ometa::Context(\n"_tree_ + ometa::pick<1>(value) + "\n);"_tree_;}); OMETA_LOG(contextDeclaration);
 
 	const auto contextReference = ~"@"_lit_ > identifier >= ometa::action([](auto value, auto& context){return "ometa::pick<\""_tree_ + value + "\">(context)"_tree_;}); OMETA_LOG(contextReference);
-    const auto outsideContextReference = identifier > ~"@"_lit_ > identifier >= ometa::action([](auto value, auto& context){return "ometa::pick<\""_tree_ + ometa::pick<1>(value) + "\">("_tree_ + ometa::pick<0>(value) + ")"_tree_;}); OMETA_LOG(outsideContextReference);
+	const auto outsideContextReference = identifier > ~"@"_lit_ > identifier >= ometa::action([](auto value, auto& context){return "ometa::pick<\""_tree_ + ometa::pick<1>(value) + "\">("_tree_ + ometa::pick<0>(value) + ")"_tree_;}); OMETA_LOG(outsideContextReference);
 
 	*cppExpression = *(identifier > ometa::predicate([](auto value, auto& context){return  value && *value != "return";})| contextReference| viewTreeLiteral| cppLiteral| parenthesizedCppExpression >= ometa::action([](auto value, auto& context){return "("_tree_ + value + ")"_tree_;})
 		| bracketedCppExpression >= ometa::action([](auto value, auto& context){return "["_tree_ + value + "]"_tree_;})
@@ -81,8 +81,12 @@ int main(int argc, char* argv[]) {
 	const auto any = "."_lit_ >= ometa::action([](auto value, auto& context){return "ometa::any()"_tree_;}); OMETA_LOG(any);
 	const auto epsilon = "()"_lit_ >= ometa::action([](auto value, auto& context){return "ometa::epsilon()"_tree_;}); OMETA_LOG(epsilon);
 
-	const auto character = ~"\\"_lit_ > ~("n"_lit_| "r"_lit_| "t"_lit_| "\""_lit_| "\\"_lit_)| !"\\"_lit_ > ~ometa::any(); OMETA_LOG(character);
-	const auto literal = ometa::capture("\""_lit_ > *(!"\""_lit_ > character) > "\""_lit_) > ometa::action([](auto value, auto& context){return "_lit_"_tree_;}) >= ometa::concat; OMETA_LOG(literal);
+	const auto literalCharacter = ometa::capture("\\"_lit_ > ("n"_lit_| "r"_lit_| "t"_lit_| "'"_lit_| "\""_lit_| "\\"_lit_))| "\""_lit_ >= ometa::action([](auto value, auto& context){return "\\\""_tree_;})
+		| ometa::capture(!"\\"_lit_ > ometa::any()); OMETA_LOG(literalCharacter);
+
+	const auto ignoredLiteral = ~"\'"_lit_ > ometa::action([](auto value, auto& context){return "~\""_tree_;}) > *(!"'"_lit_ > literalCharacter) > ~"\'"_lit_ > ometa::action([](auto value, auto& context){return "\""_tree_;}) > ometa::action([](auto value, auto& context){return "_lit_"_tree_;}) >= ometa::concat; OMETA_LOG(ignoredLiteral);
+	const auto capturedLiteral = ometa::capture("\""_lit_ > *(!"\""_lit_ > literalCharacter) > "\""_lit_) > ometa::action([](auto value, auto& context){return "_lit_"_tree_;}) >= ometa::concat; OMETA_LOG(capturedLiteral);
+	const auto literal = ignoredLiteral| capturedLiteral; OMETA_LOG(literal);
 
 	const auto range = bracedCppCode > _ > ~".."_lit_ > _ > bracedCppCode >= ometa::action([](auto value, auto& context){return 
 		"ometa::range(("_tree_ + ometa::pick<0>(value) + "), ("_tree_ + ometa::pick<1>(value) + "))"_tree_

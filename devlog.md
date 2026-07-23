@@ -6,9 +6,9 @@ I'm gonna write down my trains of thought here so once this project is super fam
 ## ToDo
 
 Getting back to this after 2 years... the syntax looks very cluttered. I think it needs some improvements:
-* I think I never actually use the captured whitespace so _ should return ignore already and I should never write ~_, I can also have some extra ws for captured whitespace
-* '"blah"' is just too much, it should be \`blah\`
-* most string literals are ignored, maybe we can use 'blah' for ignored and "blah" for significant
+* I think I never actually use the captured whitespace so _ should return ignore already and I should never write ~_, I can also have some extra ws for captured whitespace -> implemented, beautiful.
+* '"blah"' is just too much, it should be \`blah\`. I can write a custom highlighter for vscode but dont know what todo about github. Maybe $"blah" would be a nice option? semantic values are $0 $1 etc, string puzzle values can be $"sheesh"...
+* most string literals are ignored, maybe we can use 'blah' for ignored and "blah" for significant -> I have now implemented this. It looks much cleaner. Problem is that in Python as well as in PEG, '...' and "..." are identical and ~"..." was more explicit. Lets see how the giant userbase will react, I mean we can always roll it back, right?
 
 My last action was working on contexts. Check that section.
 
@@ -57,6 +57,8 @@ sucks that we need to concat the inner part first (probably the same problem as 
 		~_ ~"]" {'")"'} -> ometa::concat;
 ```
 concat fails on trees within repetitions
+
+concat fails on deque of igonres
 
 we cant have manual line and column management...
 

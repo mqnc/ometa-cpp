@@ -2,9 +2,12 @@
 #include <iostream>
 #include "ometa.h"
 
+bool allPassed = true;
+
 #define EXPECT(condition) \
 	if(!(condition)) { \
 		std::cerr << "line " << __LINE__ << " failed: " #condition << "\n"; \
+        allPassed = false; \
 	}
 
 int main() {
@@ -22,6 +25,15 @@ int main() {
 	EXPECT(literal.parse("abcd") == "abc");
 	EXPECT(not literal.parse("abX"));
 	EXPECT(not literal.parse(""));
+
+    literalWithEscapes := "\n \r \t \' \" \\ ' ";
+    EXPECT(literalWithEscapes.parse("\n \r \t \' \" \\ ' "));
+
+    ignoredLiteral := 'jkl';
+    EXPECT(ignoredLiteral.parse("jkl").value() == ometa::ignore);
+
+    ignoredLiteralWithEscapes := '\n \r \t \' \" \\ " ';
+    EXPECT(ignoredLiteralWithEscapes.parse("\n \r \t \' \" \\ \" "));
 
 	range := {'a'}..{'m'};
 	EXPECT(range.parse("m") == "m");
@@ -162,8 +174,12 @@ int main() {
 		EXPECT(key == "a" && value == "1" || key == "c" && value == "3");
 	}
 
-
-	std::cout << "done!\n";
-
-	return 0;
+    if(allPassed){
+	    std::cout << "all passed!\n";
+        return EXIT_SUCCESS;
+    }
+    else{
+        std::cout << "tests failed!\n";
+    	return EXIT_FAILURE;
+    }
 }
