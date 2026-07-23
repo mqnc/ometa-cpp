@@ -37,7 +37,7 @@ Main focus in the development was for this to be a fun hobby project and for thi
 
 ## Usage
 
-```cpp
+```d
 // rule:
 myRule := ...;
 
@@ -94,7 +94,7 @@ myAddition := myList[number, plus];
 
 // context:
 myContext@ : constants: {ViewTree} -> {ViewTree}, line: {int} = {1}, column: {int} = {1};
-myContext@constants.insert({'"awa"', 5});
+myContext@constants.insert({`awa`, 5});
 
 identifier := {'a'}..{'z'};
 number := {'0'}..{'9'};

@@ -26,10 +26,11 @@ int main(int argc, char* argv[]) {
 	const auto identifier = ometa::capture(identStart > *identContinue); OMETA_LOG(identifier);
 	const auto reference = identifier > ~"^"_lit_ >= ometa::action([](auto value, auto& context){return "ometa::ptr("_tree_ + value + ")"_tree_;}); OMETA_LOG(reference);
 
-	const auto cppChar = ~"\\"_lit_ > ~ometa::any()| ~ometa::any(); OMETA_LOG(cppChar);
+	const auto cppChar = ometa::capture(~"\\"_lit_ > ~ometa::any()| ~ometa::any()); OMETA_LOG(cppChar);
 	const auto cppLiteral = ometa::capture(~"\'"_lit_ > ~*(!"'"_lit_ > ~cppChar) > ~"\'"_lit_| ~"\""_lit_ > ~*(!"\""_lit_ > ~cppChar) > ~"\""_lit_); OMETA_LOG(cppLiteral);
 	
-	const auto viewTreeLiteral = ~"\'"_lit_ > ometa::capture("\""_lit_ > ~*(!"'"_lit_ > !"\""_lit_ > ~cppChar) > ~"\""_lit_) > ~"\'"_lit_ > ometa::action([](auto value, auto& context){return "_tree_"_tree_;}) >= ometa::concat; OMETA_LOG(viewTreeLiteral);
+	const auto viewTreeLiteral = ~"`"_lit_ > ometa::action([](auto value, auto& context){return "\""_tree_;}) > *(~"\""_lit_ >= ometa::action([](auto value, auto& context){return "\\\""_tree_;})
+        | !~"`"_lit_ > cppChar) > ~"`"_lit_ > ometa::action([](auto value, auto& context){return "\"_tree_"_tree_;}) >= ometa::concat; OMETA_LOG(viewTreeLiteral);
 
 	const auto valueReference = ~"$"_lit_ >= ometa::action([](auto value, auto& context){return "value"_tree_;}); OMETA_LOG(valueReference);
 	const auto indexedValueReference = ~"$"_lit_ > ometa::capture(+ometa::range(('0'), ('9'))) >= ometa::action([](auto value, auto& context){return "ometa::pick<"_tree_ + value + ">(value)"_tree_;}); OMETA_LOG(indexedValueReference);
@@ -84,7 +85,7 @@ int main(int argc, char* argv[]) {
 	const auto literalCharacter = ometa::capture("\\"_lit_ > ("n"_lit_| "r"_lit_| "t"_lit_| "'"_lit_| "\""_lit_| "\\"_lit_))| "\""_lit_ >= ometa::action([](auto value, auto& context){return "\\\""_tree_;})
 		| ometa::capture(!"\\"_lit_ > ometa::any()); OMETA_LOG(literalCharacter);
 
-	const auto ignoredLiteral = ~"\'"_lit_ > ometa::action([](auto value, auto& context){return "~\""_tree_;}) > *(!"'"_lit_ > literalCharacter) > ~"\'"_lit_ > ometa::action([](auto value, auto& context){return "\""_tree_;}) > ometa::action([](auto value, auto& context){return "_lit_"_tree_;}) >= ometa::concat; OMETA_LOG(ignoredLiteral);
+	const auto ignoredLiteral = ~"\'"_lit_ > ometa::action([](auto value, auto& context){return "~\""_tree_;}) > *(!"'"_lit_ > literalCharacter) > ~"\'"_lit_ > ometa::action([](auto value, auto& context){return "\"_lit_"_tree_;}) >= ometa::concat; OMETA_LOG(ignoredLiteral);
 	const auto capturedLiteral = ometa::capture("\""_lit_ > *(!"\""_lit_ > literalCharacter) > "\""_lit_) > ometa::action([](auto value, auto& context){return "_lit_"_tree_;}) >= ometa::concat; OMETA_LOG(capturedLiteral);
 	const auto literal = ignoredLiteral| capturedLiteral; OMETA_LOG(literal);
 

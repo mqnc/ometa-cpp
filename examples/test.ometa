@@ -166,8 +166,8 @@ int main() {
 	statement := assignment | comment;
 	code := statement*;
 	auto result = code.parse("a=1;b=2X;c=3;", myContext);
-	EXPECT(myContext@variables.at('"a"') == "1");
-	EXPECT(myContext@variables.at('"c"') == "3");
+	EXPECT(myContext@variables.at(`a`) == "1");
+	EXPECT(myContext@variables.at(`c`) == "3");
 	EXPECT(myContext@variables.size() == 2);
     EXPECT(myContext@digits.get() == 2);
 	for(const auto& [key, value]: myContext@variables) {

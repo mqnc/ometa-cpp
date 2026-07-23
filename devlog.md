@@ -7,7 +7,7 @@ I'm gonna write down my trains of thought here so once this project is super fam
 
 Getting back to this after 2 years... the syntax looks very cluttered. I think it needs some improvements:
 * I think I never actually use the captured whitespace so _ should return ignore already and I should never write ~_, I can also have some extra ws for captured whitespace -> implemented, beautiful.
-* '"blah"' is just too much, it should be \`blah\`. I can write a custom highlighter for vscode but dont know what todo about github. Maybe $"blah" would be a nice option? semantic values are $0 $1 etc, string puzzle values can be $"sheesh"...
+* '"blah"' is just too much, it should be \`blah\`. I can write a custom highlighter for vscode but dont know what todo about github. Maybe \$"blah" would be a nice option? semantic values are \$0 \$1 etc, string puzzle values can be \$"sheesh"... -> now I have implemented \`this\` for view trees and used D for fake syntax highlighting.
 * most string literals are ignored, maybe we can use 'blah' for ignored and "blah" for significant -> I have now implemented this. It looks much cleaner. Problem is that in Python as well as in PEG, '...' and "..." are identical and ~"..." was more explicit. Lets see how the giant userbase will react, I mean we can always roll it back, right?
 
 My last action was working on contexts. Check that section.
@@ -62,6 +62,8 @@ concat fails on deque of igonres
 
 we cant have manual line and column management...
 
+for debugging we need some way to see to which rule the output corresponds, not just 100 levels of Parser. Maybe they need a tag or what
+
 ## Putting Things into Context
 
 Contexts are like global storage for a parser. It gets handed down to subparsers and everyone can make changes to it. If the parser backtracks, so will the context. This is implemented via a `snapshot = backup()` and a `backtrack(snapshot)` method on the context classes.
@@ -94,7 +96,7 @@ Thing is, why would I ever need a stack embedded inside the context when the par
 
 First I implemented the prioritized choice so that `A | B | C` returns a `std::variant<TypeA, TypeB, TypeC>`. The choice factory became huge and ugly, mainly but not only because it should return `std::variant<TypeA, TypeB, TypeC>` instead of `std::variant<std::variant<TypeA, TypeB>, TypeC>`. However, the idiomatic way to deal with variants is to dispatch on them with `std::visit`, then you might as well handle each option right away before merging them with `|`:
 
-```cpp
+```d
 myChoice :=
 	number -> {return std::to_string($);}
 	| givenName familyName -> {return std::string($1) + std::string($2);};
@@ -102,7 +104,7 @@ myChoice :=
 
 However, this makes development a bit more difficult because you probably want to write the parser first before generating any values, and most likely the types won't match. In that case, I recommend to ignore all values first:
 
-```cpp
+```d
 myChoice := ~number | ~(givenName familyName);
 ```
 
@@ -116,7 +118,7 @@ I found a bit ugly that references need some special syntax because they need so
 
 First syntax looked like this:
 
-```cpp
+```d
 (R) := {std::string_view} -> {int}; // forward declaration
 S := "(" @R ")"; // reference
 R :> S; // definition
@@ -124,7 +126,7 @@ R :> S; // definition
 
 I did a big refactory where all lambdae captured referenced rules by reference and temporary (rvalue) rules by value:
 
-```cpp
+```d
 A := .;
 B := A A; // A is captured by reference
 C := "x" | "y"; // the literal parsers (which are not stored in a variable somewhere else) are captured by value
@@ -132,7 +134,7 @@ C := "x" | "y"; // the literal parsers (which are not stored in a variable somew
 
 This is what std::forward is usually great at, except [it doesn't work with lambda captures](https://vittorioromeo.info/index/blog/capturing_perfectly_forwarded_objects_in_lambdas.html). So I used these wrappers, already unhappy how this inflates the code into very C++esque unintuitive complicatery. To be sure that I used references everywhere, I deleted the copy constructor of the parser class and only allowed move. This made it impossible to use std::function in the forward declaration of recursive rules, as std::functions must be copyable, so they cannot be assigned a lambda that captures uncopyable parsers. C++23 will have [move only functions](https://en.cppreference.com/w/cpp/utility/functional/move_only_function/move_only_function) which worked but I want to stay C++20 for now. I was thinking to throw() inside the copy constructor but I instead decided to screw the whole std::forwardery and copy around parsers like ints everywhere and use std::shared_ptrs instead of references. The code looks just so much better and I can retro justify it by saying it's safe because there won't be any dangling references. Also worked on the syntax a bit, now looks like this:
 
-```cpp
+```d
 expression' : {std::string} -> {int}; // forward declaration
 bracedExpression := "(" expression' ")"; // reference
 expression' => primary | bracedExpression; // definition
@@ -146,19 +148,19 @@ Switched to `expression^` now that `^` is no longer used for actions (see below)
 
 I once heard about a whitespace operator in C++ (was probably a joke) and was thinking it'd be kinda cool to be able to write `a b` for `a*b` like in mathematics. Now that I am actually confronted with one, I must say that it has many annoying implications. Since a whitespace between two expressions in most parsing languages implies a sequence, we are very restricted with parentheses and letting symbols have different meenings as prefix or postfix. For example, the most intuitive syntax for macros (parameterizing rules) would be with appended parentheses, like this:
 
-```cpp
+```d
 list(X) := X ("," X)*
 ```
 
 But then if we call that in a rule, it looks like this:
 
-```cpp
+```d
 identifierList := list(identifier)
 ```
 
 And here we instead have a sequence of `list` and `(identifier)`:
 
-```cpp
+```d
 identifierList := list (identifier)
 ```
 
@@ -170,7 +172,7 @@ We can solve this by actually making `A(B)` a macro call and `A (B)` a sequence,
 
 We could also solve it by just using some explicit sequence operator like `A, B`. But [PEG](https://en.wikipedia.org/wiki/Parsing_expression_grammar#Examples), [ANTLR](https://www.antlr.org/) and even the [Dragon Book](https://en.wikipedia.org/wiki/Compilers:_Principles,_Techniques,_and_Tools) use whitespaces for sequences. [EBNF](https://en.wikipedia.org/wiki/Extended_Backus%E2%80%93Naur_form) uses commae... But I am actually also a friend of making my grammars reflect whitespaces (in the source they parse) explicitly like this:
 
-```cpp
+```d
 _ := (" " | "\n" | "\t")*
 Addition := Number (_ "+" _ Number)*
 ```
@@ -179,7 +181,7 @@ instead of having identifiers and operators swallow all following whitespaces li
 
 For now:
 
-```cpp
+```d
 list[X] := X ("," X)*
 identifierList := list[identifier]
 
@@ -192,7 +194,7 @@ optional? ^?{return predicate;}
 
 It would be nice to unify the syntax for actions and predicates somehow. Actions genereate semantic values, predicates decide if parsing continues. The solution right now looks like this:
 
-```cpp
+```d
 rule1 := A B ^{return fn();} C;
 // returns a tree of the four semantic values of A, B, fn() and C
 
@@ -220,7 +222,7 @@ Technically, all four constructs are very similar and there could be a unified s
 
 I know! I use `&` again. Look ahead is already kind of an assertion, might as well use it for semantic predicates.
 
-```cpp
+```d
 rule1 := A B {return fn();} C;
 rule2 := A B -> {return fn($1, $2);} C;
 rule3 := A B &{return fn();} C;
@@ -229,7 +231,7 @@ rule4 := A B -> &{return fn($1, $2);} C;
 
 Also, I want to provide the ability to omit `return` and `;` if it's a single expression, so:
 
-```cpp
+```d
 rule1 := A B {fn()} C;
 rule2 := A B -> {fn($1, $2)} C;
 rule3 := A B &{fn()} C;
@@ -238,7 +240,7 @@ rule4 := A B -> &{fn($1, $2)} C;
 
 Found a problem, this doesn't work:
 
-```cpp
+```d
 predicate := {fn()};
 conditional := &predicate something
 ```
@@ -247,7 +249,7 @@ The `&` would confusingly not be an operator but actually part of the `&{}`, the
 
 Had two more ideas:
 
-```cpp
+```d
 rule1 := A B !{fn()} C;
 rule2 := A B -> !{fn($1, $2)} C;
 rule3 := A B ?{fn()} C;
@@ -262,7 +264,7 @@ Also, there's not really much point in making a difference between `{?...}` and 
 
 Houston, we have another problem:
 
-```cpp
+```d
 predicate := {? checkA($)}
 rule := A predicate
 ```
@@ -284,7 +286,7 @@ Most likely you want to puzzle strings together as the output. Just using std::s
 * `'abc'` would have been nice since multi-character literals have implementation-defined behavior anyway and are thus discouraged and we can just use the syntax for our purpose. However, `'a'` should actually still be a `char` :/
 
 * Creating assimilating `operator+`es like `std::string` is a bit nice.
-```cpp
+```d
 ViewTree + ViewTree -> ViewTree
 ViewTree + const char* -> ViewTree
 const char* + ViewTree -> ViewTree
@@ -307,6 +309,8 @@ I got it!: `'"abc"'`
 
 I'm still not ultimately satisfied but I and people will have to learn to love it.
 
+Now I have implemented \`this\` for view trees and used D for fake syntax highlighting.
+
 ## Putting Things into Context
 
 My original thought was: Semantic values are for moving data from child nodes to parent nodes (all the things that the parser eventually spits out) and the context is there for moving data from parent nodes to child nodes (symbol table, line and column, etc.). So I have implemented nodes that let you modify the context. However, I have made the context a const reference, so the context modifier needs to pass on a new context (that can point to the old context). This way, it cannot happen that a node edits the context and that change is not reverted in case of backtracking. All clean and proper and functional and beautiful and Haskellesque. Instead of modifying context, data should be passed back up through values.
@@ -315,7 +319,7 @@ However, I have noticed that there was a problem.
 
 Action nodes look like this:
 
-```cpp
+```d
 (rule -> action)
 // under the hood, simplified:
 {
@@ -327,7 +331,7 @@ Action nodes look like this:
 
 while predicates look like this:
 
-```cpp
+```d
 (rule predicate)
 // under the hood, simplified:
 {
@@ -339,7 +343,7 @@ while predicates look like this:
 
 and the new context modifier looks like this:
 
-```cpp
+```d
 @contextModifier rule // wasn't sure about the syntax yet
 // under the hood, simplified:
 {
@@ -353,7 +357,7 @@ See it? There is no way for values to influence the context.
 
 Then I was thinking, do we actually need contexts? Let's say we want to parse XML where the closing tag depends on the opening tag. This can still be done with values alone:
 
-```cpp
+```d
 block := openingTag:o block closingTag:c {? $o==$c}
 // heavily simplified, the recursion and the identical tagging of nested blocks need to be taken care of
 ```
@@ -362,7 +366,7 @@ But I think it would definitely be much more complicated or maybe impossible to 
 
 My next idea was to join the values of earlier nodes in a sequence with the context, meaning:
 
-```cpp
+```d
 A B C
 // under the hood, simplified:
 {
@@ -379,7 +383,7 @@ However, this also changes the type of the context which has to be considered wh
 
 Then I thought, maybe we can have a special magic operator that turns a value into context:
 
-```cpp
+```d
 A @ B // wasn't sure about the syntax yet
 // hood:
 {
@@ -391,14 +395,14 @@ A @ B // wasn't sure about the syntax yet
 ```
 
 Buuut can we have symbol tables now? Lettuce see. We want to be able to pasrse:
-```cpp
+```d
 a=1
 b=2
 c=a+b
 ```
 and throw if we encounter an unknown variable.
 
-```cpp
+```d
 statement := identifier "=" term ("+" term)* "\n"
 term := number | knownIdentifier
 code := statement*
@@ -406,7 +410,7 @@ code := statement*
 
 `knownIdentifier` and hence `term` and hence `statement` need all previous identifiers handed to them via context. Where do we put the magic operator? We need to squeeze it into the repetition of statement...
 
-```cpp
+```d
 code := statement @ statement @ statement ...
      := (statement @)* ?!
 ```
@@ -417,7 +421,7 @@ It all feels awkward and also causes more type juggling.
 
 Maybe it would be better to actually allow modifying the context. Then it can also have the same type across all rules. However, a mutable context does not mix well with backtracking. Imagine the following contrived language:
 
-```cpp
+```d
 a=1
 b=2
 c=3 <- ignore
@@ -426,7 +430,7 @@ d=4
 
 which we parse with the following grammar with a map as context:
 
-```cpp
+```d
 assignment := identifier:i "=" number:n -> {context[$i] = $n} "\n"
 commentMarker := " <- ignore\n"
 comment := (!commentMarker .)* commentMarker
@@ -436,7 +440,7 @@ code := line*
 
 The problem is that the `assignment` rule mutates the context, then gets to the point where it expects a line break and then maybe fails and backtracks (as with line 3), then checking the comment branch. But the change to the context remains. This can be prevented by making a backup of the context before every rule invokation and reverting to it in case of backtracking. This can even be done automatically in the parser parent class:
 
-```cpp
+```d
 	auto parseOn(src, auto& ctx) const {
 		auto backup = ctx.copy();
 		auto result = parseFn(src, ctx);
@@ -453,7 +457,7 @@ Or maybe we create yet another class which accumulates changes to the context an
 
 Here's the new idea after a night of "sleep": A context is a kind of multimap where an entry also knows its insertion index (i.e. the size of the multimap before the entry was inserted). The key is for instance the symbol name. Backtracking now works like this:
 
-```cpp
+```d
 	auto parseOn(src, auto& ctx) const {
 		size_t contextSizeWhenThisNodeWasInvoked = ctx.size();
 		auto result = parseFn(src, ctx);
