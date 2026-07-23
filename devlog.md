@@ -5,13 +5,6 @@ I'm gonna write down my trains of thought here so once this project is super fam
 
 ## ToDo
 
-Getting back to this after 2 years... the syntax looks very cluttered. I think it needs some improvements:
-* I think I never actually use the captured whitespace so _ should return ignore already and I should never write ~_, I can also have some extra ws for captured whitespace -> implemented, beautiful.
-* '"blah"' is just too much, it should be \`blah\`. I can write a custom highlighter for vscode but dont know what todo about github. Maybe \$"blah" would be a nice option? semantic values are \$0 \$1 etc, string puzzle values can be \$"sheesh"... -> now I have implemented \`this\` for view trees and used D for fake syntax highlighting.
-* most string literals are ignored, maybe we can use 'blah' for ignored and "blah" for significant -> I have now implemented this. It looks much cleaner. Problem is that in Python as well as in PEG, '...' and "..." are identical and ~"..." was more explicit. Lets see how the giant userbase will react, I mean we can always roll it back, right?
-
-My last action was working on contexts. Check that section.
-
 Next steps would be to rewrite all the examples using all the new features (mainly bindings and context) and also implement some famous parsers, mainly json, json5, lua5.3 and g++ or clang ast output.
 
 * update readme
@@ -470,4 +463,11 @@ Here's the new idea after a night of "sleep": A context is a kind of multimap wh
 
 All children of this node may only add new entries to the context (although an entry can also instruct to regard this symbol as deleted). When reading in the context, only the latest entry of a symbol is considered.
 
-What is the best way to implement this? `multimap` or `unordered_multimap` are not really usable since `find()` returns a random element with a key, not the last one and also `erase()` erases all elements with a key. We can use `unordered_map<Key, stack<Entry>>` and store the insertion order in an extra `stack<Key>`. Now, if we want to backtrack, we keep popping keys from the order stack and from the corresponding symbol stack. This is it! This feels good! Assuming that entries are usually not overwritten and backtracking will usually not remove more than one element, this should be very efficient. 
+What is the best way to implement this? `multimap` or `unordered_multimap` are not really usable since `find()` returns a random element with a key, not the last one and also `erase()` erases all elements with a key. We can use `unordered_map<Key, stack<Entry>>` and store the insertion order in an extra `stack<Key>`. Now, if we want to backtrack, we keep popping keys from the order stack and from the corresponding symbol stack. This is it! This feels good! Assuming that entries are usually not overwritten and backtracking will usually not remove more than one element, this should be very efficient.
+
+# Done
+
+Getting back to this after 2 years... the syntax looks very cluttered. I think it needs some improvements:
+* I think I never actually use the captured whitespace so _ should return ignore already and I should never write ~_, I can also have some extra ws for captured whitespace -> implemented, beautiful.
+* '"blah"' is just too much, it should be \`blah\`. I can write a custom highlighter for vscode but dont know what todo about github. Maybe \$"blah" would be a nice option? semantic values are \$0 \$1 etc, string puzzle values can be \$"sheesh"... -> now I have implemented \`this\` for view trees and used D for fake syntax highlighting.
+* most string literals are ignored, maybe we can use 'blah' for ignored and "blah" for significant -> I have now implemented this. It looks much cleaner. Problem is that in Python as well as in PEG, '...' and "..." are identical and ~"..." was more explicit. Lets see how the giant userbase will react, I mean we can always roll it back, right?
