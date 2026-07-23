@@ -18,7 +18,9 @@ int main(int argc, char* argv[]) {
 		return EXIT_FAILURE;
 	}
 
-	const auto whitespace = ometa::capture(*(" "_lit_| "\t"_lit_| "\n"_lit_)); OMETA_LOG(whitespace);
+	const auto comment = ometa::capture(~"/*"_lit_ > *(!~"*/"_lit_ > ~ometa::any()) > ~"*/"_lit_)| ometa::capture(~"//"_lit_ > *(!~"\n"_lit_ > ~ometa::any()) > ~"\n"_lit_); OMETA_LOG(comment);
+
+	const auto whitespace = comment| ometa::capture(*(" "_lit_| "\t"_lit_| "\n"_lit_)); OMETA_LOG(whitespace);
 	const auto _ = ~whitespace; OMETA_LOG(_);
 
 	const auto identStart = ometa::range(('A'), ('Z'))| ometa::range(('a'), ('z'))| "_"_lit_| "::"_lit_; OMETA_LOG(identStart);

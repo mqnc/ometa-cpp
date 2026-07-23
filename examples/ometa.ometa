@@ -18,7 +18,10 @@ int main(int argc, char* argv[]) {
 		return EXIT_FAILURE;
 	}
 
-	whitespace := <(" " | "\t" | "\n")*>;
+	comment := <'/*' (!'*/' ~.)* '*/'>
+		| <'//' (!'\n' ~.)* '\n'>;
+
+	whitespace := comment | <(" " | "\t" | "\n")*>;
 	_ := ~whitespace;
 
 	identStart := {'A'}..{'Z'} | {'a'}..{'z'} | "_" | "::";

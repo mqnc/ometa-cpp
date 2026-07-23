@@ -31,15 +31,6 @@ bit ugly that we dont have a syntactically sugary way to use pick on something o
 sucks that we have to return something here; just `{@column.set(@column.get()+1)}` will be interpreted as needing to be returned
 
 ```
-	primary :=
-		reference
-		//| macroCall
-		| any
-		| epsilon
-```
-that didn't translate, something must be wrong with whitespace
-
-```
 contextItemDeclaration ~_ ("," {'"\n"'} ~_ contextItemDeclaration -> ometa::concat)* -> ometa::concat;
 ```
 sucks that we need to concat the inner part first (probably the same problem as the next)
