@@ -18,6 +18,8 @@ struct ValueTree {
 	using Type1 = T1;
 	using Type2 = T2;
 
+	ValueTree(){}
+
 	ValueTree(T1 left, T2 right):
 		left {left}, right {right} {}
 

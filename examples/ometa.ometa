@@ -62,7 +62,7 @@ int main(int argc, char* argv[]) {
 			+ ($2.size() > 0 ? $2[0] : ``) + `})`
 		};
 	contextItemDeclaration := contextTableDeclaration | contextValueDeclaration;
-	contextItemDeclarationList := contextItemDeclaration _ ("," {`\n`} _ contextItemDeclaration -> ometa::concat)* -> ometa::concat;
+	contextItemDeclarationList := contextItemDeclaration _ ("," {`\n`} _ contextItemDeclaration)* -> ometa::concat;
 	contextDeclaration := identifier '@' _ ':' _ contextItemDeclarationList _ ';'
 		-> {`auto ` + $0 + ` = ometa::Context(\n` + $1 + `\n);`};
 
@@ -148,7 +148,7 @@ int main(int argc, char* argv[]) {
 	parameterizedAction := '->' {` >= `} _ action -> ometa::concat;
 
 	macroCall := identifier _ '[' {`(`} _
-		expression^ _ ("," {` `} _ expression^ -> ometa::concat)*
+		expression^ _ ("," {` `} _ expression^)*
 		_ ']' {`)`} -> ometa::concat;
 
 	primary :=
@@ -178,18 +178,15 @@ int main(int argc, char* argv[]) {
 			return result;
 		};
 
-	prefixed := <("&" | "!" | "~")?>
-		_ postfixed -> ometa::concat;
+	prefixed := <("&" | "!" | "~")?> _ postfixed -> ometa::concat;
 
-	sequence := prefixed (
-		(_ (
+	sequence := prefixed ( _ (
 			{` > `} prefixed -> ometa::concat
 			| parameterizedAction
-		)) -> ometa::concat
-	)* -> ometa::concat;
+	))* -> ometa::concat;
 
 	choice := sequence (
-		<whitespace "|" whitespace> sequence -> ometa::concat
+		<whitespace "|" whitespace> sequence
 	)* -> ometa::concat;
 
 	expression^ => choice;

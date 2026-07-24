@@ -54,7 +54,7 @@ int main(int argc, char* argv[]) {
 			+ (ometa::pick<2>(value).size() > 0 ? ometa::pick<2>(value)[0] : ""_tree_) + "})"_tree_
 		;}); OMETA_LOG(contextValueDeclaration);
 	const auto contextItemDeclaration = contextTableDeclaration| contextValueDeclaration; OMETA_LOG(contextItemDeclaration);
-	const auto contextItemDeclarationList = contextItemDeclaration > _ > *(","_lit_ > ometa::action([](auto value, auto& context){return "\n"_tree_;}) > _ > contextItemDeclaration >= ometa::concat) >= ometa::concat; OMETA_LOG(contextItemDeclarationList);
+	const auto contextItemDeclarationList = contextItemDeclaration > _ > *(","_lit_ > ometa::action([](auto value, auto& context){return "\n"_tree_;}) > _ > contextItemDeclaration) >= ometa::concat; OMETA_LOG(contextItemDeclarationList);
 	const auto contextDeclaration = identifier > ~"@"_lit_ > _ > ~":"_lit_ > _ > contextItemDeclarationList > _ > ~";"_lit_ >= ometa::action([](auto value, auto& context){return "auto "_tree_ + ometa::pick<0>(value) + " = ometa::Context(\n"_tree_ + ometa::pick<1>(value) + "\n);"_tree_;}); OMETA_LOG(contextDeclaration);
 
 	const auto contextReference = ~"@"_lit_ > identifier >= ometa::action([](auto value, auto& context){return "ometa::pick<\""_tree_ + value + "\">(context)"_tree_;}); OMETA_LOG(contextReference);
@@ -106,7 +106,7 @@ int main(int argc, char* argv[]) {
 
 	const auto parameterizedAction = ~"->"_lit_ > ometa::action([](auto value, auto& context){return " >= "_tree_;}) > _ > action >= ometa::concat; OMETA_LOG(parameterizedAction);
 
-	const auto macroCall = identifier > _ > ~"["_lit_ > ometa::action([](auto value, auto& context){return "("_tree_;}) > _ > ometa::ptr(expression) > _ > *(","_lit_ > ometa::action([](auto value, auto& context){return " "_tree_;}) > _ > ometa::ptr(expression) >= ometa::concat) > _ > ~"]"_lit_ > ometa::action([](auto value, auto& context){return ")"_tree_;}) >= ometa::concat; OMETA_LOG(macroCall);
+	const auto macroCall = identifier > _ > ~"["_lit_ > ometa::action([](auto value, auto& context){return "("_tree_;}) > _ > ometa::ptr(expression) > _ > *(","_lit_ > ometa::action([](auto value, auto& context){return " "_tree_;}) > _ > ometa::ptr(expression)) > _ > ~"]"_lit_ > ometa::action([](auto value, auto& context){return ")"_tree_;}) >= ometa::concat; OMETA_LOG(macroCall);
 
 	const auto primary = reference| macroCall| any| epsilon| literal| range| capture| predicate| action| parenthesized; OMETA_LOG(primary);
 
@@ -126,10 +126,10 @@ int main(int argc, char* argv[]) {
 
 	const auto prefixed = ometa::capture(-("&"_lit_| "!"_lit_| "~"_lit_)) > _ > postfixed >= ometa::concat; OMETA_LOG(prefixed);
 
-	const auto sequence = prefixed > *((_ > (ometa::action([](auto value, auto& context){return " > "_tree_;}) > prefixed >= ometa::concat
-			| parameterizedAction)) >= ometa::concat) >= ometa::concat; OMETA_LOG(sequence);
+	const auto sequence = prefixed > *(_ > (ometa::action([](auto value, auto& context){return " > "_tree_;}) > prefixed >= ometa::concat
+			| parameterizedAction)) >= ometa::concat; OMETA_LOG(sequence);
 
-	const auto choice = sequence > *(ometa::capture(whitespace > "|"_lit_ > whitespace) > sequence >= ometa::concat) >= ometa::concat; OMETA_LOG(choice);
+	const auto choice = sequence > *(ometa::capture(whitespace > "|"_lit_ > whitespace) > sequence) >= ometa::concat; OMETA_LOG(choice);
 
 	*expression = choice; OMETA_LOG(*expression);
 

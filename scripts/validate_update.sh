@@ -29,3 +29,13 @@ echo "building tests with new parser..."
 
 echo "running tests..."
 ./build/test_new_parser
+
+echo "building calculator with new parser..."
+./build.py -o build/test_calculator \
+    --transpiler build/new_parser_from_new_syntax \
+    --ometa-include update/include \
+    --cpp build/calculator.ometa.cpp \
+    examples/calculator.ometa
+
+echo "running calculator..."
+./build/test_calculator "5+4*3^(2+1-0)"

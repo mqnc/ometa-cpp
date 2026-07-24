@@ -38,15 +38,16 @@ auto select = action([](auto value, auto&) {
 });
 
 template <typename T>
-auto concatImpl = [](T value) {
+inline auto concatImpl(T value) {
 	if constexpr (TreeType<T>) {
-		return concatImpl<typename T::Type1>(value.left)
-			+ concatImpl<typename T::Type2>(value.right);
+		return concatImpl(value.left)
+			+ concatImpl(value.right);
 	}
 	else if constexpr (RepetitionValueType<T>) {
-		typename T::value_type temp{};
+		using TReturn = decltype(concatImpl(value[0]));
+		TReturn temp{};
 		for(auto item:value){
-			temp = temp + item;
+			temp = temp + concatImpl(item);
 		}
 		return temp;
 	}
@@ -63,7 +64,7 @@ auto insert = action([](auto value, auto&) {
 	return epsilon() >= constant(value);
 });
 
-auto lfold = [](auto combine) {
+inline auto lfold(auto combine) {
 	return action([combine](auto value, auto&) {
 
 		auto temp = value.template pick<0>();
@@ -79,7 +80,7 @@ auto lfold = [](auto combine) {
 	});
 };
 
-auto rfold = [](auto combine) {
+inline auto rfold(auto combine) {
 	return action([combine](auto value, auto&) {
 
 		auto steps = value.template pick<1>();

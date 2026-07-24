@@ -83,6 +83,11 @@ int main() {
 	EXPECT(zeroOrMore_0.parse("abcdef"));
 	EXPECT(zeroOrMore_0.parse("def"));
 	EXPECT(not zeroOrMore.parse("XXX"));
+	
+	concatRepetitionOfIgnores := 'a'* -> ometa::concat;
+	EXPECT(concatRepetitionOfIgnores.parse("aa").value() == ometa::ignore);
+	concatRepetitionOfSequences := ("a" "b")* -> ometa::concat;
+	EXPECT(concatRepetitionOfSequences.parse("abab").value() == "abab");
 
 	oneOrMore := abc+ def;
 	EXPECT(oneOrMore.parse("abcabcdef"));

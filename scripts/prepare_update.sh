@@ -12,14 +12,14 @@ using ViewTree = ometa::ViewTree<std::string_view>;
 
 int main(int argc, char* argv[]) {
 
-    start := "abc";
+	start := "abc";
 
 	auto code = R"(abc)";
 
 	auto result = start.parse(code);
 	if (result) {
 		std::cout << *result << "\n";
-	    return EXIT_SUCCESS;
+		return EXIT_SUCCESS;
 	}
 	else {
 		std::cout << "fail\n";

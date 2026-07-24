@@ -16,6 +16,10 @@ constexpr bool operator==(const auto, const Ignore) {
 
 Ignore ignore;
 
+constexpr Ignore operator+(const Ignore, const Ignore) {
+	return ignore;
+}
+
 std::ostream& operator<<(std::ostream& os, Ignore)
 {
 	os << "(ignore)";

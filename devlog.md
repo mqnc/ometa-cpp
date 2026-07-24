@@ -30,20 +30,6 @@ bit ugly that we dont have a syntactically sugary way to use pick on something o
 ```
 sucks that we have to return something here; just `{@column.set(@column.get()+1)}` will be interpreted as needing to be returned
 
-```
-contextItemDeclaration ~_ ("," {'"\n"'} ~_ contextItemDeclaration -> ometa::concat)* -> ometa::concat;
-```
-sucks that we need to concat the inner part first (probably the same problem as the next)
-
-```
-	macroCall := identifier ~_ ~"[" {'"("'} ~_
-		expression^ ~_ ("," {'" "'} ~_ expression^)*
-		~_ ~"]" {'")"'} -> ometa::concat;
-```
-concat fails on trees within repetitions
-
-concat fails on deque of igonres
-
 we cant have manual line and column management...
 
 for debugging we need some way to see to which rule the output corresponds, not just 100 levels of Parser. Maybe they need a tag or what
