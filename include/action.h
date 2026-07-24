@@ -27,15 +27,16 @@ auto action(A fn) {
 			// so the compiler doesn't complain if fn() cannot handle ignore
 			// but we actually never call it with ignore.
 
-			constexpr bool actionHasReturn = !std::is_same_v<std::invoke_result_t<
-				decltype(fn), decltype(defer<TSource, ignore>), decltype(ctx)
-			>, void>;
+			auto noValue = defer<TSource, ignore>;
+
+			constexpr bool actionHasReturn = !std::is_same_v<
+				decltype(fn(noValue, ctx)), void>;
 
 			if constexpr(actionHasReturn){
-				return makeMaybeMatch(fn(defer<TSource, ignore>, ctx), src);
+				return makeMaybeMatch(fn(noValue, ctx), src);
 			}
 			else{
-				fn(defer<TSource, ignore>, ctx);
+				fn(noValue, ctx);
 				return makeMaybeMatch(ignore, src);
 			}
 		};
@@ -54,9 +55,8 @@ auto parameterizedAction(T child, Action<A, F> act) {
 
 			auto result = child.parseOn(src, ctx);
 
-			constexpr bool actionHasReturn = !std::is_same_v<std::invoke_result_t<
-				decltype(act.fn), decltype(result->value), decltype(ctx)
-			>, void>;
+			constexpr bool actionHasReturn = !std::is_same_v<
+				decltype(act.fn(result->value, ctx)), void>;
 
 			if constexpr(actionHasReturn){
 				return result.has_value() ?

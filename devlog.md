@@ -5,6 +5,14 @@ I'm gonna write down my trains of thought here so once this project is super fam
 
 ## ToDo
 
+```
+	sequence := prefixed ( _ (
+			{" > "_tree_} prefixed -> ometa::concat //
+			| parameterizedAction
+	))* -> ometa::concat;
+```
+did not get translated, something wrong with the comment
+
 Next steps would be to rewrite all the examples using all the new features (mainly bindings and context) and also implement some famous parsers, mainly json, json5, lua5.3 and g++ or clang ast output.
 
 * update readme
