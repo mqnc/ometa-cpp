@@ -114,13 +114,13 @@ int main(int argc, char* argv[]) {
 	const auto zeroOrMore = "*"_lit_ >= ometa::action([](auto value, auto& context){return "*"_tree_;}); OMETA_LOG(zeroOrMore);
 	const auto oneOrMore = "+"_lit_ >= ometa::action([](auto value, auto& context){return "+"_tree_;}); OMETA_LOG(oneOrMore);
 	const auto repetition = optional| zeroOrMore| oneOrMore; OMETA_LOG(repetition);
-	const auto tag = ~":"_lit_ > _ > identifier >= ometa::action([](auto value, auto& context){return ".as<\""_tree_ + value + "\">()"_tree_;}); OMETA_LOG(tag);
+	const auto tag = ~":"_lit_ > _ > identifier; OMETA_LOG(tag);
 
 	const auto postfixed = primary > _ > -tag > _ > -repetition > _ > -tag >= ometa::action([](auto value, auto& context){ 
 			auto result = ometa::pick<0>(value);
-			if (ometa::pick<1>(value).size() == 1) {result = result + ometa::pick<1>(value)[0];}
+			if (ometa::pick<1>(value).size() == 1) {result = "tagResult<\""_tree_ + ometa::pick<1>(value)[0] + "\">("_tree_ + result + ")"_tree_;}
 			if (ometa::pick<2>(value).size() == 1) {result = ometa::pick<2>(value)[0] + result;}
-			if (ometa::pick<3>(value).size() == 1) {result = "("_tree_ + result + ")"_tree_ + ometa::pick<3>(value)[0];}
+			if (ometa::pick<3>(value).size() == 1) {result = "tagResult<\""_tree_ + ometa::pick<3>(value)[0] + "\">("_tree_ + result + ")"_tree_;}
 			return result;
 		}); OMETA_LOG(postfixed);
 

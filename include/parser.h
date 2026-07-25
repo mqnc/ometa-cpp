@@ -92,31 +92,6 @@ public:
 		return parseFn;
 	}
 
-	// template <typename F2>
-	// void operator=(const Parser<F2>& target) {
-	// 	parseFn = target.parseFn;
-	// }
-
-	template <Tag tag>
-	auto as() const {
-
-		auto parseFn = [this]<forward_range TSource>
-			(
-				View<TSource> src,
-				auto& ctx
-			) {
-				auto result = this->parseOn(src, ctx);
-				return (result) ?
-					makeMaybeMatch(
-						makeTagged<tag>(result->value),
-						result->next
-						)
-					: fail;
-			};
-
-		return Parser<decltype(parseFn)>(parseFn);
-	}
-
 #ifndef DEBUG_PRINTS
 	Parser operator[](std::string) { return *this; }
 #else
@@ -133,13 +108,29 @@ public:
 	}
 #endif
 
-	// template <typename TSource>
-	// using TValue = decltype(std::declval<Parser<F, TChildren>>().parse(std::declval<TSource>()));
-
 };
 
 template<typename T>
 concept DerivedFromParser = requires {typename T::parse_fn_type;}
 	&& std::derived_from<T, Parser<typename T::parse_fn_type>>;
+
+template <Tag tag, DerivedFromParser P>
+auto tagResult(P parser){
+	auto parseFn = [parser]<forward_range TSource>
+		(
+			View<TSource> src,
+			auto& ctx
+		) {
+			auto result = parser.parseOn(src, ctx);
+			return (result) ?
+				makeMaybeMatch(
+					makeTagged<tag>(result->value),
+					result->next
+					)
+				: fail;
+		};
+
+	return Parser(parseFn);
+}
 
 }

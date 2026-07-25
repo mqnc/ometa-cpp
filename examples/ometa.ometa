@@ -167,14 +167,14 @@ int main(int argc, char* argv[]) {
 	zeroOrMore := "*" -> {`*`};
 	oneOrMore := "+" -> {`+`};
 	repetition := optional | zeroOrMore | oneOrMore;
-	tag := ':' _ identifier -> {`.as<\"` + $ + `\">()`};
+	tag := ':' _ identifier;
 
 	postfixed := primary _ tag? _ repetition? _ tag?
 		-> { 
 			auto result = $0;
-			if ($1.size() == 1) {result = result + $1[0];}
+			if ($1.size() == 1) {result = `tagResult<"` + $1[0] + `">(` + result + `)`;}
 			if ($2.size() == 1) {result = $2[0] + result;}
-			if ($3.size() == 1) {result = `(` + result + `)` + $3[0];}
+			if ($3.size() == 1) {result = `tagResult<"` + $3[0] + `">(` + result + `)`;}
 			return result;
 		};
 
