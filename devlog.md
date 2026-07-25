@@ -5,6 +5,16 @@ I'm gonna write down my trains of thought here so once this project is super fam
 
 ## ToDo
 
+Here is where I left of: I wanted to rewrite the Parser class. parseFn should be private, parsers should get a name tag:
+Parser<Tag name, typename F>
+so they can easily be identified in compiler spam. Then parser parameters in whatever external functions should use ParserLike concept so they can handle Parser-derived classes without slicing if the parser carries some extra data around. Maybe slicing is also ok, dunno.
+Anyway. On that note I wanted to make the parseFn private. I also wanted to take some functionality outside of the class and make it a bit smaller. as() can be an external function. operator=() should go away, the parseFn should be immutable and Parser-pointers should have the child swappable. Maybe we can even somehow unify parse and parseOn into a single function and then a parser is something that only has a parse() method. But then if theres only the parse() method, we can even use operator() for that and have a Parser just be a function/functor...
+
+https://chatgpt.com/share/6a64a144-ff80-83ed-8cae-151c4e7df1fe
+
+
+
+
 ```
 	sequence := prefixed ( _ (
 			{" > "_tree_} prefixed -> ometa::concat //

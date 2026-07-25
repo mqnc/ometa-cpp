@@ -23,8 +23,10 @@ constexpr bool has_backup_method() {
 
 template <typename F>
 class Parser {
-public:
+protected:
 	F parseFn;
+public:
+	using parse_fn_type = F;
 
 #ifdef DEBUG_PRINTS
 	mutable std::string name = "";
@@ -86,10 +88,14 @@ public:
 		return unwrap(result);
 	}
 
-	template <typename F2>
-	void operator=(const Parser<F2>& target) {
-		parseFn = target.parseFn;
+	const F& getParseFn() const {
+		return parseFn;
 	}
+
+	// template <typename F2>
+	// void operator=(const Parser<F2>& target) {
+	// 	parseFn = target.parseFn;
+	// }
 
 	template <Tag tag>
 	auto as() const {
@@ -131,5 +137,9 @@ public:
 	// using TValue = decltype(std::declval<Parser<F, TChildren>>().parse(std::declval<TSource>()));
 
 };
+
+template<typename T>
+concept DerivedFromParser = requires {typename T::parse_fn_type;}
+	&& std::derived_from<T, Parser<typename T::parse_fn_type>>;
 
 }
