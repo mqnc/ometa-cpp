@@ -28,52 +28,22 @@ protected:
 public:
 	using parse_fn_type = F;
 
-#ifdef DEBUG_PRINTS
-	mutable std::string name = "";
-#endif
-
 	Parser(F parseFn): parseFn {parseFn} {}
 
 	// to be called internally by parent parsers
 	template <forward_range TSource>
 	auto parseOn(View<TSource> src, auto& ctx) const {
-
-#ifdef DEBUG_PRINTS
-		if (name != "") {
-			log(name, LogEvent::enter, src);
-		}
-#endif
-
 		if constexpr (has_backup_method<decltype(ctx)>()) {
 			auto backup = ctx.backup();
 			auto result = parseFn(src, ctx);
 			if (!result) {
 				ctx.backtrack(backup);
 			}
-#ifdef DEBUG_PRINTS
-			if (name != "") {
-				auto evt = result ? LogEvent::accept : LogEvent::reject;
-				log(name, evt, src, result->next);
-			}
-#endif
 			return result;
 		}
 		else {
-#ifdef DEBUG_PRINTS
-			if (name != "") {
-				auto result = parseFn(src, ctx);
-				auto evt = result ? LogEvent::accept : LogEvent::reject;
-				log(name, evt, src, result->next);
-				return result;
-			}
-			else {
-				return parseFn(src, ctx);
-			}
-#else
 			return parseFn(src, ctx);
-#endif
 		}
-
 	}
 
 	// to be called from the outside to start the parsing process
@@ -91,23 +61,6 @@ public:
 	const F& getParseFn() const {
 		return parseFn;
 	}
-
-#ifndef DEBUG_PRINTS
-	Parser operator[](std::string) { return *this; }
-#else
-	auto operator[](std::string name) {
-		auto parseFn = [this]<forward_range TSource>(
-						   View<TSource> src, const auto& ctx
-					   ) {
-			return this->parseOn(src, ctx);
-		};
-
-		auto wrap = Parser<decltype(parseFn)>(parseFn);
-		wrap.name = name;
-		return wrap;
-	}
-#endif
-
 };
 
 template<typename T>

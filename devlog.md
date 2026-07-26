@@ -12,8 +12,15 @@ Anyway. On that note I wanted to make the parseFn private. I also wanted to take
 
 https://chatgpt.com/share/6a64a144-ff80-83ed-8cae-151c4e7df1fe
 
+new approach:
+Parser is a wrapper around parseFn to provide convenience functionality. parseFn is immutable-ish (only has a getter) but we need it to be mutable for recursion. We can't let pre-declared parser pointers have a swappable child since we then need to know the super nested complicated Parser type of the child in advance. We rather just type-erasingly specify the type of its parseFn and then rip it out. So the parseFn must be out-rippable... oops...
+On that note, check if the parseFn is actually out-rippable, given all the context-specific decoration in parseOn... I think the context stuff is alright since the new parser does that as well. but the logging will be replaced. need to investigate.
 
-
+sheesh I should definitely move to a parser just being a std::function. And all these generator functions should return Functors. In fact, the generators can be classes with operator() as the parser.
+BUUUUT I could lose the ability to track down every parse call...
+except those can then be done in an actual debugger.
+benefit is actually usable compiler output.
+I should start by implementing recursion first, that is most likely to byte me. maybe custom parser combined rules can also be classes with a sensible name...
 
 ```
 	sequence := prefixed ( _ (
@@ -36,6 +43,7 @@ Next steps would be to rewrite all the examples using all the new features (main
 * maybe propagate an ignore_value flag (or maybe not, we might want the side effects)
 * do some projects like a lua, clang and json5 parser, note errors and catch them with awesome eigen error reports
 * memoize (aka packrat parsing); however, need to be aware that context can change parsing result
+* right now EVERYTHING backs up the context, do we maybe only need it in actions and predicates?
 
 ```
 binding := abc:t0 ("+" abc)*:ts;

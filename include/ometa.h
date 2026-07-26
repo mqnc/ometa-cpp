@@ -18,6 +18,7 @@
 #include "recursion.h"
 #include "helpers.h"
 #include "viewtree.h"
+#include "rule.h"
 
 using ometa::operator""_lit_;
 using ometa::operator""_tree_;

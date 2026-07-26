@@ -199,10 +199,10 @@ int main(int argc, char* argv[]) {
 		};
 
 	ruleDefinition^ => identifier _ ':=' _ expression^ _ ';'
-		-> {`const auto ` + $0 + ` = ` + $1 + `; OMETA_LOG(` + $0 + `);`};
+		-> {`const auto ` + $0 + ` = ometa::rule<"` + $0 + `">(` + $1 + `);`};
 
 	ruleRedefinition^ => identifier '^' _ '=>' _ expression^ _ ';'
-		-> {`*` + $0 + ` = ` + $1 + `; OMETA_LOG(*` + $0 + `);`};
+		-> {`*` + $0 + ` = ometa::rule<"` + $0 + `">(` + $1 + `);`};
 
 	macroParameterList := '[' _ {`auto `} identifier _
 		(',' _ identifier -> {`, auto ` + $})* _ ']'
