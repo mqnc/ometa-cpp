@@ -20,7 +20,7 @@ int main(int argc, char* argv[]) {
 
 	const auto comment = ometa::rule<"comment">(ometa::capture(~"/*"_lit_ > *(!~"*/"_lit_ > ~ometa::any()) > ~"*/"_lit_)| ometa::capture(~"//"_lit_ > *(!~"\n"_lit_ > ~ometa::any()) > ~"\n"_lit_));
 
-	const auto whitespace = ometa::rule<"whitespace">(comment| ometa::capture(*(" "_lit_| "\t"_lit_| "\n"_lit_)));
+	const auto whitespace = ometa::rule<"whitespace">(ometa::capture(*(" "_lit_| "\t"_lit_| "\n"_lit_| comment)));
 	const auto _ = ometa::rule<"_">(~whitespace);
 
 	const auto identStart = ometa::rule<"identStart">(ometa::range(('A'), ('Z'))| ometa::range(('a'), ('z'))| "_"_lit_| "::"_lit_);

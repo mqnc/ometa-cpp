@@ -21,7 +21,7 @@ int main(int argc, char* argv[]) {
 	comment := <'/*' (!'*/' ~.)* '*/'>
 		| <'//' (!'\n' ~.)* '\n'>;
 
-	whitespace := comment | <(" " | "\t" | "\n")*>;
+	whitespace := <(" " | "\t" | "\n" | comment)*>;
 	_ := ~whitespace;
 
 	identStart := {'A'}..{'Z'} | {'a'}..{'z'} | "_" | "::";
