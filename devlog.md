@@ -22,14 +22,6 @@ except those can then be done in an actual debugger.
 benefit is actually usable compiler output.
 I should start by implementing recursion first, that is most likely to byte me. maybe custom parser combined rules can also be classes with a sensible name...
 
-```
-	sequence := prefixed ( _ (
-			{" > "_tree_} prefixed -> ometa::concat //
-			| parameterizedAction
-	))* -> ometa::concat;
-```
-did not get translated, something wrong with the comment
-
 Next steps would be to rewrite all the examples using all the new features (mainly bindings and context) and also implement some famous parsers, mainly json, json5, lua5.3 and g++ or clang ast output.
 
 * update readme
