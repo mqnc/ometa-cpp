@@ -6,53 +6,36 @@
 
 namespace ometa{
 
-template <typename TSource, typename TValue, typename TContext = Empty>
-class MutableParser: public Parser<
-	std::function<MaybeMatch<TValue, TSource>(View<TSource>, TContext&)>
->{
+template <typename F, typename TSetter>
+class RecursiveParser : public Parser<F> {
 public:
+	const TSetter define;
+    RecursiveParser(F fn, TSetter setter)
+        : Parser<F>{fn}, define{setter}
+    {}
+};
 
-	MutableParser():Parser<std::function<MaybeMatch<TValue, TSource>(View<TSource>, TContext&)>>{
-		[](View<TSource> src, TContext& ctx) -> MaybeMatch<TValue, TSource> {
-			throw std::runtime_error("mutable parser not defined");
-		}
-	}{}
+template <typename TSource, typename TValue, typename TContext = Empty>
+auto recursive(){
 
-	template<DerivedFromParser P>
-	void setChild(const P& child){
-		this->parseFn = [child] (
-			View<TSource> src,
-			auto& ctx
-		) {
+	auto wrappedChild =
+		std::make_shared<std::function<MaybeMatch<TValue, TSource>(View<TSource>, TContext&)>>(
+			[](View<TSource> src, TContext& ctx) -> MaybeMatch<TValue, TSource> {
+				throw std::runtime_error("recursive parser not defined");
+			}
+		);
+
+	auto parseFn = [wrappedChild](View<TSource> src, TContext& ctx){
+		return (*wrappedChild)(src, ctx);
+	};
+
+	auto define = [pWrapped = wrappedChild.get()](DerivedFromParser auto child){
+		*pWrapped = [child](View<TSource> src, TContext& ctx){
 			return child.parseOn(src, ctx);
 		};
-	}
-};
-
-template <typename F, typename SC>
-class SharedParser:public Parser<F>{
-public:
-	SC setChild;
-	SharedParser(F parseFn, SC setChild):Parser<F>{parseFn}, setChild{setChild}{}
-};
-
-template <typename TSource, typename TValue, typename TContext = Empty>
-auto declareSharedMutableParser() {
-
-	auto sharedParser = std::make_shared<MutableParser<TSource, TValue, TContext>>();
-
-	auto parseFn = [sharedParser] (
-		View<TSource> src,
-		auto& ctx
-	) {
-		return sharedParser->parseOn(src, ctx);
 	};
 
-	auto setChild = [sharedParser] (auto child){
-		sharedParser->setChild(child);
-	};
-
-	return SharedParser<decltype(parseFn), decltype(setChild)>(parseFn, setChild);
+	return RecursiveParser(parseFn, define);
 }
 
 }

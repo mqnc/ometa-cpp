@@ -23,8 +23,7 @@ constexpr bool has_backup_method() {
 
 template <typename F>
 class Parser {
-protected:
-	F parseFn;
+	const F parseFn;
 public:
 	using parse_fn_type = F;
 
@@ -56,10 +55,6 @@ public:
 	auto parse(const auto& src, TCtx& ctx) const {
 		auto result = parseOn(View(src), ctx);
 		return unwrap(result);
-	}
-
-	const F& getParseFn() const {
-		return parseFn;
 	}
 };
 

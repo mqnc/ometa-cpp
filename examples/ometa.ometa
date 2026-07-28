@@ -194,7 +194,7 @@ int main(int argc, char* argv[]) {
 	ruleForwardDecl => identifier _ ':' _
 		bracedCppExpression _ '=>' _ bracedCppExpression _ ';'
 		-> {
-			`auto ` + $0 + ` = ometa::declareSharedMutableParser<`
+			`auto ` + $0 + ` = ometa::recursive<`
 				+ $1 + `, ` + $2 + `>();`
 		};
 
@@ -202,7 +202,7 @@ int main(int argc, char* argv[]) {
 		-> {`const auto ` + $0 + ` = ometa::rule<"` + $0 + `">(` + $1 + `);`};
 
 	ruleRedefinition => identifier _ '=>' _ expression _ ';'
-		-> {$0 + `.setChild(` + $1 + `);`};
+		-> {$0 + `.define(` + $1 + `);`};
 
 	macroParameterList := '[' _ {`auto `} identifier _
 		(',' _ identifier -> {`, auto ` + $})* _ ']'
