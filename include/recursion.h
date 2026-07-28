@@ -4,41 +4,55 @@
 #include "parser.h"
 #include "empty.h"
 
-namespace ometa {
+namespace ometa{
 
-template <typename F>
-class MutableParser: public Parser<F>{
+template <typename TSource, typename TValue, typename TContext = Empty>
+class MutableParser: public Parser<
+	std::function<MaybeMatch<TValue, TSource>(View<TSource>, TContext&)>
+>{
 public:
-	using Parser<F>::Parser;
-	
+
+	MutableParser():Parser<std::function<MaybeMatch<TValue, TSource>(View<TSource>, TContext&)>>{
+		[](View<TSource> src, TContext& ctx) -> MaybeMatch<TValue, TSource> {
+			throw std::runtime_error("mutable parser not defined");
+		}
+	}{}
+
 	template<DerivedFromParser P>
-	MutableParser<F>& operator=(const P& other) {
-		this->parseFn = other.getParseFn();
-		return *this;
+	void setChild(const P& child){
+		this->parseFn = [child] (
+			View<TSource> src,
+			auto& ctx
+		) {
+			return child.parseOn(src, ctx);
+		};
 	}
 };
 
-template <typename TSource, typename TValue, typename TContext = Empty>
-auto declare() {
-	return std::make_shared<
-		MutableParser<std::function<MaybeMatch<TValue, TSource>(View<TSource>, TContext&)>>
-	>(
-		[](View<TSource> src, TContext& ctx) -> MaybeMatch<TValue, TSource> {
-			throw std::runtime_error("forward-declared parser not initialized");
-		}
-	);
-}
+template <typename F, typename SC>
+class SharedParser:public Parser<F>{
+public:
+	SC setChild;
+	SharedParser(F parseFn, SC setChild):Parser<F>{parseFn}, setChild{setChild}{}
+};
 
-template<DerivedFromParser P>
-auto ptr(std::shared_ptr<P> target) {
-	auto parseFn = [target]<forward_range TSource> (
+template <typename TSource, typename TValue, typename TContext = Empty>
+auto declareSharedMutableParser() {
+
+	auto sharedParser = std::make_shared<MutableParser<TSource, TValue, TContext>>();
+
+	auto parseFn = [sharedParser] (
 		View<TSource> src,
 		auto& ctx
 	) {
-		return target->parseOn(src, ctx);
+		return sharedParser->parseOn(src, ctx);
 	};
 
-	return Parser(parseFn);
+	auto setChild = [sharedParser] (auto child){
+		sharedParser->setChild(child);
+	};
+
+	return SharedParser<decltype(parseFn), decltype(setChild)>(parseFn, setChild);
 }
 
 }

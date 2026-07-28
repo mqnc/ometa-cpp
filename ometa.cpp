@@ -38,11 +38,11 @@ int main(int argc, char* argv[]) {
 	const auto indexedValueReference = ometa::rule<"indexedValueReference">(~"$"_lit_ > ometa::capture(+ometa::range(('0'), ('9'))) >= ometa::action([](auto value, auto& context){return "ometa::pick<"_tree_ + value + ">(value)"_tree_;}));
 	const auto taggedValueReference = ometa::rule<"taggedValueReference">(~"$"_lit_ > identifier >= ometa::action([](auto value, auto& context){return "ometa::pick<\""_tree_ + value + "\">(value)"_tree_;}));
 
-	auto cppExpression = ometa::declare<std::string_view, ViewTree>();
-	const auto parenthesizedCppExpression = ometa::rule<"parenthesizedCppExpression">(~"("_lit_ > ometa::ptr(cppExpression) > ~")"_lit_);
-	const auto bracketedCppExpression = ometa::rule<"bracketedCppExpression">(~"["_lit_ > ometa::ptr(cppExpression) > ~"]"_lit_);
-	const auto bracedCppExpression = ometa::rule<"bracedCppExpression">(~"{"_lit_ > ometa::ptr(cppExpression) > ~"}"_lit_);
-	const auto predicateCppExpression = ometa::rule<"predicateCppExpression">(~"{"_lit_ > _ > ~"?"_lit_ > ometa::ptr(cppExpression) > ~"}"_lit_);
+	auto cppExpression = ometa::declareSharedMutableParser<std::string_view, ViewTree>();
+	const auto parenthesizedCppExpression = ometa::rule<"parenthesizedCppExpression">(~"("_lit_ > cppExpression > ~")"_lit_);
+	const auto bracketedCppExpression = ometa::rule<"bracketedCppExpression">(~"["_lit_ > cppExpression > ~"]"_lit_);
+	const auto bracedCppExpression = ometa::rule<"bracedCppExpression">(~"{"_lit_ > cppExpression > ~"}"_lit_);
+	const auto predicateCppExpression = ometa::rule<"predicateCppExpression">(~"{"_lit_ > _ > ~"?"_lit_ > cppExpression > ~"}"_lit_);
 
 	const auto contextTableDeclaration = ometa::rule<"contextTableDeclaration">(identifier > _ > ~":"_lit_ > _ > bracedCppExpression > _ > ~"->"_lit_ > _ > bracedCppExpression >= ometa::action([](auto value, auto& context){return 
 			"\tometa::makeTagged<\""_tree_ + ometa::pick<0>(value) + "\">"_tree_
@@ -60,23 +60,23 @@ int main(int argc, char* argv[]) {
 	const auto contextReference = ometa::rule<"contextReference">(~"@"_lit_ > identifier >= ometa::action([](auto value, auto& context){return "ometa::pick<\""_tree_ + value + "\">(context)"_tree_;}));
 	const auto outsideContextReference = ometa::rule<"outsideContextReference">(identifier > ~"@"_lit_ > identifier >= ometa::action([](auto value, auto& context){return "ometa::pick<\""_tree_ + ometa::pick<1>(value) + "\">("_tree_ + ometa::pick<0>(value) + ")"_tree_;}));
 
-	*cppExpression = ometa::rule<"cppExpression">(*(identifier > ometa::predicate([](auto value, auto& context){return  value && *value != "return";})| contextReference| viewTreeLiteral| cppLiteral| parenthesizedCppExpression >= ometa::action([](auto value, auto& context){return "("_tree_ + value + ")"_tree_;})
+	cppExpression.setChild(*(identifier > ometa::predicate([](auto value, auto& context){return  value && *value != "return";})| contextReference| viewTreeLiteral| cppLiteral| parenthesizedCppExpression >= ometa::action([](auto value, auto& context){return "("_tree_ + value + ")"_tree_;})
 		| bracketedCppExpression >= ometa::action([](auto value, auto& context){return "["_tree_ + value + "]"_tree_;})
 		| bracedCppExpression >= ometa::action([](auto value, auto& context){return "{"_tree_ + value + "}"_tree_;})
 		| indexedValueReference| taggedValueReference| valueReference| !")"_lit_ > !"]"_lit_ > !"}"_lit_ > !";"_lit_ > ometa::any()) >= ometa::concat);
 
-	auto cppCode = ometa::declare<std::string_view, ViewTree>();
-	const auto parenthesizedCppCode = ometa::rule<"parenthesizedCppCode">(~"("_lit_ > ometa::ptr(cppCode) > ~")"_lit_);
-	const auto bracketedCppCode = ometa::rule<"bracketedCppCode">(~"["_lit_ > ometa::ptr(cppCode) > ~"]"_lit_);
-	const auto bracedCppCode = ometa::rule<"bracedCppCode">(~"{"_lit_ > ometa::ptr(cppCode) > ~"}"_lit_);
-	const auto predicateCppCode = ometa::rule<"predicateCppCode">(~"{"_lit_ > _ > ~"?"_lit_ > ometa::ptr(cppCode) > ~"}"_lit_);
+	auto cppCode = ometa::declareSharedMutableParser<std::string_view, ViewTree>();
+	const auto parenthesizedCppCode = ometa::rule<"parenthesizedCppCode">(~"("_lit_ > cppCode > ~")"_lit_);
+	const auto bracketedCppCode = ometa::rule<"bracketedCppCode">(~"["_lit_ > cppCode > ~"]"_lit_);
+	const auto bracedCppCode = ometa::rule<"bracedCppCode">(~"{"_lit_ > cppCode > ~"}"_lit_);
+	const auto predicateCppCode = ometa::rule<"predicateCppCode">(~"{"_lit_ > _ > ~"?"_lit_ > cppCode > ~"}"_lit_);
 
-	auto ruleForwardDecl = ometa::declare<std::string_view, ViewTree>();
-	auto ruleDefinition = ometa::declare<std::string_view, ViewTree>();
-	auto ruleRedefinition = ometa::declare<std::string_view, ViewTree>();
-	auto macroDefinition = ometa::declare<std::string_view, ViewTree>();
+	auto ruleForwardDecl = ometa::declareSharedMutableParser<std::string_view, ViewTree>();
+	auto ruleDefinition = ometa::declareSharedMutableParser<std::string_view, ViewTree>();
+	auto ruleRedefinition = ometa::declareSharedMutableParser<std::string_view, ViewTree>();
+	auto macroDefinition = ometa::declareSharedMutableParser<std::string_view, ViewTree>();
 
-	*cppCode = ometa::rule<"cppCode">(*(ometa::ptr(ruleForwardDecl)| ometa::ptr(ruleDefinition)| ometa::ptr(ruleRedefinition)| ometa::ptr(macroDefinition)| contextDeclaration| contextReference| outsideContextReference| identifier| viewTreeLiteral| cppLiteral| parenthesizedCppCode >= ometa::action([](auto value, auto& context){return "("_tree_ + value + ")"_tree_;})
+	cppCode.setChild(*(ruleForwardDecl| ruleDefinition| ruleRedefinition| macroDefinition| contextDeclaration| contextReference| outsideContextReference| identifier| viewTreeLiteral| cppLiteral| parenthesizedCppCode >= ometa::action([](auto value, auto& context){return "("_tree_ + value + ")"_tree_;})
 		| bracketedCppCode >= ometa::action([](auto value, auto& context){return "["_tree_ + value + "]"_tree_;})
 		| bracedCppCode >= ometa::action([](auto value, auto& context){return "{"_tree_ + value + "}"_tree_;})
 		| indexedValueReference| taggedValueReference| valueReference| !")"_lit_ > !"]"_lit_ > !"}"_lit_ > ometa::any()) >= ometa::concat);
@@ -95,9 +95,9 @@ int main(int argc, char* argv[]) {
 		"ometa::range(("_tree_ + ometa::pick<0>(value) + "), ("_tree_ + ometa::pick<1>(value) + "))"_tree_
 	;}));
 
-	auto expression = ometa::declare<std::string_view, ViewTree>();
-	const auto parenthesized = ometa::rule<"parenthesized">(~"("_lit_ > _ > ometa::ptr(expression) > _ > ~")"_lit_ >= ometa::action([](auto value, auto& context){return "("_tree_ + value + ")"_tree_;}));
-	const auto capture = ometa::rule<"capture">(~"<"_lit_ > _ > ometa::ptr(expression) > _ > ~">"_lit_ >= ometa::action([](auto value, auto& context){return "ometa::capture("_tree_ + value + ")"_tree_;}));
+	auto expression = ometa::declareSharedMutableParser<std::string_view, ViewTree>();
+	const auto parenthesized = ometa::rule<"parenthesized">(~"("_lit_ > _ > expression > _ > ~")"_lit_ >= ometa::action([](auto value, auto& context){return "("_tree_ + value + ")"_tree_;}));
+	const auto capture = ometa::rule<"capture">(~"<"_lit_ > _ > expression > _ > ~">"_lit_ >= ometa::action([](auto value, auto& context){return "ometa::capture("_tree_ + value + ")"_tree_;}));
 
 	const auto action = ometa::rule<"action">(identifier| bracedCppExpression >= ometa::action([](auto value, auto& context){return "ometa::action([](auto value, auto& context){return "_tree_ + value + ";})"_tree_;})
 		| bracedCppCode >= ometa::action([](auto value, auto& context){return "ometa::action([](auto value, auto& context){"_tree_ + value + "})"_tree_;}));
@@ -106,7 +106,7 @@ int main(int argc, char* argv[]) {
 
 	const auto parameterizedAction = ometa::rule<"parameterizedAction">(~"->"_lit_ > ometa::action([](auto value, auto& context){return " >= "_tree_;}) > _ > action >= ometa::concat);
 
-	const auto macroCall = ometa::rule<"macroCall">(identifier > _ > ~"["_lit_ > ometa::action([](auto value, auto& context){return "("_tree_;}) > _ > ometa::ptr(expression) > _ > *(","_lit_ > ometa::action([](auto value, auto& context){return " "_tree_;}) > _ > ometa::ptr(expression)) > _ > ~"]"_lit_ > ometa::action([](auto value, auto& context){return ")"_tree_;}) >= ometa::concat);
+	const auto macroCall = ometa::rule<"macroCall">(identifier > _ > ~"["_lit_ > ometa::action([](auto value, auto& context){return "("_tree_;}) > _ > expression > _ > *(","_lit_ > ometa::action([](auto value, auto& context){return " "_tree_;}) > _ > expression) > _ > ~"]"_lit_ > ometa::action([](auto value, auto& context){return ")"_tree_;}) >= ometa::concat);
 
 	const auto primary = ometa::rule<"primary">(reference| macroCall| any| epsilon| literal| range| capture| predicate| action| parenthesized);
 
@@ -131,25 +131,25 @@ int main(int argc, char* argv[]) {
 
 	const auto choice = ometa::rule<"choice">(sequence > *(ometa::capture(whitespace > "|"_lit_ > whitespace) > sequence) >= ometa::concat);
 
-	*expression = ometa::rule<"expression">(choice);
+	expression.setChild(choice);
 
-	*ruleForwardDecl = ometa::rule<"ruleForwardDecl">(identifier > ~"^"_lit_ > _ > ~":"_lit_ > _ > bracedCppExpression > _ > ~"->"_lit_ > _ > bracedCppExpression > _ > ~";"_lit_ >= ometa::action([](auto value, auto& context){return 
-			"auto "_tree_ + ometa::pick<0>(value) + " = ometa::declare<"_tree_
+	ruleForwardDecl.setChild(identifier > _ > ~":"_lit_ > _ > bracedCppExpression > _ > ~"=>"_lit_ > _ > bracedCppExpression > _ > ~";"_lit_ >= ometa::action([](auto value, auto& context){return 
+			"auto "_tree_ + ometa::pick<0>(value) + " = ometa::declareSharedMutableParser<"_tree_
 				+ ometa::pick<1>(value) + ", "_tree_ + ometa::pick<2>(value) + ">();"_tree_
 		;}));
 
-	*ruleDefinition = ometa::rule<"ruleDefinition">(identifier > _ > ~":="_lit_ > _ > ometa::ptr(expression) > _ > ~";"_lit_ >= ometa::action([](auto value, auto& context){return "const auto "_tree_ + ometa::pick<0>(value) + " = ometa::rule<\""_tree_ + ometa::pick<0>(value) + "\">("_tree_ + ometa::pick<1>(value) + ");"_tree_;}));
+	ruleDefinition.setChild(identifier > _ > ~":="_lit_ > _ > expression > _ > ~";"_lit_ >= ometa::action([](auto value, auto& context){return "const auto "_tree_ + ometa::pick<0>(value) + " = ometa::rule<\""_tree_ + ometa::pick<0>(value) + "\">("_tree_ + ometa::pick<1>(value) + ");"_tree_;}));
 
-	*ruleRedefinition = ometa::rule<"ruleRedefinition">(identifier > ~"^"_lit_ > _ > ~"=>"_lit_ > _ > ometa::ptr(expression) > _ > ~";"_lit_ >= ometa::action([](auto value, auto& context){return "*"_tree_ + ometa::pick<0>(value) + " = ometa::rule<\""_tree_ + ometa::pick<0>(value) + "\">("_tree_ + ometa::pick<1>(value) + ");"_tree_;}));
+	ruleRedefinition.setChild(identifier > _ > ~"=>"_lit_ > _ > expression > _ > ~";"_lit_ >= ometa::action([](auto value, auto& context){return ometa::pick<0>(value) + ".setChild("_tree_ + ometa::pick<1>(value) + ");"_tree_;}));
 
 	const auto macroParameterList = ometa::rule<"macroParameterList">(~"["_lit_ > _ > ometa::action([](auto value, auto& context){return "auto "_tree_;}) > identifier > _ > *(~","_lit_ > _ > identifier >= ometa::action([](auto value, auto& context){return ", auto "_tree_ + value;})) > _ > ~"]"_lit_ >= ometa::concat);
-	*macroDefinition = ometa::rule<"macroDefinition">(identifier > _ > macroParameterList > _ > ~":="_lit_ > _ > ometa::ptr(expression) > _ > ~";"_lit_ >= ometa::action([](auto value, auto& context){return 
+	macroDefinition.setChild(identifier > _ > macroParameterList > _ > ~":="_lit_ > _ > expression > _ > ~";"_lit_ >= ometa::action([](auto value, auto& context){return 
 			"const auto "_tree_ + ometa::pick<0>(value) + " = [=]("_tree_ + ometa::pick<1>(value) + "){return "_tree_ + ometa::pick<2>(value) + ";};"_tree_
 		;}));
 
 	auto code = ometa::readFile(argv[1]);
 
-	auto result = cppCode->parse(code);
+	auto result = cppCode.parse(code);
 	if (result) {
 		try {
 			auto backup = ometa::readFile(argv[2]);

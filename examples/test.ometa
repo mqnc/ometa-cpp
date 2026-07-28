@@ -135,11 +135,11 @@ int main() {
 	binding_ts_0_0 := binding -> {$ts[0]} -> {$0};
 	EXPECT(binding_ts_0_0.parse("abc+abc+abc") == "+");
 
-	recursion^ : {std::string_view} -> {ometa::ViewTree<std::string_view>};
-	recursion^ => abc | <"(" recursion^ ")">;
-	EXPECT(recursion->parse("abc") == "abc");
-	EXPECT(recursion->parse("(abc)") == "(abc)");
-	EXPECT(recursion->parse("((abc))") == "((abc))");
+	recursion : {std::string_view} => {ometa::ViewTree<std::string_view>};
+	recursion => abc | <"(" recursion ")">;
+	EXPECT(recursion.parse("abc") == "abc");
+	EXPECT(recursion.parse("(abc)") == "(abc)");
+	EXPECT(recursion.parse("((abc))") == "((abc))");
 
 	macro[x, y, z] := z y x -> ometa::concat;
 	parametrizedMacro := macro[abc, def, ghi];

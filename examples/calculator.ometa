@@ -20,8 +20,8 @@ int main(int argc, char* argv[]) {
 
 	number := <("+" | "-")? {'0'}..{'9'}+> -> parseInt;
 
-	expression^ : {std::string_view} -> {int};
-	atom := number | ~"(" expression^ ~")";
+	expression : {std::string_view} => {int};
+	atom := number | ~"(" expression ~")";
 
 	auto rfoldPower = ometa::rfold([](auto prev, auto op, auto temp) {
 		auto result = pow(prev, temp);
@@ -47,9 +47,9 @@ int main(int argc, char* argv[]) {
 
 	sum := product (("+" | "-") product)* -> lfoldSum;
 
-	expression^ => sum;
+	expression => sum;
 
-	auto result = expression->parse(argv[1]);
+	auto result = expression.parse(argv[1]);
 
 	if(result) {
 		std::cout << argv[1] << "=" << *result << "\n";

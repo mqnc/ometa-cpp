@@ -5,7 +5,7 @@ I'm gonna write down my trains of thought here so once this project is super fam
 
 ## ToDo
 
-Here is where I left of: I wanted to rewrite the Parser class. parseFn should be private, parsers should get a name tag:
+Here is where I left off: I wanted to rewrite the Parser class. parseFn should be private, parsers should get a name tag:
 Parser<Tag name, typename F>
 so they can easily be identified in compiler spam. Then parser parameters in whatever external functions should use ParserLike concept so they can handle Parser-derived classes without slicing if the parser carries some extra data around. Maybe slicing is also ok, dunno.
 Anyway. On that note I wanted to make the parseFn private. I also wanted to take some functionality outside of the class and make it a bit smaller. as() can be an external function. operator=() should go away, the parseFn should be immutable and Parser-pointers should have the child swappable. Maybe we can even somehow unify parse and parseOn into a single function and then a parser is something that only has a parse() method. But then if theres only the parse() method, we can even use operator() for that and have a Parser just be a function/functor...
@@ -22,8 +22,82 @@ except those can then be done in an actual debugger.
 benefit is actually usable compiler output.
 I should start by implementing recursion first, that is most likely to byte me. maybe custom parser combined rules can also be classes with a sensible name...
 
+I've just noticed that context backup cant only happen in actions and predicates. Only actions and predicates can change the context but anything that can fail needs to backup the context and restore the changes from its subparsers. Hence a Parser wrapper is probably a good idea after all.
+
+One major argument for just using functions was that type erasure on those is trivial, which I need for pre-declaring and later assigning recursive parsers. This is now solved via Parser objects only being wrapper shells and by convention allowing to rip the parseFn out of them then recursion works like this:
+
+```
+shell := ParserShell with stub parseFn of type: std::function...
+stuff := a | b | shell // some combinations referencing shell
+shell.parseFn = (c | d | stuff).parseFn // some combinations referencing stuff that references shell
+```
+
+This rips out the parseFn from whatever is assigned to it, which feels super ugly. I'd rather save that as a child Parser in the shell but didn't know how without having a Parser base class with virtual destructor and all that virtualization overhead.
+
+Here's how:
+
+```
+struct Shell{
+	shared_ptr<Parser<std::function...>> child;
+}
+shell := Shell<std::function...>{};
+stuff := a | b | shell // some combinations referencing shell
+shell.child = make_shared<SpecialParser<F>>(...)
+```
+
+shared_ptr can do type erasure without virtual destructor. We could even do shared_ptr<void>.
+
+Maybe even sexier:
+```cpp
+template<class B, class D, class... Args>
+std::unique_ptr<B, void(*)(B*)>
+make_erased_unique(Args&&... args)
+{
+    return {
+        new D(std::forward<Args>(args)...),
+        [](B* p) {delete static_cast<D*>(p);}
+    };
+}
+```
+
+shared_ptr probably safer and less to worry about. Also, we don't need all references to it to be any special anymore. Parser handles the pointing already internally and can be value-copied around and all occurrences update when child gets assinged.
+
+expression : {int} => {int}
+stuff := a | b | expression
+expression => ...
+
+
+What I was just now trying was this:
+```cpp
+template <typename TSource, typename TValue, typename TContext>
+class MutableParser{
+
+	std::unique_ptr<Parser<TSource, TValue, TContext>> child;
+
+	MutableParser():Parser{
+		[this](View<TSource> src, TContext& ctx) -> MaybeMatch<TValue, TSource> {
+			if(this->child){	
+				return child->parseOn(src, ctx);
+			}
+			else{
+				throw std::runtime_error("mutable parser not defined");
+			}
+		}
+	}{}
+
+	template<DerivedFromParser P>
+	void setChild(const P& newChild){
+		child = make_type_erased_unique<Parser<TSource, TValue, TContext>, P>(newChild);
+	}	
+};
+```
+I thought I'd rewrite the Parser<F> to Parser<TSource, TValue, TContext> instead but then it's impossibru to store lambdas in it like I do. If I rewrite with a base class Parser<TSource, TValue, TContext> with a fix parse() member that throws and has to be overwritten with template inheritance, I lose the code reuse possibility I use now because base parse() cant call child methods without virtualiticity.
+
+## Later Steps
+
 Next steps would be to rewrite all the examples using all the new features (mainly bindings and context) and also implement some famous parsers, mainly json, json5, lua5.3 and g++ or clang ast output.
 
+* cant declare context type for recursive parsers yet
 * update readme
 * preserve whitespaces
 * selective debug log
@@ -35,7 +109,6 @@ Next steps would be to rewrite all the examples using all the new features (main
 * maybe propagate an ignore_value flag (or maybe not, we might want the side effects)
 * do some projects like a lua, clang and json5 parser, note errors and catch them with awesome eigen error reports
 * memoize (aka packrat parsing); however, need to be aware that context can change parsing result
-* right now EVERYTHING backs up the context, do we maybe only need it in actions and predicates?
 
 ```
 binding := abc:t0 ("+" abc)*:ts;
@@ -466,3 +539,4 @@ Getting back to this after 2 years... the syntax looks very cluttered. I think i
 * I think I never actually use the captured whitespace so _ should return ignore already and I should never write ~_, I can also have some extra ws for captured whitespace -> implemented, beautiful.
 * '"blah"' is just too much, it should be \`blah\`. I can write a custom highlighter for vscode but dont know what todo about github. Maybe \$"blah" would be a nice option? semantic values are \$0 \$1 etc, string puzzle values can be \$"sheesh"... -> now I have implemented \`this\` for view trees and used D for fake syntax highlighting.
 * most string literals are ignored, maybe we can use 'blah' for ignored and "blah" for significant -> I have now implemented this. It looks much cleaner. Problem is that in Python as well as in PEG, '...' and "..." are identical and ~"..." was more explicit. Lets see how the giant userbase will react, I mean we can always roll it back, right?
+* right now EVERYTHING backs up the context, do we maybe only need it in actions and predicates? -> no, we need it everywhere. Everything that can fail itself needs to backup the context and restore it from all the changes its subparsers might have done.
