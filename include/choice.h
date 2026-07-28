@@ -6,7 +6,7 @@
 
 namespace ometa {
 
-template <typename T1, typename T2>
+template <DerivedFromParser T1, DerivedFromParser T2>
 auto choice(T1 child1, T2 child2) {
 
 	auto parseFn = [child1, child2]<forward_range TSource>
@@ -27,8 +27,8 @@ auto choice(T1 child1, T2 child2) {
 	return Parser(parseFn);
 }
 
-template <typename F1, typename F2>
-auto operator|(Parser<F1> parser1, Parser<F2> parser2) {
+template <DerivedFromParser T1, DerivedFromParser T2>
+auto operator|(T1 parser1, T2 parser2) {
 	return choice(parser1, parser2);
 }
 

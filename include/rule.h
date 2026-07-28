@@ -6,11 +6,11 @@ namespace ometa{
 
 #ifdef DEBUG_PRINTS
 
-template <Tag tag, DerivedFromParser P>
+template <Tag tag, DerivedFromParser T>
 class Rule {
-	P body;
+	T body;
 public:
-	Rule(P parser):body{parser}{};
+	Rule(T parser):body{parser}{};
 	auto operator()(auto src, auto& ctx) const {
 		log(tag.value, LogEvent::enter, src);
 		auto result = body.parseOn(src, ctx);
@@ -20,15 +20,15 @@ public:
 	}
 };
 
-template <Tag tag, DerivedFromParser P>
-auto rule(P body) {
-	return Parser(Rule<tag, P>(body));
+template <Tag tag, DerivedFromParser T>
+auto rule(T body) {
+	return Parser(Rule<tag, T>(body));
 }
 
 #else
 
-template <Tag tag, DerivedFromParser P>
-auto rule(P body) {
+template <Tag tag, DerivedFromParser T>
+auto rule(T body) {
 	return body;
 }
 

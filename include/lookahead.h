@@ -7,7 +7,7 @@ namespace ometa {
 
 enum Polarity { positive, negative };
 
-template <typename T>
+template <DerivedFromParser T>
 auto lookAhead(T child, Polarity polarity) {
 
 	auto parseFn = [child, polarity]<forward_range TSource>
@@ -26,12 +26,12 @@ auto lookAhead(T child, Polarity polarity) {
 }
 
 
-template <typename F>
-auto operator&(Parser<F> parser) {
+template <DerivedFromParser T>
+auto operator&(T parser) {
 	return lookAhead(parser, positive);
 }
-template <typename F>
-auto operator!(Parser<F> parser) {
+template <DerivedFromParser T>
+auto operator!(T parser) {
 	return lookAhead(parser, negative);
 }
 

@@ -5,7 +5,7 @@ I'm gonna write down my trains of thought here so once this project is super fam
 
 ## ToDo
 
-Here is where I left off: I wanted to rewrite the Parser class. parseFn should be private, parsers should get a name tag:
+I wanted to rewrite the Parser class. parseFn should be private, parsers should get a name tag:
 Parser<Tag name, typename F>
 so they can easily be identified in compiler spam. Then parser parameters in whatever external functions should use ParserLike concept so they can handle Parser-derived classes without slicing if the parser carries some extra data around. Maybe slicing is also ok, dunno.
 Anyway. On that note I wanted to make the parseFn private. I also wanted to take some functionality outside of the class and make it a bit smaller. as() can be an external function. operator=() should go away, the parseFn should be immutable and Parser-pointers should have the child swappable. Maybe we can even somehow unify parse and parseOn into a single function and then a parser is something that only has a parse() method. But then if theres only the parse() method, we can even use operator() for that and have a Parser just be a function/functor...
@@ -92,6 +92,27 @@ class MutableParser{
 };
 ```
 I thought I'd rewrite the Parser<F> to Parser<TSource, TValue, TContext> instead but then it's impossibru to store lambdas in it like I do. If I rewrite with a base class Parser<TSource, TValue, TContext> with a fix parse() member that throws and has to be overwritten with template inheritance, I lose the code reuse possibility I use now because base parse() cant call child methods without virtualiticity.
+
+Now rewritten the recursion part. I dislike how it uses shared_ptr as well as std::function. We can already do type erasure with shared_ptr, there should be a way to avoid std::function. But fine for now. Here is the minimum example:
+
+```cpp
+shared_ptr<function<int(int)>> wrap =
+    make_shared<function<int(int)>>(
+        [](int)->int{
+            throw runtime_error("undefined");
+        }
+    );
+    
+auto wrap2 = wrap;
+
+*wrap = [](int x){return x+1;};
+
+cout << (*wrap2)(5);
+```
+
+If we want to really squeeze, we can invert the update direction. Right now, a shared_ptr is used so every occurrence of the yet-undefined parser will point to a single instance and once that is updated, they all point to the correct parser. Instead we could keep track of instances and once the parser is defined, it updates all the instances, so there will be one less indirection on the hot path. But in the end we are using recursive descent, we shouldn't worry about performance too much.
+
+Actually, functors instead of lambdas might not be the best idea. If all parsers are functors, they will be huge types in the compiler errors instead of just "lambda at ..."
 
 ## Later Steps
 

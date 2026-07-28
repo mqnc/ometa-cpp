@@ -13,7 +13,7 @@ concept RepetitionValueType = std::is_same_v<
 	T, RepetitionValue<typename T::value_type>
 	>;
 
-template <typename T>
+template <DerivedFromParser T>
 auto repetition(T child, size_t min, size_t max) {
 
 	auto parseFn = [child, min, max]<forward_range TSource>
@@ -49,16 +49,16 @@ auto repetition(T child, size_t min, size_t max) {
 	return Parser(parseFn);
 }
 
-template <typename F>
-auto operator-(Parser<F> parser) {
+template <DerivedFromParser T>
+auto operator-(T parser) {
 	return repetition(parser, 0, 1);
 }
-template <typename F>
-auto operator*(Parser<F> parser) {
+template <DerivedFromParser T>
+auto operator*(T parser) {
 	return repetition(parser, 0, (size_t) -1);
 }
-template <typename F>
-auto operator+(Parser<F> parser) {
+template <DerivedFromParser T>
+auto operator+(T parser) {
 	return repetition(parser, 1, (size_t) -1);
 }
 

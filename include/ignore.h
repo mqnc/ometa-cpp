@@ -26,7 +26,7 @@ std::ostream& operator<<(std::ostream& os, Ignore)
 	return os;
 }
 
-template <typename T>
+template <DerivedFromParser T>
 auto ignoreValue(T child) {
 
 	auto parseFn = [child]<forward_range TSource>
@@ -48,8 +48,8 @@ auto ignoreValue(T child) {
 	return Parser(parseFn);
 }
 
-template <typename F>
-auto operator~(Parser<F> parser) {
+template <DerivedFromParser T>
+auto operator~(T parser) {
 	return ignoreValue(parser);
 }
 

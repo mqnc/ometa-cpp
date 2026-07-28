@@ -44,7 +44,7 @@ auto action(A fn) {
 	return Action(fn, parseFn);
 }
 
-template <typename T, typename A, typename F>
+template <DerivedFromParser T, typename A, typename F>
 auto parameterizedAction(T child, Action<A, F> act) {
 
 	auto parseFn = [child, act]<forward_range TSource>
@@ -73,8 +73,8 @@ auto parameterizedAction(T child, Action<A, F> act) {
 	return Parser(parseFn);
 }
 
-template <typename F1, typename A, typename F2>
-auto operator>=(Parser<F1> parser, Action<A, F2> act) {
+template <DerivedFromParser T, typename A, typename F>
+auto operator>=(T parser, Action<A, F> act) {
 	return parameterizedAction(parser, act);
 }
 

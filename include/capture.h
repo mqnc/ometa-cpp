@@ -5,7 +5,7 @@
 
 namespace ometa {
 
-template <typename T>
+template <DerivedFromParser T>
 auto capture(T child) {
 
 	auto parseFn = [child]<forward_range TSource>

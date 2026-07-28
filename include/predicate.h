@@ -33,7 +33,7 @@ auto predicate(P fn) {
 	return Predicate(fn, parseFn);
 }
 
-template <typename T, typename P, typename F>
+template <DerivedFromParser T, typename P, typename F>
 auto parameterizedPredicate(T child, Predicate<P, F> pred) {
 
 	auto parseFn = [child, pred]<forward_range TSource>
@@ -50,8 +50,8 @@ auto parameterizedPredicate(T child, Predicate<P, F> pred) {
 	return Parser(parseFn);
 }
 
-template <typename F1, typename P, typename F2>
-auto operator>(Parser<F1> parser, Predicate<P, F2> pred) {
+template <DerivedFromParser T, typename P, typename F>
+auto operator>(T parser, Predicate<P, F> pred) {
 	return parameterizedPredicate(parser, pred);
 }
 
