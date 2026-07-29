@@ -1,7 +1,14 @@
 #pragma once
 
 #include "parser.h"
+#include "rule.h"
 #include "defer.h"
+
+// A predicate must be a working Parser on its own
+// but we must also be able to pipe things into it:
+//
+// pred := {? true}; // used standalone, we feed Ignore into it
+// paramPred := a pred; // now a's value is piped into it
 
 namespace ometa {
 
@@ -53,6 +60,11 @@ auto parameterizedPredicate(T child, Predicate<P, F> pred) {
 template <DerivedFromParser T, typename P, typename F>
 auto operator>(T parser, Predicate<P, F> pred) {
 	return parameterizedPredicate(parser, pred);
+}
+
+template <DerivedFromParser T, Tag tag, typename P, typename F>
+auto operator>(T parser, RuleWrapper<Rule<tag, Predicate<P, F>>> predRule) {
+	return rule<tag>(parameterizedPredicate(parser, predRule.getBody()));
 }
 
 }

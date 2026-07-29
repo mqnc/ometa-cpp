@@ -3,6 +3,12 @@
 #include "parser.h"
 #include "defer.h"
 
+// An action must be a working Parser on its own
+// but we must also be able to pipe things into it:
+//
+// act := {...}; // used standalone, we feed Ignore into it
+// paramAct := a act; // now a's value is piped into it
+
 namespace ometa {
 
 template <typename A, typename F>
@@ -76,6 +82,11 @@ auto parameterizedAction(T child, Action<A, F> act) {
 template <DerivedFromParser T, typename A, typename F>
 auto operator>=(T parser, Action<A, F> act) {
 	return parameterizedAction(parser, act);
+}
+
+template <DerivedFromParser T, Tag tag, typename A, typename F>
+auto operator>=(T parser, RuleWrapper<Rule<tag, Action<A, F>>> actRule) {
+	return rule<tag>(parameterizedAction(parser, actRule.getBody()));
 }
 
 }

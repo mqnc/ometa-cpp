@@ -23,8 +23,13 @@ constexpr bool has_backup_method() {
 
 template <typename F>
 class Parser {
+
+protected:
+
 	const F parseFn;
+
 public:
+
 	using parse_fn_type = F;
 
 	Parser(F parseFn): parseFn {parseFn} {}

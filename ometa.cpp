@@ -60,10 +60,10 @@ int main(int argc, char* argv[]) {
 	const auto contextReference = ometa::rule<"contextReference">(~"@"_lit_ > identifier >= ometa::action([](auto value, auto& context){return "ometa::pick<\""_tree_ + value + "\">(context)"_tree_;}));
 	const auto outsideContextReference = ometa::rule<"outsideContextReference">(identifier > ~"@"_lit_ > identifier >= ometa::action([](auto value, auto& context){return "ometa::pick<\""_tree_ + ometa::pick<1>(value) + "\">("_tree_ + ometa::pick<0>(value) + ")"_tree_;}));
 
-	cppExpression.define(*(identifier > ometa::predicate([](auto value, auto& context){return  value && *value != "return";})| contextReference| viewTreeLiteral| cppLiteral| parenthesizedCppExpression >= ometa::action([](auto value, auto& context){return "("_tree_ + value + ")"_tree_;})
+	cppExpression.define(ometa::rule<"cppExpression">(*(identifier > ometa::predicate([](auto value, auto& context){return  value && *value != "return";})| contextReference| viewTreeLiteral| cppLiteral| parenthesizedCppExpression >= ometa::action([](auto value, auto& context){return "("_tree_ + value + ")"_tree_;})
 		| bracketedCppExpression >= ometa::action([](auto value, auto& context){return "["_tree_ + value + "]"_tree_;})
 		| bracedCppExpression >= ometa::action([](auto value, auto& context){return "{"_tree_ + value + "}"_tree_;})
-		| indexedValueReference| taggedValueReference| valueReference| !")"_lit_ > !"]"_lit_ > !"}"_lit_ > !";"_lit_ > ometa::any()) >= ometa::concat);
+		| indexedValueReference| taggedValueReference| valueReference| !")"_lit_ > !"]"_lit_ > !"}"_lit_ > !";"_lit_ > ometa::any()) >= ometa::concat));
 
 	auto cppCode = ometa::recursive<std::string_view, ViewTree>();
 	const auto parenthesizedCppCode = ometa::rule<"parenthesizedCppCode">(~"("_lit_ > cppCode > ~")"_lit_);
@@ -76,10 +76,10 @@ int main(int argc, char* argv[]) {
 	auto ruleRedefinition = ometa::recursive<std::string_view, ViewTree>();
 	auto macroDefinition = ometa::recursive<std::string_view, ViewTree>();
 
-	cppCode.define(*(ruleForwardDecl| ruleDefinition| ruleRedefinition| macroDefinition| contextDeclaration| contextReference| outsideContextReference| identifier| viewTreeLiteral| cppLiteral| parenthesizedCppCode >= ometa::action([](auto value, auto& context){return "("_tree_ + value + ")"_tree_;})
+	cppCode.define(ometa::rule<"cppCode">(*(ruleForwardDecl| ruleDefinition| ruleRedefinition| macroDefinition| contextDeclaration| contextReference| outsideContextReference| identifier| viewTreeLiteral| cppLiteral| parenthesizedCppCode >= ometa::action([](auto value, auto& context){return "("_tree_ + value + ")"_tree_;})
 		| bracketedCppCode >= ometa::action([](auto value, auto& context){return "["_tree_ + value + "]"_tree_;})
 		| bracedCppCode >= ometa::action([](auto value, auto& context){return "{"_tree_ + value + "}"_tree_;})
-		| indexedValueReference| taggedValueReference| valueReference| !")"_lit_ > !"]"_lit_ > !"}"_lit_ > ometa::any()) >= ometa::concat);
+		| indexedValueReference| taggedValueReference| valueReference| !")"_lit_ > !"]"_lit_ > !"}"_lit_ > ometa::any()) >= ometa::concat));
 
 	const auto any = ometa::rule<"any">("."_lit_ >= ometa::action([](auto value, auto& context){return "ometa::any()"_tree_;}));
 	const auto epsilon = ometa::rule<"epsilon">("()"_lit_ >= ometa::action([](auto value, auto& context){return "ometa::epsilon()"_tree_;}));
@@ -131,35 +131,37 @@ int main(int argc, char* argv[]) {
 
 	const auto choice = ometa::rule<"choice">(sequence > *(ometa::capture(whitespace > "|"_lit_ > whitespace) > sequence) >= ometa::concat);
 
-	expression.define(choice);
+	expression.define(ometa::rule<"expression">(choice));
 
-	ruleForwardDecl.define(identifier > _ > ~":"_lit_ > _ > bracedCppExpression > _ > ~"=>"_lit_ > _ > bracedCppExpression > _ > ~";"_lit_ >= ometa::action([](auto value, auto& context){return 
+	ruleForwardDecl.define(ometa::rule<"ruleForwardDecl">(identifier > _ > ~":"_lit_ > _ > bracedCppExpression > _ > ~"=>"_lit_ > _ > bracedCppExpression > _ > ~";"_lit_ >= ometa::action([](auto value, auto& context){return 
 			"auto "_tree_ + ometa::pick<0>(value) + " = ometa::recursive<"_tree_
 				+ ometa::pick<1>(value) + ", "_tree_ + ometa::pick<2>(value) + ">();"_tree_
-		;}));
+		;})));
 
-	ruleDefinition.define(identifier > _ > ~":="_lit_ > _ > expression > _ > ~";"_lit_ >= ometa::action([](auto value, auto& context){return "const auto "_tree_ + ometa::pick<0>(value) + " = ometa::rule<\""_tree_ + ometa::pick<0>(value) + "\">("_tree_ + ometa::pick<1>(value) + ");"_tree_;}));
+	ruleDefinition.define(ometa::rule<"ruleDefinition">(identifier > _ > ~":="_lit_ > _ > expression > _ > ~";"_lit_ >= ometa::action([](auto value, auto& context){return "const auto "_tree_ + ometa::pick<0>(value) + " = ometa::rule<\""_tree_ + ometa::pick<0>(value) + "\">("_tree_ + ometa::pick<1>(value) + ");"_tree_;})));
 
-	ruleRedefinition.define(identifier > _ > ~"=>"_lit_ > _ > expression > _ > ~";"_lit_ >= ometa::action([](auto value, auto& context){return ometa::pick<0>(value) + ".define("_tree_ + ometa::pick<1>(value) + ");"_tree_;}));
+	ruleRedefinition.define(ometa::rule<"ruleRedefinition">(identifier > _ > ~"=>"_lit_ > _ > expression > _ > ~";"_lit_ >= ometa::action([](auto value, auto& context){return ometa::pick<0>(value) + ".define(ometa::rule<\""_tree_ + ometa::pick<0>(value) + "\">("_tree_ + ometa::pick<1>(value) + "));"_tree_;})));
 
 	const auto macroParameterList = ometa::rule<"macroParameterList">(~"["_lit_ > _ > ometa::action([](auto value, auto& context){return "auto "_tree_;}) > identifier > _ > *(~","_lit_ > _ > identifier >= ometa::action([](auto value, auto& context){return ", auto "_tree_ + value;})) > _ > ~"]"_lit_ >= ometa::concat);
-	macroDefinition.define(identifier > _ > macroParameterList > _ > ~":="_lit_ > _ > expression > _ > ~";"_lit_ >= ometa::action([](auto value, auto& context){return 
+	macroDefinition.define(ometa::rule<"macroDefinition">(identifier > _ > macroParameterList > _ > ~":="_lit_ > _ > expression > _ > ~";"_lit_ >= ometa::action([](auto value, auto& context){return 
 			"const auto "_tree_ + ometa::pick<0>(value) + " = [=]("_tree_ + ometa::pick<1>(value) + "){return "_tree_ + ometa::pick<2>(value) + ";};"_tree_
-		;}));
+		;})));
 
 	auto code = ometa::readFile(argv[1]);
 
 	auto result = cppCode.parse(code);
 	if (result) {
-		try {
-			auto backup = ometa::readFile(argv[2]);
-			std::time_t time = std::time({});
-			char timeString[std::size("yyyy_mm_dd__hh_mm_ssZ")];
-			std::strftime(std::data(timeString), std::size(timeString),
-				"%Y_%m_%d__%H_%M_%S", std::gmtime(&time));
-			ometa::writeFile(std::string(argv[2]) + "." + timeString + ".backup", backup);
-		}
-		catch (...) {}
+		// make a backup copy if transpiled file already exists
+
+		// try {
+		// 	auto backup = ometa::readFile(argv[2]);
+		// 	std::time_t time = std::time({});
+		// 	char timeString[std::size("yyyy_mm_dd__hh_mm_ssZ")];
+		// 	std::strftime(std::data(timeString), std::size(timeString),
+		// 		"%Y_%m_%d__%H_%M_%S", std::gmtime(&time));
+		// 	ometa::writeFile(std::string(argv[2]) + "." + timeString + ".backup", backup);
+		// }
+		// catch (...) {}
 
 		ometa::writeFile(argv[2], *result);
 	}

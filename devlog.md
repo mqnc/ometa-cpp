@@ -112,7 +112,15 @@ cout << (*wrap2)(5);
 
 If we want to really squeeze, we can invert the update direction. Right now, a shared_ptr is used so every occurrence of the yet-undefined parser will point to a single instance and once that is updated, they all point to the correct parser. Instead we could keep track of instances and once the parser is defined, it updates all the instances, so there will be one less indirection on the hot path. But in the end we are using recursive descent, we shouldn't worry about performance too much.
 
-Actually, functors instead of lambdas might not be the best idea. If all parsers are functors, they will be huge types in the compiler errors instead of just "lambda at ..."
+## Compiler Error Readability
+
+I was thinking I should move away from lambdas and use functors in the generators. I've tried it with choice. Instead of a lambda which appears as `(lambda at ...)`, it appears as `ometa::ChoiceFn<ometa::Parser<(lambda at update/include/sequence.h:11:17)>, ometa::Parser<(lambda at update/include/action.h:50:17)>>::operator()<ometa::View<std::basic_string_view<char>>, ometa::Empty>` I think this is worse tho as this will nest to oblivion and lambda actually prevents this nicely.
+
+Furthermore, I've made a class Choice that inherits from Parser and does nothing else, only to give Parser a name. However, often we will still see `ometa::Parser<ometa::ChoiceFn<` because it refers to the passOn method which is defined in Parser, not in Choice.
+
+So I will now try to give Parser a tag.
+
+actions, predicates and recursives must not be wrapped by the rule wrapper, otherwise their mechanism wont work later.
 
 ## Later Steps
 
