@@ -3,128 +3,9 @@
 
 I'm gonna write down my trains of thought here so once this project is super famous, people can understand certain decisions. Also so I can understand certain decisions once I pick the project back up after five years of losing interest. The individual thought trains are chronological within themselves but it can happen that a decision that is noted in the middle of one train overthrows a final decision of another train somewhere else (below or above) in the document. So the readme and the test should be the reference. 
 
-## ToDo
-
-I wanted to rewrite the Parser class. parseFn should be private, parsers should get a name tag:
-Parser<Tag name, typename F>
-so they can easily be identified in compiler spam. Then parser parameters in whatever external functions should use ParserLike concept so they can handle Parser-derived classes without slicing if the parser carries some extra data around. Maybe slicing is also ok, dunno.
-Anyway. On that note I wanted to make the parseFn private. I also wanted to take some functionality outside of the class and make it a bit smaller. as() can be an external function. operator=() should go away, the parseFn should be immutable and Parser-pointers should have the child swappable. Maybe we can even somehow unify parse and parseOn into a single function and then a parser is something that only has a parse() method. But then if theres only the parse() method, we can even use operator() for that and have a Parser just be a function/functor...
-
-https://chatgpt.com/share/6a64a144-ff80-83ed-8cae-151c4e7df1fe
-
-new approach:
-Parser is a wrapper around parseFn to provide convenience functionality. parseFn is immutable-ish (only has a getter) but we need it to be mutable for recursion. We can't let pre-declared parser pointers have a swappable child since we then need to know the super nested complicated Parser type of the child in advance. We rather just type-erasingly specify the type of its parseFn and then rip it out. So the parseFn must be out-rippable... oops...
-On that note, check if the parseFn is actually out-rippable, given all the context-specific decoration in parseOn... I think the context stuff is alright since the new parser does that as well. but the logging will be replaced. need to investigate.
-
-sheesh I should definitely move to a parser just being a std::function. And all these generator functions should return Functors. In fact, the generators can be classes with operator() as the parser.
-BUUUUT I could lose the ability to track down every parse call...
-except those can then be done in an actual debugger.
-benefit is actually usable compiler output.
-I should start by implementing recursion first, that is most likely to byte me. maybe custom parser combined rules can also be classes with a sensible name...
-
-I've just noticed that context backup cant only happen in actions and predicates. Only actions and predicates can change the context but anything that can fail needs to backup the context and restore the changes from its subparsers. Hence a Parser wrapper is probably a good idea after all.
-
-One major argument for just using functions was that type erasure on those is trivial, which I need for pre-declaring and later assigning recursive parsers. This is now solved via Parser objects only being wrapper shells and by convention allowing to rip the parseFn out of them then recursion works like this:
-
-```
-shell := ParserShell with stub parseFn of type: std::function...
-stuff := a | b | shell // some combinations referencing shell
-shell.parseFn = (c | d | stuff).parseFn // some combinations referencing stuff that references shell
-```
-
-This rips out the parseFn from whatever is assigned to it, which feels super ugly. I'd rather save that as a child Parser in the shell but didn't know how without having a Parser base class with virtual destructor and all that virtualization overhead.
-
-Here's how:
-
-```
-struct Shell{
-	shared_ptr<Parser<std::function...>> child;
-}
-shell := Shell<std::function...>{};
-stuff := a | b | shell // some combinations referencing shell
-shell.child = make_shared<SpecialParser<F>>(...)
-```
-
-shared_ptr can do type erasure without virtual destructor. We could even do shared_ptr<void>.
-
-Maybe even sexier:
-```cpp
-template<class B, class D, class... Args>
-std::unique_ptr<B, void(*)(B*)>
-make_erased_unique(Args&&... args)
-{
-    return {
-        new D(std::forward<Args>(args)...),
-        [](B* p) {delete static_cast<D*>(p);}
-    };
-}
-```
-
-shared_ptr probably safer and less to worry about. Also, we don't need all references to it to be any special anymore. Parser handles the pointing already internally and can be value-copied around and all occurrences update when child gets assinged.
-
-expression : {int} => {int}
-stuff := a | b | expression
-expression => ...
-
-
-What I was just now trying was this:
-```cpp
-template <typename TSource, typename TValue, typename TContext>
-class MutableParser{
-
-	std::unique_ptr<Parser<TSource, TValue, TContext>> child;
-
-	MutableParser():Parser{
-		[this](View<TSource> src, TContext& ctx) -> MaybeMatch<TValue, TSource> {
-			if(this->child){	
-				return child->parseOn(src, ctx);
-			}
-			else{
-				throw std::runtime_error("mutable parser not defined");
-			}
-		}
-	}{}
-
-	template<DerivedFromParser P>
-	void setChild(const P& newChild){
-		child = make_type_erased_unique<Parser<TSource, TValue, TContext>, P>(newChild);
-	}	
-};
-```
-I thought I'd rewrite the Parser<F> to Parser<TSource, TValue, TContext> instead but then it's impossibru to store lambdas in it like I do. If I rewrite with a base class Parser<TSource, TValue, TContext> with a fix parse() member that throws and has to be overwritten with template inheritance, I lose the code reuse possibility I use now because base parse() cant call child methods without virtualiticity.
-
-Now rewritten the recursion part. I dislike how it uses shared_ptr as well as std::function. We can already do type erasure with shared_ptr, there should be a way to avoid std::function. But fine for now. Here is the minimum example:
-
-```cpp
-shared_ptr<function<int(int)>> wrap =
-    make_shared<function<int(int)>>(
-        [](int)->int{
-            throw runtime_error("undefined");
-        }
-    );
-    
-auto wrap2 = wrap;
-
-*wrap = [](int x){return x+1;};
-
-cout << (*wrap2)(5);
-```
-
-If we want to really squeeze, we can invert the update direction. Right now, a shared_ptr is used so every occurrence of the yet-undefined parser will point to a single instance and once that is updated, they all point to the correct parser. Instead we could keep track of instances and once the parser is defined, it updates all the instances, so there will be one less indirection on the hot path. But in the end we are using recursive descent, we shouldn't worry about performance too much.
-
-## Compiler Error Readability
-
-I was thinking I should move away from lambdas and use functors in the generators. I've tried it with choice. Instead of a lambda which appears as `(lambda at ...)`, it appears as `ometa::ChoiceFn<ometa::Parser<(lambda at update/include/sequence.h:11:17)>, ometa::Parser<(lambda at update/include/action.h:50:17)>>::operator()<ometa::View<std::basic_string_view<char>>, ometa::Empty>` I think this is worse tho as this will nest to oblivion and lambda actually prevents this nicely.
-
-Furthermore, I've made a class Choice that inherits from Parser and does nothing else, only to give Parser a name. However, often we will still see `ometa::Parser<ometa::ChoiceFn<` because it refers to the passOn method which is defined in Parser, not in Choice.
-
-So I will now try to give Parser a tag.
-
-actions, predicates and recursives must not be wrapped by the rule wrapper, otherwise their mechanism wont work later.
-
 ## Later Steps
 
-Next steps would be to rewrite all the examples using all the new features (mainly bindings and context) and also implement some famous parsers, mainly json, json5, lua5.3 and g++ or clang ast output.
+Next steps would be to rewrite all the examples using all the new features (mainly bindings and context) and also implement some famous parsers, mainly json, json5, lua5.3, g++ or clang ast output, write a minimal C++ formatter.
 
 * see if recursion is properly log-wrapped
 * cant declare context type for recursive parsers yet
@@ -139,6 +20,7 @@ Next steps would be to rewrite all the examples using all the new features (main
 * maybe propagate an ignore_value flag (or maybe not, we might want the side effects)
 * do some projects like a lua, clang and json5 parser, note errors and catch them with awesome eigen error reports
 * memoize (aka packrat parsing); however, need to be aware that context can change parsing result
+* parse and summarize clang error output
 
 ```
 binding := abc:t0 ("+" abc)*:ts;
@@ -152,8 +34,6 @@ bit ugly that we dont have a syntactically sugary way to use pick on something o
 sucks that we have to return something here; just `{@column.set(@column.get()+1)}` will be interpreted as needing to be returned
 
 we cant have manual line and column management...
-
-for debugging we need some way to see to which rule the output corresponds, not just 100 levels of Parser. Maybe they need a tag or what
 
 ## Putting Things into Context
 
@@ -570,3 +450,124 @@ Getting back to this after 2 years... the syntax looks very cluttered. I think i
 * '"blah"' is just too much, it should be \`blah\`. I can write a custom highlighter for vscode but dont know what todo about github. Maybe \$"blah" would be a nice option? semantic values are \$0 \$1 etc, string puzzle values can be \$"sheesh"... -> now I have implemented \`this\` for view trees and used D for fake syntax highlighting.
 * most string literals are ignored, maybe we can use 'blah' for ignored and "blah" for significant -> I have now implemented this. It looks much cleaner. Problem is that in Python as well as in PEG, '...' and "..." are identical and ~"..." was more explicit. Lets see how the giant userbase will react, I mean we can always roll it back, right?
 * right now EVERYTHING backs up the context, do we maybe only need it in actions and predicates? -> no, we need it everywhere. Everything that can fail itself needs to backup the context and restore it from all the changes its subparsers might have done.
+
+### Parser Refactory
+
+I wanted to rewrite the Parser class. parseFn should be private, parsers should get a name tag:
+Parser<Tag name, typename F>
+so they can easily be identified in compiler spam. Then parser parameters in whatever external functions should use ParserLike concept so they can handle Parser-derived classes without slicing if the parser carries some extra data around. Maybe slicing is also ok, dunno.
+Anyway. On that note I wanted to make the parseFn private. I also wanted to take some functionality outside of the class and make it a bit smaller. as() can be an external function. operator=() should go away, the parseFn should be immutable and Parser-pointers should have the child swappable. Maybe we can even somehow unify parse and parseOn into a single function and then a parser is something that only has a parse() method. But then if theres only the parse() method, we can even use operator() for that and have a Parser just be a function/functor...
+
+https://chatgpt.com/share/6a64a144-ff80-83ed-8cae-151c4e7df1fe
+
+new approach:
+Parser is a wrapper around parseFn to provide convenience functionality. parseFn is immutable-ish (only has a getter) but we need it to be mutable for recursion. We can't let pre-declared parser pointers have a swappable child since we then need to know the super nested complicated Parser type of the child in advance. We rather just type-erasingly specify the type of its parseFn and then rip it out. So the parseFn must be out-rippable... oops...
+On that note, check if the parseFn is actually out-rippable, given all the context-specific decoration in parseOn... I think the context stuff is alright since the new parser does that as well. but the logging will be replaced. need to investigate.
+
+sheesh I should definitely move to a parser just being a std::function. And all these generator functions should return Functors. In fact, the generators can be classes with operator() as the parser.
+BUUUUT I could lose the ability to track down every parse call...
+except those can then be done in an actual debugger.
+benefit is actually usable compiler output.
+I should start by implementing recursion first, that is most likely to byte me. maybe custom parser combined rules can also be classes with a sensible name...
+
+I've just noticed that context backup cant only happen in actions and predicates. Only actions and predicates can change the context but anything that can fail needs to backup the context and restore the changes from its subparsers. Hence a Parser wrapper is probably a good idea after all.
+
+One major argument for just using functions was that type erasure on those is trivial, which I need for pre-declaring and later assigning recursive parsers. This is now solved via Parser objects only being wrapper shells and by convention allowing to rip the parseFn out of them then recursion works like this:
+
+```
+shell := ParserShell with stub parseFn of type: std::function...
+stuff := a | b | shell // some combinations referencing shell
+shell.parseFn = (c | d | stuff).parseFn // some combinations referencing stuff that references shell
+```
+
+This rips out the parseFn from whatever is assigned to it, which feels super ugly. I'd rather save that as a child Parser in the shell but didn't know how without having a Parser base class with virtual destructor and all that virtualization overhead.
+
+Here's how:
+
+```
+struct Shell{
+	shared_ptr<Parser<std::function...>> child;
+}
+shell := Shell<std::function...>{};
+stuff := a | b | shell // some combinations referencing shell
+shell.child = make_shared<SpecialParser<F>>(...)
+```
+
+shared_ptr can do type erasure without virtual destructor. We could even do shared_ptr<void>.
+
+Maybe even sexier:
+```cpp
+template<class B, class D, class... Args>
+std::unique_ptr<B, void(*)(B*)>
+make_erased_unique(Args&&... args)
+{
+    return {
+        new D(std::forward<Args>(args)...),
+        [](B* p) {delete static_cast<D*>(p);}
+    };
+}
+```
+
+shared_ptr probably safer and less to worry about. Also, we don't need all references to it to be any special anymore. Parser handles the pointing already internally and can be value-copied around and all occurrences update when child gets assinged.
+
+expression : {int} => {int}
+stuff := a | b | expression
+expression => ...
+
+
+What I was just now trying was this:
+```cpp
+template <typename TSource, typename TValue, typename TContext>
+class MutableParser{
+
+	std::unique_ptr<Parser<TSource, TValue, TContext>> child;
+
+	MutableParser():Parser{
+		[this](View<TSource> src, TContext& ctx) -> MaybeMatch<TValue, TSource> {
+			if(this->child){	
+				return child->parseOn(src, ctx);
+			}
+			else{
+				throw std::runtime_error("mutable parser not defined");
+			}
+		}
+	}{}
+
+	template<DerivedFromParser P>
+	void setChild(const P& newChild){
+		child = make_type_erased_unique<Parser<TSource, TValue, TContext>, P>(newChild);
+	}	
+};
+```
+I thought I'd rewrite the Parser<F> to Parser<TSource, TValue, TContext> instead but then it's impossibru to store lambdas in it like I do. If I rewrite with a base class Parser<TSource, TValue, TContext> with a fix parse() member that throws and has to be overwritten with template inheritance, I lose the code reuse possibility I use now because base parse() cant call child methods without virtualiticity.
+
+Now rewritten the recursion part. I dislike how it uses shared_ptr as well as std::function. We can already do type erasure with shared_ptr, there should be a way to avoid std::function. But fine for now. Here is the minimum example:
+
+```cpp
+shared_ptr<function<int(int)>> wrap =
+    make_shared<function<int(int)>>(
+        [](int)->int{
+            throw runtime_error("undefined");
+        }
+    );
+    
+auto wrap2 = wrap;
+
+*wrap = [](int x){return x+1;};
+
+cout << (*wrap2)(5);
+```
+
+If we want to really squeeze, we can invert the update direction. Right now, a shared_ptr is used so every occurrence of the yet-undefined parser will point to a single instance and once that is updated, they all point to the correct parser. Instead we could keep track of instances and once the parser is defined, it updates all the instances, so there will be one less indirection on the hot path. But in the end we are using recursive descent, we shouldn't worry about performance too much.
+
+### Compiler Error Readability
+
+I was thinking I should move away from lambdas and use functors in the generators. I've tried it with choice. Instead of a lambda which appears as `(lambda at ...)`, it appears as `ometa::ChoiceFn<ometa::Parser<(lambda at update/include/sequence.h:11:17)>, ometa::Parser<(lambda at update/include/action.h:50:17)>>::operator()<ometa::View<std::basic_string_view<char>>, ometa::Empty>` I think this is worse tho as this will nest to oblivion and lambda actually prevents this nicely.
+
+Furthermore, I've made a class Choice that inherits from Parser and does nothing else, only to give Parser a name. However, often we will still see `ometa::Parser<ometa::ChoiceFn<` because it refers to the passOn method which is defined in Parser, not in Choice.
+
+So I will now try to give Parser a tag.
+
+actions, predicates and recursives must not be wrapped by the rule wrapper, otherwise their mechanism wont work later. -> solved, we can now take things out of the rule wrapper.
+
+I gave parsers a tag with a string literal, it increased compile time from 6.3 to 8.6 seconds. Now each Parser gets a custom class as tag. It looks even better in the compile error and compiles faster.
