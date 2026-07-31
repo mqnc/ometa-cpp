@@ -24,14 +24,26 @@ parser.add_argument(
 )
 
 parser.add_argument(
-    "--transpiler", default="build/ometa-cpp", help="Transpiler executable (default: build/ometa-cpp)."
+    "--transpiler",
+    default="build/ometa-cpp",
+    help="Transpiler executable (default: build/ometa-cpp).",
 )
 
 parser.add_argument(
-    "--ometa-include", default="include", help="Standard OMeta include directory (default: include)."
+    "--ometa-include",
+    default="include",
+    help="Standard OMeta include directory (default: include).",
 )
 
 parser.add_argument("--debug", action="store_true", help="Compile with debug flags.")
+
+parser.add_argument(
+    "-v",
+    "--verbose",
+    action="count",
+    default=0,
+    help="Increase transpiler verbosity (-v, -vv, -vvv)",
+)
 
 parser.add_argument(
     "--release", action="store_true", help="Compile with optimizations."
@@ -56,19 +68,22 @@ if input_path.suffix == ".ometa":
 
     cpp.parent.mkdir(parents=True, exist_ok=True)
 
-    subprocess.run(
-        [
-            args.transpiler,
-            str(input_path),
-            str(cpp),
-        ],
-        check=True,
-    )
+    cmd = [
+        args.transpiler,
+        str(input_path),
+        str(cpp),
+    ]
+
+    if args.verbose > 0:
+        cmd.append("-" + "v"*args.verbose)
+
+    subprocess.run(cmd, check=True)
 else:
     cpp = input_path
 
 cmd = [
     "clang++",
+    # f"-ftime-trace={str(output)}.trace.json",
     "-std=c++20",
     "-I" + args.ometa_include,
     "-ferror-limit=1",
@@ -76,7 +91,7 @@ cmd = [
 ]
 
 if args.debug:
-    cmd += ["-O0", "-DDEBUG_PRINTS"]
+    cmd += ["-g", "-O0"]
 elif args.release:
     cmd += ["-O3"]
 else:

@@ -6,13 +6,15 @@
 
 namespace ometa{
 
+DECL_DEBUG_TAG(RECURSION, "(recursion)", 3);
+
 template <typename F, typename TSetter>
-class RecursiveParser : public Parser<F> {
+class RecursiveParser : public Parser<RECURSION, F> {
 public:
 	const TSetter define;
-    RecursiveParser(F fn, TSetter setter)
-        : Parser<F>{fn}, define{setter}
-    {}
+	RecursiveParser(F fn, TSetter setter)
+		: Parser<RECURSION, F>{fn}, define{setter}
+	{}
 };
 
 template <typename TSource, typename TValue, typename TContext = Empty>

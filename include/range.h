@@ -5,6 +5,8 @@
 
 namespace ometa {
 
+DECL_DEBUG_TAG(RANGE, "(range)", 3);
+
 template <typename T1, typename T2>
 auto range(T1 a, T2 b) {
 
@@ -25,7 +27,7 @@ auto range(T1 a, T2 b) {
 				: fail;
 		};
 
-	return Parser(parseFn);
+	return parser<RANGE>(parseFn);
 }
 
 }

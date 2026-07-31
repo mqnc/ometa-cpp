@@ -12,13 +12,16 @@
 
 namespace ometa {
 
+DECL_DEBUG_TAG(PREDICATE, "(predicate)", 3);
+DECL_DEBUG_TAG(PARAMETRIC_PREDICATE, "(parametricPredicate)", 3);
+
 template <typename P, typename F>
-struct Predicate: public Parser<F> {
+struct Predicate: public Parser<PREDICATE, F> {
 	P fn;
 
 	Predicate(P fn, F parseFn):
 		fn {fn},
-		Parser<F> {parseFn}
+		Parser<PREDICATE, F> {parseFn}
 	{}
 };
 
@@ -54,7 +57,7 @@ auto parameterizedPredicate(T child, Predicate<P, F> pred) {
 			return pred.fn(unwrap(result), ctx) ? result : fail;
 		};
 
-	return Parser(parseFn);
+	return parser<PARAMETRIC_PREDICATE>(parseFn);
 }
 
 template <DerivedFromParser T, typename P, typename F>
@@ -62,9 +65,9 @@ auto operator>(T parser, Predicate<P, F> pred) {
 	return parameterizedPredicate(parser, pred);
 }
 
-template <DerivedFromParser T, Tag tag, typename P, typename F>
-auto operator>(T parser, RuleWrapper<Rule<tag, Predicate<P, F>>> predRule) {
-	return rule<tag>(parameterizedPredicate(parser, predRule.getBody()));
+template <DerivedFromParser T, typename Tag, typename P, typename F>
+auto operator>(T parser, RuleWrapper<Tag, Rule<Predicate<P, F>>> predRule) {
+	return rule<Tag>(parameterizedPredicate(parser, predRule.getBody()));
 }
 
 }

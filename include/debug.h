@@ -22,7 +22,7 @@ enum class LogEvent {
 
 template <forward_range TSource>
 void log(
-	std::string name,
+	std::string_view name,
 	LogEvent event,
 	View<TSource> src,
 	View<TSource> next = {}
@@ -32,8 +32,9 @@ void log(
 		logIndent--;
 	}
 
-	for (size_t i = 0; i < logIndent; i++) { std::cout << blue << "|  "; }
-	std::cout << magenta << name;
+	for (size_t i = 0; i < logIndent; i++) { std::cout << blue << "| "; }
+	if (name.size() > 0 && name[0] == '('){std::cout << blue << name;}
+	else{std::cout << magenta << name;}
 	switch (event) {
 		case LogEvent::enter: std::cout << yellow << "[?] "; break;
 		case LogEvent::accept: std::cout << green << "[√] »"; break;

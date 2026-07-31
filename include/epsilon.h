@@ -5,6 +5,8 @@
 
 namespace ometa {
 
+DECL_DEBUG_TAG(EPSILON, "(epsilon)", 3);
+
 auto epsilon() {
 
 	auto parseFn = []<forward_range TSource>
@@ -16,7 +18,7 @@ auto epsilon() {
 			return makeMaybeMatch(empty, src);
 		};
 
-	return Parser(parseFn);
+	return parser<EPSILON>(parseFn);
 }
 
 }

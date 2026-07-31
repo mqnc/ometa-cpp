@@ -126,10 +126,11 @@ actions, predicates and recursives must not be wrapped by the rule wrapper, othe
 
 Next steps would be to rewrite all the examples using all the new features (mainly bindings and context) and also implement some famous parsers, mainly json, json5, lua5.3 and g++ or clang ast output.
 
+* see if recursion is properly log-wrapped
 * cant declare context type for recursive parsers yet
 * update readme
 * preserve whitespaces
-* selective debug log
+* selective debug log: we can use numbers as a breakpoint marker, identifiers must not start with them
 * prettify debug log
 * handle context
 * error handling

@@ -13,8 +13,25 @@ using ViewTree = ometa::ViewTree<std::string_view>;
 
 int main(int argc, char* argv[]) {
 
-	if(argc != 3){
-		std::cout << "usage: " << argv[0] << " INPUT_FILE OUTPUT_FILE\n";
+	char* inputPath;
+	char* outputPath;
+
+	if(argc == 3 || argc == 4){
+		inputPath = argv[1];
+		outputPath = argv[2];
+		if(argc == 4){
+			std::string v = argv[3];
+			if(v=="-v"){ometa::globalDebugLevel = 1;}
+			else if(v=="-vv"){ometa::globalDebugLevel = 2;}
+			else if(v=="-vvv"){ometa::globalDebugLevel = 3;}
+			else{
+				std::cout << "unknown verbosity setting: " << v << "; expected -v, -vv or -vvv\n";
+				return EXIT_FAILURE;
+			}
+		}
+	}
+	else{
+		std::cout << "usage: " << argv[0] << " INPUT_FILE OUTPUT_FILE [-v[v[v]]]\n";
 		return EXIT_FAILURE;
 	}
 
@@ -36,9 +53,9 @@ int main(int argc, char* argv[]) {
 	>;
 	
 	viewTreeLiteral := '`' {`\"`}(
-        '"' -> {`\\\"`}
-        | !'`' cppChar
-    )* '`' {`\"_tree_`} -> ometa::concat;
+		'"' -> {`\\\"`}
+		| !'`' cppChar
+	)* '`' {`\"_tree_`} -> ometa::concat;
 
 	valueReference := '$' -> {`value`};
 	indexedValueReference := '$' <{'0'}..{'9'}+> -> {`ometa::pick<` + $ + `>(value)`};
@@ -194,15 +211,15 @@ int main(int argc, char* argv[]) {
 	ruleForwardDecl => identifier _ ':' _
 		bracedCppExpression _ '=>' _ bracedCppExpression _ ';'
 		-> {
-			`auto ` + $0 + ` = ometa::recursive<`
+			`DECL_DEBUG_TAG(RULE_` + $0 + `, "` + $0 + `", 2); auto ` + $0 + ` = ometa::recursive<`
 				+ $1 + `, ` + $2 + `>();`
 		};
 
 	ruleDefinition => identifier _ ':=' _ expression _ ';'
-		-> {`const auto ` + $0 + ` = ometa::rule<"` + $0 + `">(` + $1 + `);`};
+		-> {`DECL_DEBUG_TAG(RULE_` + $0 + `, "` + $0 + `", 2); const auto ` + $0 + ` = ometa::rule<RULE_` + $0 + `>(` + $1 + `);`};
 
 	ruleRedefinition => identifier _ '=>' _ expression _ ';'
-		-> {$0 + `.define(ometa::rule<"` + $0 + `">(` + $1 + `));`};
+		-> {$0 + `.define(ometa::rule<RULE_` + $0 + `>(` + $1 + `));`};
 
 	macroParameterList := '[' _ {`auto `} identifier _
 		(',' _ identifier -> {`, auto ` + $})* _ ']'
@@ -212,23 +229,23 @@ int main(int argc, char* argv[]) {
 			`const auto ` + $0 + ` = [=](` + $1 + `){return ` + $2 + `;};`
 		};
 
-	auto code = ometa::readFile(argv[1]);
+	auto code = ometa::readFile(inputPath);
 
 	auto result = cppCode.parse(code);
 	if (result) {
 		// make a backup copy if transpiled file already exists
 
 		// try {
-		// 	auto backup = ometa::readFile(argv[2]);
+		// 	auto backup = ometa::readFile(outputPath);
 		// 	std::time_t time = std::time({});
 		// 	char timeString[std::size("yyyy_mm_dd__hh_mm_ssZ")];
 		// 	std::strftime(std::data(timeString), std::size(timeString),
 		// 		"%Y_%m_%d__%H_%M_%S", std::gmtime(&time));
-		// 	ometa::writeFile(std::string(argv[2]) + "." + timeString + ".backup", backup);
+		// 	ometa::writeFile(std::string(outputPath) + "." + timeString + ".backup", backup);
 		// }
 		// catch (...) {}
 
-		ometa::writeFile(argv[2], *result);
+		ometa::writeFile(outputPath, *result);
 	}
 	else {
 		std::cout << "fail\n";

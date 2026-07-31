@@ -6,6 +6,8 @@
 
 namespace ometa {
 
+DECL_DEBUG_TAG(CHOICE, "(choice)", 3);
+
 template <DerivedFromParser T1, DerivedFromParser T2>
 auto choice(T1 child1, T2 child2) {
 
@@ -24,7 +26,7 @@ auto choice(T1 child1, T2 child2) {
 				result1 : child2.parseOn(src, ctx);
 		};
 
-	return Parser(parseFn);
+	return parser<CHOICE>(parseFn);
 }
 
 template <DerivedFromParser T1, DerivedFromParser T2>

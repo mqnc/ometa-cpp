@@ -6,6 +6,8 @@
 
 namespace ometa {
 
+DECL_DEBUG_TAG(REPETITION, "(repetition)", 3);
+
 template <typename T>
 using RepetitionValue = std::deque<T>;
 template <typename T>
@@ -46,7 +48,7 @@ auto repetition(T child, size_t min, size_t max) {
 
 		};
 
-	return Parser(parseFn);
+	return parser<REPETITION>(parseFn);
 }
 
 template <DerivedFromParser T>

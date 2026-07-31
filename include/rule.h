@@ -5,37 +5,31 @@
 
 namespace ometa{
 
-template <typename F>
-class RuleWrapper: public Parser<F>{
+template <typename Tag, typename F>
+class RuleWrapper: public Parser<Tag, F>{
 public:
-	using Parser<F>::Parser;
+	using Parser<Tag, F>::Parser;
 	
+	// some sub parsers require us to unpack the child and wrap it
+	// in another parent and wrap that with this rule again
 	const auto& getBody() const{
 		return this->parseFn.body;
 	}
 };
 
-template <Tag tag, DerivedFromParser T>
-class Rule {
+template <DerivedFromParser T>
+class Rule { // can't use lambda because we need to extract the body from the capture
 public:
 	T body;
 	Rule(T parser):body{parser}{};
 	auto operator()(auto src, auto& ctx) const {
-		#ifdef DEBUG_PRINTS
-			log(tag.value, LogEvent::enter, src);
-			auto result = body.parseOn(src, ctx);
-			auto evt = result ? LogEvent::accept : LogEvent::reject;
-			log(tag.value, evt, src, result->next);
-			return result;
-		#else
-			return body.parseOn(src, ctx);
-		#endif
+		return body.parseOn(src, ctx);
 	}
 };
 
-template <Tag tag, DerivedFromParser T>
+template <typename Tag, DerivedFromParser T>
 inline auto rule(T body) {
-	return RuleWrapper<Rule<tag, T>>(Rule<tag, T>(body));
+	return RuleWrapper<Tag, Rule<T>>(Rule<T>(body));
 }
 
 }

@@ -9,6 +9,8 @@
 
 namespace ometa {
 
+DECL_DEBUG_TAG(LITERAL, "(literal)", 3);
+
 auto literal(auto compare) {
 
 	auto parseFn = [compare]<forward_range TSource>
@@ -27,7 +29,7 @@ auto literal(auto compare) {
 				}() : fail;
 		};
 
-	return Parser(parseFn);
+	return parser<LITERAL>(parseFn);
 }
 
 auto literal(const char* compare) {

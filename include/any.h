@@ -5,6 +5,8 @@
 
 namespace ometa {
 
+DECL_DEBUG_TAG(ANY, "(any)", 3);
+
 auto any() {
 
 	auto parseFn = []<forward_range TSource>
@@ -24,7 +26,7 @@ auto any() {
 				: fail;
 		};
 
-	return Parser(parseFn);
+	return parser<ANY>(parseFn);
 }
 
 }

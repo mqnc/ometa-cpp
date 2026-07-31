@@ -11,13 +11,16 @@
 
 namespace ometa {
 
+DECL_DEBUG_TAG(ACTION, "(action)", 3);
+DECL_DEBUG_TAG(PARAMETRIC_ACTION, "(parametricAction)", 3);
+
 template <typename A, typename F>
-struct Action: public Parser<F> {
+struct Action: public Parser<ACTION, F> {
 	A fn;
 
 	Action(A fn, F parseFn):
 		fn {fn},
-		Parser<F> {parseFn}
+		Parser<ACTION, F> {parseFn}
 	{}
 };
 
@@ -76,7 +79,7 @@ auto parameterizedAction(T child, Action<A, F> act) {
 			}
 		};
 
-	return Parser(parseFn);
+	return parser<PARAMETRIC_ACTION>(parseFn);
 }
 
 template <DerivedFromParser T, typename A, typename F>
@@ -84,9 +87,9 @@ auto operator>=(T parser, Action<A, F> act) {
 	return parameterizedAction(parser, act);
 }
 
-template <DerivedFromParser T, Tag tag, typename A, typename F>
-auto operator>=(T parser, RuleWrapper<Rule<tag, Action<A, F>>> actRule) {
-	return rule<tag>(parameterizedAction(parser, actRule.getBody()));
+template <DerivedFromParser T, typename Tag, typename A, typename F>
+auto operator>=(T parser, RuleWrapper<Tag, Rule<Action<A, F>>> actRule) {
+	return rule<Tag>(parameterizedAction(parser, actRule.getBody()));
 }
 
 }

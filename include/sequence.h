@@ -5,6 +5,8 @@
 
 namespace ometa {
 
+DECL_DEBUG_TAG(SEQUENCE, "(sequence)", 3);
+
 template <DerivedFromParser T1, DerivedFromParser T2>
 auto sequence(T1 child1, T2 child2) {
 
@@ -41,7 +43,7 @@ auto sequence(T1 child1, T2 child2) {
 			return fail_as<ReturnType>;
 		};
 
-	return Parser(parseFn);
+	return parser<SEQUENCE>(parseFn);
 }
 
 template <DerivedFromParser T1, DerivedFromParser T2>
