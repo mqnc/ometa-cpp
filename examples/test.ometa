@@ -116,6 +116,12 @@ int main() {
 	actionThenWithInput := "abc" -> actionFirstWithoutInput;
 	EXPECT(actionThenWithInput.parse("abc") == "abc");
 
+	0 loggingActionFirstWithoutInput := {$};
+	EXPECT(loggingActionFirstWithoutInput.parse("abc").value() == ometa::ignore);
+
+	loggingActionThenWithInput := "abc" -> loggingActionFirstWithoutInput;
+	EXPECT(loggingActionThenWithInput.parse("abc") == "abc");
+
 	predicateWithoutInput := {?
 		EXPECT($ == ometa::ignore);
 		return true;
@@ -130,6 +136,7 @@ int main() {
 	EXPECT(predicateWithInput.parse("abc") == "abc");
 
 	static bool wasIgnore = false;
+
 	predicateFirstWithoutInput := {?
 		wasIgnore = $ == ometa::ignore;
 		return true;
@@ -139,6 +146,17 @@ int main() {
 
 	predicateThenWithInput := "abc" predicateFirstWithoutInput;
 	EXPECT(predicateThenWithInput.parse("abc"));
+	EXPECT(wasIgnore == false);
+
+	0 loggingPredicateFirstWithoutInput := {?
+		wasIgnore = $ == ometa::ignore;
+		return true;
+	};
+	EXPECT(loggingPredicateFirstWithoutInput.parse("abc"));
+	EXPECT(wasIgnore == true);
+
+	loggingPredicateThenWithInput := "abc" loggingPredicateFirstWithoutInput;
+	EXPECT(loggingPredicateThenWithInput.parse("abc"));
 	EXPECT(wasIgnore == false);
 
 	rejectingPredicate := abc {?

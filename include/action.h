@@ -2,6 +2,8 @@
 
 #include "parser.h"
 #include "defer.h"
+#include "rule.h"
+#include "logger.h"
 
 // An action must be a working Parser on its own
 // but we must also be able to pipe things into it:
@@ -82,14 +84,37 @@ auto parameterizedAction(T child, Action<A, F> act) {
 	return parser<PARAMETRIC_ACTION>(parseFn);
 }
 
+// abc >= action -> parametricAction(abc)
 template <DerivedFromParser T, typename A, typename F>
 auto operator>=(T parser, Action<A, F> act) {
 	return parameterizedAction(parser, act);
 }
 
+// uglily, we also need to support
+// abc >= rule(action) -> rule(parametricAction(abc))
 template <DerivedFromParser T, typename Tag, typename A, typename F>
-auto operator>=(T parser, RuleWrapper<Tag, Rule<Action<A, F>>> actRule) {
-	return rule<Tag>(parameterizedAction(parser, actRule.getBody()));
+auto operator>=(T parser, RuleWrapper<Tag, WrapperFn<Action<A, F>>> actRule) {
+	return rule<Tag>(
+		parameterizedAction(
+			parser,
+			actRule.getChild()
+		)
+	);
+}
+
+// atrociously, we also need to support
+// abc >= logger(rule(action)) -> logger(rule(parametricAction(abc)))
+template <DerivedFromParser T, typename Tag, typename A, typename F>
+auto operator>=(T parser, LoggerWrapper<LoggerFn<RuleWrapper<Tag, WrapperFn<Action<A, F>>>>> logActRule) {
+	return logger(
+		logActRule.getLevel(),
+		rule<Tag>(
+			parameterizedAction(
+				parser,
+				logActRule.getChild().getChild()
+			)
+		)
+	);
 }
 
 }

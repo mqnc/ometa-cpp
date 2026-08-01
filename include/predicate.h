@@ -1,8 +1,9 @@
 #pragma once
 
 #include "parser.h"
-#include "rule.h"
 #include "defer.h"
+#include "rule.h"
+#include "logger.h"
 
 // A predicate must be a working Parser on its own
 // but we must also be able to pipe things into it:
@@ -60,14 +61,37 @@ auto parameterizedPredicate(T child, Predicate<P, F> pred) {
 	return parser<PARAMETRIC_PREDICATE>(parseFn);
 }
 
+// abc > predicate -> parametricPredicate(abc)
 template <DerivedFromParser T, typename P, typename F>
 auto operator>(T parser, Predicate<P, F> pred) {
 	return parameterizedPredicate(parser, pred);
 }
 
+// uglily, we also need to support
+// abc > rule(predicate) -> rule(parametricPredicate(abc))
 template <DerivedFromParser T, typename Tag, typename P, typename F>
-auto operator>(T parser, RuleWrapper<Tag, Rule<Predicate<P, F>>> predRule) {
-	return rule<Tag>(parameterizedPredicate(parser, predRule.getBody()));
+auto operator>(T parser, RuleWrapper<Tag, WrapperFn<Predicate<P, F>>> predRule) {
+	return rule<Tag>(
+		parameterizedPredicate(
+			parser,
+			predRule.getChild()
+		)
+	);
+}
+
+// atrociously, we also need to support
+// abc > logger(rule(predicate)) -> logger(rule(parametricPredicate(abc)))
+template <DerivedFromParser T, typename Tag, typename P, typename F>
+auto operator>(T parser, LoggerWrapper<LoggerFn<RuleWrapper<Tag, WrapperFn<Predicate<P, F>>>>> logPredRule) {
+	return logger(
+		logPredRule.getLevel(),
+		rule<Tag>(
+			parameterizedPredicate(
+				parser,
+				logPredRule.getChild().getChild()
+			)
+		)
+	);
 }
 
 }
