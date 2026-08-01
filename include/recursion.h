@@ -6,7 +6,7 @@
 
 namespace ometa{
 
-DECL_DEBUG_TAG(RECURSION, "(recursion)", 3);
+DECL_DEBUG_TAG(RECURSION, "(recursion)", false);
 
 template <typename F, typename TSetter>
 class RecursiveParser : public Parser<RECURSION, F> {

@@ -4,30 +4,29 @@
 #include <string>
 #include <functional>
 #include <iostream>
+#include <limits.h>
 
 #include "empty.h"
 #include "view.h"
 #include "match.h"
 #include "tag.h"
 
-#include "debug.h"
+#include "log.h"
 
 #ifndef DEBUG_PRINT_LEVEL
 #define DEBUG_PRINT_LEVEL 0
 #endif
 
-#define DECL_DEBUG_TAG(TYPE_NAME, LOG_NAME, LOG_LEVEL) \
+#define DECL_DEBUG_TAG(TYPE_NAME, LOG_NAME, IS_RULE) \
 	struct TYPE_NAME { \
 		static constexpr std::string_view name() { return LOG_NAME; } \
-		static constexpr int debugLevel() { return LOG_LEVEL; } \
+		static constexpr bool isRule() { return IS_RULE; } \
 	}
 
 namespace ometa {
 
-DECL_DEBUG_TAG(ANONYMOUS, "(anonymous)", 3);
-DECL_DEBUG_TAG(TAGGER, "(tagger)", 3);
-
-inline int globalDebugLevel = 0;
+DECL_DEBUG_TAG(ANONYMOUS, "(anonymous)", false);
+DECL_DEBUG_TAG(TAGGER, "(tagger)", false);
 
 template <typename T>
 constexpr bool has_backup_method() {
@@ -35,6 +34,12 @@ constexpr bool has_backup_method() {
 		t.backup();
 	};
 }
+
+inline int globalDebugLevel = 0;
+
+inline int nextLogThreshold = INT_MAX;
+inline int ruleLogThreshold = 2;
+inline int parserLogThreshold = 3;
 
 template <typename Tag, typename F>
 class Parser {
@@ -54,16 +59,23 @@ public:
 	template <forward_range TSource>
 	auto parseOn(View<TSource> src, auto& ctx) const {
 
+		int minLogThreshold = std::min(nextLogThreshold, parserLogThreshold);
+		if (Tag::isRule()){
+			minLogThreshold = std::min(minLogThreshold, ruleLogThreshold);
+		}
+		bool doLog = globalDebugLevel >= minLogThreshold;
+		nextLogThreshold = INT_MAX;
+
 		if constexpr (has_backup_method<decltype(ctx)>()) {
 			auto backup = ctx.backup();
 		
-			if (globalDebugLevel >= Tag::debugLevel()){
+			if (doLog){
 				log(Tag::name(), LogEvent::enter, src);
 			}
 
 			auto result = parseFn(src, ctx);
 
-			if (globalDebugLevel >= Tag::debugLevel()){
+			if (doLog){
 				auto evt = result ? LogEvent::accept : LogEvent::reject;
 				log(Tag::name(), evt, src, result->next);
 			}
@@ -75,13 +87,13 @@ public:
 			return result;
 		}
 		else{
-			if (globalDebugLevel >= Tag::debugLevel()){
+			if (doLog){
 				log(Tag::name(), LogEvent::enter, src);
 			}
 
 			auto result = parseFn(src, ctx);
 
-			if (globalDebugLevel >= Tag::debugLevel()){
+			if (doLog){
 				auto evt = result ? LogEvent::accept : LogEvent::reject;
 				log(Tag::name(), evt, src, result->next);
 			}

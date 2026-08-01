@@ -8,6 +8,7 @@
 #include <cmath>
 #include <string>
 #include <ctime>
+#include <utility>
 
 using ViewTree = ometa::ViewTree<std::string_view>;
 
@@ -107,13 +108,13 @@ int main(int argc, char* argv[]) {
 	predicateCppCode := '{' _ '?' cppCode '}';
 
 	ruleForwardDecl : {std::string_view} => {ViewTree};
-	ruleDefinition : {std::string_view} => {ViewTree};
+	debugMarkedRuleDefinition : {std::string_view} => {ViewTree};
 	ruleRedefinition : {std::string_view} => {ViewTree};
 	macroDefinition : {std::string_view} => {ViewTree};
 
 	cppCode => (
 		ruleForwardDecl
-		| ruleDefinition
+		| debugMarkedRuleDefinition
 		| ruleRedefinition
 		| macroDefinition
 		| contextDeclaration
@@ -186,12 +187,21 @@ int main(int argc, char* argv[]) {
 	repetition := optional | zeroOrMore | oneOrMore;
 	tag := ':' _ identifier;
 
-	postfixed := primary _ tag? _ repetition? _ tag?
+	digit := {'0'}..{'9'};
+	debugMark := <digit digit? digit?>;
+
+	debugMarkedParser := (debugMark _)? primary
+		-> {
+			if ($0.size() == 0){return $1;}
+			else {return `ometa::logger("` + $0[0] + `", ` + $1 + `)`;}
+		};
+
+	postfixed := debugMarkedParser _ tag? _ repetition? _ tag?
 		-> { 
 			auto result = $0;
-			if ($1.size() == 1) {result = `tagResult<"` + $1[0] + `">(` + result + `)`;}
+			if ($1.size() == 1) {result = `ometa::tagResult<"` + $1[0] + `">(` + result + `)`;}
 			if ($2.size() == 1) {result = $2[0] + result;}
-			if ($3.size() == 1) {result = `tagResult<"` + $3[0] + `">(` + result + `)`;}
+			if ($3.size() == 1) {result = `ometa::tagResult<"` + $3[0] + `">(` + result + `)`;}
 			return result;
 		};
 
@@ -211,12 +221,27 @@ int main(int argc, char* argv[]) {
 	ruleForwardDecl => identifier _ ':' _
 		bracedCppExpression _ '=>' _ bracedCppExpression _ ';'
 		-> {
-			`DECL_DEBUG_TAG(RULE_` + $0 + `, "` + $0 + `", 2); auto ` + $0 + ` = ometa::recursive<`
+			`DECL_DEBUG_TAG(RULE_` + $0 + `, "` + $0 + `", true); auto ` + $0 + ` = ometa::recursive<`
 				+ $1 + `, ` + $2 + `>();`
 		};
 
-	ruleDefinition => identifier _ ':=' _ expression _ ';'
-		-> {`DECL_DEBUG_TAG(RULE_` + $0 + `, "` + $0 + `", 2); const auto ` + $0 + ` = ometa::rule<RULE_` + $0 + `>(` + $1 + `);`};
+	ruleDefinition := identifier _ ':=' _ expression _ ';'
+		-> {
+			std::make_pair(
+				`DECL_DEBUG_TAG(RULE_` + $0 + `, "` + $0 + `", true); const auto ` + $0,
+				`ometa::rule<RULE_` + $0 + `>(` + $1 + `)`
+			)
+		};
+
+	debugMarkedRuleDefinition => (debugMark _)? ruleDefinition
+		-> {
+			if ($0.size() == 0){
+				return $1.first + ` = ` + $1.second + `;`;
+			}
+			else {
+				return $1.first + ` = ometa::logger("` + $0[0] + `", ` + $1.second + `);`;
+			}
+		};
 
 	ruleRedefinition => identifier _ '=>' _ expression _ ';'
 		-> {$0 + `.define(ometa::rule<RULE_` + $0 + `>(` + $1 + `));`};

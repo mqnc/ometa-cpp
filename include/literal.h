@@ -9,7 +9,7 @@
 
 namespace ometa {
 
-DECL_DEBUG_TAG(LITERAL, "(literal)", 3);
+DECL_DEBUG_TAG(LITERAL, "(literal)", false);
 
 auto literal(auto compare) {
 

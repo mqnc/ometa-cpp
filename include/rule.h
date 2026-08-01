@@ -1,7 +1,7 @@
 #pragma once
 
 #include "parser.h"
-#include "debug.h"
+#include "log.h"
 
 namespace ometa{
 

@@ -19,6 +19,7 @@
 #include "helpers.h"
 #include "viewtree.h"
 #include "rule.h"
+#include "logger.h"
 
 using ometa::operator""_lit_;
 using ometa::operator""_tree_;

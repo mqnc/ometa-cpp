@@ -5,7 +5,7 @@
 
 namespace ometa {
 
-DECL_DEBUG_TAG(RANGE, "(range)", 3);
+DECL_DEBUG_TAG(RANGE, "(range)", false);
 
 template <typename T1, typename T2>
 auto range(T1 a, T2 b) {

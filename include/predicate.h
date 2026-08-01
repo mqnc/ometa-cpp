@@ -12,8 +12,8 @@
 
 namespace ometa {
 
-DECL_DEBUG_TAG(PREDICATE, "(predicate)", 3);
-DECL_DEBUG_TAG(PARAMETRIC_PREDICATE, "(parametricPredicate)", 3);
+DECL_DEBUG_TAG(PREDICATE, "(predicate)", false);
+DECL_DEBUG_TAG(PARAMETRIC_PREDICATE, "(parametricPredicate)", false);
 
 template <typename P, typename F>
 struct Predicate: public Parser<PREDICATE, F> {

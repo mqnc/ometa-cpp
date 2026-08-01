@@ -6,7 +6,7 @@
 
 namespace ometa {
 
-DECL_DEBUG_TAG(REPETITION, "(repetition)", 3);
+DECL_DEBUG_TAG(REPETITION, "(repetition)", false);
 
 template <typename T>
 using RepetitionValue = std::deque<T>;

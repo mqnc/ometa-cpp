@@ -5,7 +5,7 @@
 
 namespace ometa {
 
-DECL_DEBUG_TAG(EPSILON, "(epsilon)", 3);
+DECL_DEBUG_TAG(EPSILON, "(epsilon)", false);
 
 auto epsilon() {
 

@@ -5,7 +5,7 @@
 
 namespace ometa {
 
-DECL_DEBUG_TAG(SEQUENCE, "(sequence)", 3);
+DECL_DEBUG_TAG(SEQUENCE, "(sequence)", false);
 
 template <DerivedFromParser T1, DerivedFromParser T2>
 auto sequence(T1 child1, T2 child2) {

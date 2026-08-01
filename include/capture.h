@@ -5,7 +5,7 @@
 
 namespace ometa {
 
-DECL_DEBUG_TAG(CAPTURE, "(capture)", 3);
+DECL_DEBUG_TAG(CAPTURE, "(capture)", false);
 
 template <DerivedFromParser T>
 auto capture(T child) {

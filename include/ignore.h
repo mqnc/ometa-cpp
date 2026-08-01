@@ -26,7 +26,7 @@ std::ostream& operator<<(std::ostream& os, Ignore)
 	return os;
 }
 
-DECL_DEBUG_TAG(IGNORE, "(ignore)", 3);
+DECL_DEBUG_TAG(IGNORE, "(ignore)", false);
 
 template <DerivedFromParser T>
 auto ignoreValue(T child) {

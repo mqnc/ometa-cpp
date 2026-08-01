@@ -5,7 +5,7 @@
 
 namespace ometa {
 
-DECL_DEBUG_TAG(ANY, "(any)", 3);
+DECL_DEBUG_TAG(ANY, "(any)", false);
 
 auto any() {
 

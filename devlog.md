@@ -3,11 +3,51 @@
 
 I'm gonna write down my trains of thought here so once this project is super famous, people can understand certain decisions. Also so I can understand certain decisions once I pick the project back up after five years of losing interest. The individual thought trains are chronological within themselves but it can happen that a decision that is noted in the middle of one train overthrows a final decision of another train somewhere else (below or above) in the document. So the readme and the test should be the reference. 
 
-## Later Steps
+## Current Mission
+
+Selective logging. Current idea:
+We can call ometa-cpp with different levels of verbosity: (nothing), -v, -vv, -vvv
+
+By default -v does nothing, -vv prints every rule invocation and -vvv prints every parseOn invocation.
+
+But we can tweak that in code! Numbers are still free, so we can use them to change debug levels of parsers.
+
+```d
+// set the debug log threshold of myRule to 0:
+0 myRule := a | b | c;
+
+// set the debug log threshold of myRule and every rule call inside to 0:
+00 myRule := a | b | c;
+
+// set the debug log threshold of myRule and every parseOn call inside to 0:
+000 myRule := a | b | c;
+
+// set the debug log threshold of this occurrence of b to 0:
+myRule := a | 0b | c
+myRule := a | 0 b | c
+
+// we can also set all that to 1, 2 or 3
+0 myRule := 1 a | 2 b | 3 c
+
+// and also mix levels: myRule is 0, subrules are 1, parseOn calls are 2
+012 myRule := a | b | c;
+
+// omitting digits means inherit from outside.
+
+```
+I think this should be the highest operator precedence.
+Inner overrides outer.
+
+recursion, actions and predicates also need to be able to deal with rule(log(standalone)) :/ maybe I find a better way
+
+## ToDo
 
 Next steps would be to rewrite all the examples using all the new features (mainly bindings and context) and also implement some famous parsers, mainly json, json5, lua5.3, g++ or clang ast output, write a minimal C++ formatter.
 
+* maybe get rid of make_pair, std often bloated
+* consistent naming with log vs debug vs verbose
 * see if recursion is properly log-wrapped
+* dislike: postfixed := primary _ tag? _ repetition? _ tag?
 * cant declare context type for recursive parsers yet
 * update readme
 * preserve whitespaces
@@ -21,6 +61,7 @@ Next steps would be to rewrite all the examples using all the new features (main
 * do some projects like a lua, clang and json5 parser, note errors and catch them with awesome eigen error reports
 * memoize (aka packrat parsing); however, need to be aware that context can change parsing result
 * parse and summarize clang error output
+* make repetition count templated so we can log oneOrMore, zeroOrMore and optional or maybe make optional separate
 
 ```
 binding := abc:t0 ("+" abc)*:ts;

@@ -6,7 +6,7 @@
 
 namespace ometa {
 
-DECL_DEBUG_TAG(CHOICE, "(choice)", 3);
+DECL_DEBUG_TAG(CHOICE, "(choice)", false);
 
 template <DerivedFromParser T1, DerivedFromParser T2>
 auto choice(T1 child1, T2 child2) {

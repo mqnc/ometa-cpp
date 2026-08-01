@@ -11,8 +11,8 @@
 
 namespace ometa {
 
-DECL_DEBUG_TAG(ACTION, "(action)", 3);
-DECL_DEBUG_TAG(PARAMETRIC_ACTION, "(parametricAction)", 3);
+DECL_DEBUG_TAG(ACTION, "(action)", false);
+DECL_DEBUG_TAG(PARAMETRIC_ACTION, "(parametricAction)", false);
 
 template <typename A, typename F>
 struct Action: public Parser<ACTION, F> {

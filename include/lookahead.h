@@ -5,8 +5,8 @@
 
 namespace ometa {
 
-DECL_DEBUG_TAG(LOOK_AHEAD, "(lookAhead)", 3);
-DECL_DEBUG_TAG(NOT_FOLLOWED_BY, "(notFollowedBy)", 3);
+DECL_DEBUG_TAG(LOOK_AHEAD, "(lookAhead)", false);
+DECL_DEBUG_TAG(NOT_FOLLOWED_BY, "(notFollowedBy)", false);
 
 enum Polarity { positive, negative };
 
