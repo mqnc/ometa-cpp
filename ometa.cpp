@@ -90,10 +90,10 @@ int main(int argc, char* argv[]) {
 
 	DECL_DEBUG_TAG(RULE_ruleForwardDecl, "ruleForwardDecl", true); auto ruleForwardDecl = ometa::recursive<std::string_view, ViewTree>();
 	DECL_DEBUG_TAG(RULE_ruleDefinition, "ruleDefinition", true); auto ruleDefinition = ometa::recursive<std::string_view, ViewTree>();
-	DECL_DEBUG_TAG(RULE_ruleRedefinition, "ruleRedefinition", true); auto ruleRedefinition = ometa::recursive<std::string_view, ViewTree>();
+	DECL_DEBUG_TAG(RULE_ruleAssignment, "ruleAssignment", true); auto ruleAssignment = ometa::recursive<std::string_view, ViewTree>();
 	DECL_DEBUG_TAG(RULE_macroDefinition, "macroDefinition", true); auto macroDefinition = ometa::recursive<std::string_view, ViewTree>();
 
-	cppCode.define(ometa::rule<RULE_cppCode>(*(ruleForwardDecl| ruleDefinition| ruleRedefinition| macroDefinition| contextDeclaration| contextReference| outsideContextReference| identifier| viewTreeLiteral| cppLiteral| parenthesizedCppCode >= ometa::action([](auto value, auto& context){return "("_tree_ + value + ")"_tree_;})
+	cppCode.define(ometa::rule<RULE_cppCode>(*(ruleForwardDecl| ruleDefinition| ruleAssignment| macroDefinition| contextDeclaration| contextReference| outsideContextReference| identifier| viewTreeLiteral| cppLiteral| parenthesizedCppCode >= ometa::action([](auto value, auto& context){return "("_tree_ + value + ")"_tree_;})
 		| bracketedCppCode >= ometa::action([](auto value, auto& context){return "["_tree_ + value + "]"_tree_;})
 		| bracedCppCode >= ometa::action([](auto value, auto& context){return "{"_tree_ + value + "}"_tree_;})
 		| indexedValueReference| taggedValueReference| valueReference| !")"_lit_ > !"]"_lit_ > !"}"_lit_ > ometa::any()) >= ometa::concat));
@@ -170,7 +170,11 @@ int main(int argc, char* argv[]) {
 			else { return assignee + " = ometa::logger(\""_tree_ + ometa::pick<0>(value)[0] + "\", "_tree_ + body + ");"_tree_; }
 		})));
 
-	ruleRedefinition.define(ometa::rule<RULE_ruleRedefinition>(identifier > _ > ~"=>"_lit_ > _ > expression > _ > ~";"_lit_ >= ometa::action([](auto value, auto& context){return ometa::pick<0>(value) + ".define(ometa::rule<RULE_"_tree_ + ometa::pick<0>(value) + ">("_tree_ + ometa::pick<1>(value) + "));"_tree_;})));
+	ruleAssignment.define(ometa::rule<RULE_ruleAssignment>(-(debugMark > _) > identifier > _ > ~"=>"_lit_ > _ > expression > _ > ~";"_lit_ >= ometa::action([](auto value, auto& context){
+			auto body = "ometa::rule<RULE_"_tree_ + ometa::pick<1>(value) + ">("_tree_ + ometa::pick<2>(value) + ")"_tree_;
+			if (ometa::pick<0>(value).size() == 0){ return ometa::pick<1>(value) + ".define("_tree_ + body + ");"_tree_; }
+			else{ return ometa::pick<1>(value) + ".define(ometa::logger(\""_tree_ + ometa::pick<0>(value)[0] + "\", "_tree_ + body + "));"_tree_; }
+		})));
 
 	DECL_DEBUG_TAG(RULE_macroParameterList, "macroParameterList", true); const auto macroParameterList = ometa::rule<RULE_macroParameterList>(~"["_lit_ > _ > ometa::action([](auto value, auto& context){return "auto "_tree_;}) > identifier > _ > *(~","_lit_ > _ > identifier >= ometa::action([](auto value, auto& context){return ", auto "_tree_ + value;})) > _ > ~"]"_lit_ >= ometa::concat);
 	macroDefinition.define(ometa::rule<RULE_macroDefinition>(identifier > _ > macroParameterList > _ > ~":="_lit_ > _ > expression > _ > ~";"_lit_ >= ometa::action([](auto value, auto& context){return 

@@ -108,13 +108,13 @@ int main(int argc, char* argv[]) {
 
 	ruleForwardDecl : {std::string_view} => {ViewTree};
 	ruleDefinition : {std::string_view} => {ViewTree};
-	ruleRedefinition : {std::string_view} => {ViewTree};
+	ruleAssignment : {std::string_view} => {ViewTree};
 	macroDefinition : {std::string_view} => {ViewTree};
 
 	cppCode => (
 		ruleForwardDecl
 		| ruleDefinition
-		| ruleRedefinition
+		| ruleAssignment
 		| macroDefinition
 		| contextDeclaration
 		| contextReference
@@ -232,8 +232,12 @@ int main(int argc, char* argv[]) {
 			else { return assignee + ` = ometa::logger("` + $0[0] + `", ` + body + `);`; }
 		};
 
-	ruleRedefinition => identifier _ '=>' _ expression _ ';'
-		-> {$0 + `.define(ometa::rule<RULE_` + $0 + `>(` + $1 + `));`};
+	ruleAssignment => (debugMark _)? identifier _ '=>' _ expression _ ';'
+		-> {
+			auto body = `ometa::rule<RULE_` + $1 + `>(` + $2 + `)`;
+			if ($0.size() == 0){ return $1 + `.define(` + body + `);`; }
+			else{ return $1 + `.define(ometa::logger("` + $0[0] + `", ` + body + `));`; }
+		};
 
 	macroParameterList := '[' _ {`auto `} identifier _
 		(',' _ identifier -> {`, auto ` + $})* _ ']'

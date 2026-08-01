@@ -7,7 +7,7 @@ bool allPassed = true;
 #define EXPECT(condition) \
 	if(!(condition)) { \
 		std::cerr << "line " << __LINE__ << " failed: " #condition << "\n"; \
-        allPassed = false; \
+		allPassed = false; \
 	}
 
 int main() {
@@ -26,14 +26,14 @@ int main() {
 	EXPECT(not literal.parse("abX"));
 	EXPECT(not literal.parse(""));
 
-    literalWithEscapes := "\n \r \t \' \" \\ ' ";
-    EXPECT(literalWithEscapes.parse("\n \r \t \' \" \\ ' "));
+	literalWithEscapes := "\n \r \t \' \" \\ ' ";
+	EXPECT(literalWithEscapes.parse("\n \r \t \' \" \\ ' "));
 
-    ignoredLiteral := 'jkl';
-    EXPECT(ignoredLiteral.parse("jkl").value() == ometa::ignore);
+	ignoredLiteral := 'jkl';
+	EXPECT(ignoredLiteral.parse("jkl").value() == ometa::ignore);
 
-    ignoredLiteralWithEscapes := '\n \r \t \' \" \\ " ';
-    EXPECT(ignoredLiteralWithEscapes.parse("\n \r \t \' \" \\ \" "));
+	ignoredLiteralWithEscapes := '\n \r \t \' \" \\ " ';
+	EXPECT(ignoredLiteralWithEscapes.parse("\n \r \t \' \" \\ \" "));
 
 	range := {'a'}..{'m'};
 	EXPECT(range.parse("m") == "m");
@@ -179,8 +179,8 @@ int main() {
 	EXPECT(lit_123_567.parse(intSrc) == expected_result);
 
 	using ViewTree = ometa::ViewTree<std::string_view>;
-    myContext@ : variables: {ViewTree} -> {ViewTree},
-        digits : {int} = {0};
+	myContext@ : variables: {ViewTree} -> {ViewTree},
+		digits : {int} = {0};
 	identifier := {'a'}..{'z'};
 	number := {'0'}..{'9'} -> {@digits.set(@digits.get()+1); return $0;};
 	assignment := identifier:i "=" number:n -> {@variables.insert({$i, $n});} ~";";
@@ -192,17 +192,34 @@ int main() {
 	EXPECT(myContext@variables.at(`a`) == "1");
 	EXPECT(myContext@variables.at(`c`) == "3");
 	EXPECT(myContext@variables.size() == 2);
-    EXPECT(myContext@digits.get() == 2);
+	EXPECT(myContext@digits.get() == 2);
 	for(const auto& [key, value]: myContext@variables) {
 		EXPECT(key == "a" && value == "1" || key == "c" && value == "3");
 	}
 
-    if(allPassed){
-	    std::cout << "all passed!\n";
-        return EXIT_SUCCESS;
-    }
-    else{
-        std::cout << "tests failed!\n";
-    	return EXIT_FAILURE;
-    }
+	0 logged0 := "a";
+	logged0.parse("a");
+	innerLogged0 := 0 "a";
+	innerLogged0.parse("a");
+	01 logged01 := "a";
+	logged01.parse("a");
+	innderLogged01 := 01 "a";
+	innderLogged01.parse("a");
+	012 logged012 := "a";
+	logged012.parse("a");
+	innerLogged012 := 012 "a";
+	innerLogged012.parse("a");
+
+	preDeclLogged0 : {std::string_view} => {ometa::ViewTree<std::string_view>};
+	0 preDeclLogged0 => "a";
+	preDeclLogged0.parse("a");
+
+	if(allPassed){
+		std::cout << "all passed!\n";
+		return EXIT_SUCCESS;
+	}
+	else{
+		std::cout << "tests failed!\n";
+		return EXIT_FAILURE;
+	}
 }

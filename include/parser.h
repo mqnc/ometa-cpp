@@ -104,13 +104,25 @@ public:
 
 	// to be called from the outside to start the parsing process
 	auto parse(const auto& src) const {
-		auto result = parseOn(View(src), empty);
-		return unwrap(result);
+		return parse(src, empty);
 	}
 
 	template <typename TCtx>
 	auto parse(const auto& src, TCtx& ctx) const {
+		
+		int restoreRuleLogThreshold = ruleLogThreshold;
+		int restoreParserLogThreshold = parserLogThreshold;
+		
+		nextLogThreshold = INT_MAX;
+		ruleLogThreshold = 2;
+		parserLogThreshold = 3;
+
 		auto result = parseOn(View(src), ctx);
+
+		parserLogThreshold = restoreParserLogThreshold;
+		ruleLogThreshold = restoreRuleLogThreshold;
+		nextLogThreshold = INT_MAX;
+
 		return unwrap(result);
 	}
 };
