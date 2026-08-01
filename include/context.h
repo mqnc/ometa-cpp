@@ -19,7 +19,7 @@ public:
 	PersistentContextValue(const T& value): value(value) {}
 	void set(const T& newValue) { value = newValue; }
 	const T& get() const { return value; }
-	Empty backup() const {}
+	Empty backup() const { return empty; }
 	void backtrack(Empty) {}
 };
 
