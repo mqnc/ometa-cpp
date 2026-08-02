@@ -16,14 +16,12 @@ auto range(T1 a, T2 b) {
 			auto& ctx
 		) {
 			(void) ctx;
-			return a <= *src.begin() && *src.begin() <= b ?
-				makeMaybeMatch(
-					ViewTree{View<TSource>(
-						src.begin(),
-						src.begin() + 1
-						)},
+			auto it = src.begin();
+			return (it != src.end() && a <= *it && *it <= b)
+				? makeMaybeMatch(
+					ViewTree{View<TSource>(it, std::next(it))},
 					src.next()
-					)
+				)
 				: fail;
 		};
 

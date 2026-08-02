@@ -15,14 +15,12 @@ auto any() {
 			auto& ctx
 		) {
 			(void) ctx;
-			return src.begin() != src.end() ?
-				makeMaybeMatch(
-					ViewTree{View<TSource>(
-						src.begin(),
-						src.begin() + 1
-						)},
+			auto it = src.begin();
+			return it != src.end()
+				? makeMaybeMatch(
+					ViewTree{View<TSource>(it, std::next(it))},
 					src.next()
-					)
+				)
 				: fail;
 		};
 
