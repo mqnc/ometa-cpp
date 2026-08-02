@@ -7,6 +7,7 @@ I'm gonna write down my trains of thought here so once this project is super fam
 
 Next steps would be to rewrite all the examples using all the new features (mainly bindings and context) and also implement some famous parsers, mainly json, json5, lua5.3, g++ or clang ast output, write a minimal C++ formatter.
 
+* global log threshold state is not thread-safe; should maybe become part of context; context should maybe have a standard part and a custom part inheriting from it
 * maybe get rid of make_pair, std often bloated
 * consistent naming with log vs debug vs verbose
 * see if recursion is properly log-wrapped

@@ -14,7 +14,7 @@ constexpr bool operator==(const auto, const Empty) {
 	return false;
 }
 
-Empty empty;
+inline Empty empty;
 
 std::ostream& operator<<(std::ostream& os, Empty)
 {

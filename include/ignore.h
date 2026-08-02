@@ -11,7 +11,7 @@ constexpr bool isIgnore(const T&) {
 	return std::same_as<std::remove_cvref_t<T>, Ignore>;
 }
 
-Ignore ignore;
+inline Ignore ignore{};
 
 constexpr Ignore operator+(const Ignore, const Ignore) {
 	return ignore;

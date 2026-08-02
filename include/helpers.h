@@ -2,6 +2,8 @@
 #include <string>
 #include <fstream>
 #include <ranges>
+#include <chrono>
+#include <iostream>
 #include "valuetree.h"
 #include "repetition.h"
 
@@ -104,17 +106,11 @@ inline auto rfold(auto combine) {
 	});
 };
 
-}
-
-
-
-#include <chrono>
-#include <iostream>
-
 inline auto tic() {
 	using std::chrono::high_resolution_clock;
 	return high_resolution_clock::now();
 }
+
 inline double toc(auto tstart){
 	using std::chrono::high_resolution_clock;
 	using std::chrono::duration;
@@ -122,4 +118,6 @@ inline double toc(auto tstart){
 	duration<double, std::milli> ms_double = t - tstart;
 	std::cout << ms_double.count() << "ms\n";
 	return ms_double.count()/1000.0;
+}
+
 }
