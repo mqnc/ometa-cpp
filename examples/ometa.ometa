@@ -86,7 +86,7 @@ int main(int argc, char* argv[]) {
 	outsideContextReference := identifier '@' identifier -> {`ometa::pick<\"` + $1 + `\">(` + $0 + `)`};
 
 	cppExpression => (
-		identifier {? $ && *$ != "return"}
+		identifier {? $ != "return"}
 		| contextReference
 		| viewTreeLiteral
 		| cppLiteral

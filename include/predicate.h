@@ -55,7 +55,7 @@ auto parameterizedPredicate(T child, Predicate<P, F> pred) {
 
 			auto result = child.parseOn(src, ctx);
 
-			return pred.fn(unwrap(result), ctx) ? result : fail;
+			return result.has_value() && pred.fn(result->value, ctx) ? result : fail;
 		};
 
 	return parser<PARAMETRIC_PREDICATE>(parseFn);

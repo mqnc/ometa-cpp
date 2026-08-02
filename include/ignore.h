@@ -6,12 +6,9 @@ namespace ometa {
 
 struct Ignore {};
 
-constexpr bool operator==(const Ignore, const Ignore) {
-	return true;
-}
-
-constexpr bool operator==(const auto, const Ignore) {
-	return false;
+template <typename T>
+constexpr bool isIgnore(const T&) {
+	return std::same_as<std::remove_cvref_t<T>, Ignore>;
 }
 
 Ignore ignore;
