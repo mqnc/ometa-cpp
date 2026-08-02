@@ -44,7 +44,6 @@ int main(int argc, char* argv[]) {
 	identStart := {'A'}..{'Z'} | {'a'}..{'z'} | "_" | "::";
 	identContinue := identStart | {'0'}..{'9'};
 	identifier := <identStart identContinue*>;
-	reference := identifier '^' -> {`ometa::ptr(` + $ + `)`};
 
 	cppChar := <'\\' ~. | ~.>;
 	cppLiteral := <
@@ -169,8 +168,7 @@ int main(int argc, char* argv[]) {
 		_ ']' {`)`} -> ometa::concat;
 
 	primary :=
-		reference
-		| macroCall
+		macroCall
 		| any
 		| epsilon
 		| literal

@@ -43,7 +43,6 @@ int main(int argc, char* argv[]) {
 	DECL_DEBUG_TAG(RULE_identStart, "identStart", true); const auto identStart = ometa::rule<RULE_identStart>(ometa::range(('A'), ('Z'))| ometa::range(('a'), ('z'))| "_"_lit_| "::"_lit_);
 	DECL_DEBUG_TAG(RULE_identContinue, "identContinue", true); const auto identContinue = ometa::rule<RULE_identContinue>(identStart| ometa::range(('0'), ('9')));
 	DECL_DEBUG_TAG(RULE_identifier, "identifier", true); const auto identifier = ometa::rule<RULE_identifier>(ometa::capture(identStart > *identContinue));
-	DECL_DEBUG_TAG(RULE_reference, "reference", true); const auto reference = ometa::rule<RULE_reference>(identifier > ~"^"_lit_ >= ometa::action([](auto value, auto& context){return "ometa::ptr("_tree_ + value + ")"_tree_;}));
 
 	DECL_DEBUG_TAG(RULE_cppChar, "cppChar", true); const auto cppChar = ometa::rule<RULE_cppChar>(ometa::capture(~"\\"_lit_ > ~ometa::any()| ~ometa::any()));
 	DECL_DEBUG_TAG(RULE_cppLiteral, "cppLiteral", true); const auto cppLiteral = ometa::rule<RULE_cppLiteral>(ometa::capture(~"\'"_lit_ > ~*(!"'"_lit_ > ~cppChar) > ~"\'"_lit_| ~"\""_lit_ > ~*(!"\""_lit_ > ~cppChar) > ~"\""_lit_));
@@ -125,7 +124,7 @@ int main(int argc, char* argv[]) {
 
 	DECL_DEBUG_TAG(RULE_macroCall, "macroCall", true); const auto macroCall = ometa::rule<RULE_macroCall>(identifier > _ > ~"["_lit_ > ometa::action([](auto value, auto& context){return "("_tree_;}) > _ > expression > _ > *(","_lit_ > ometa::action([](auto value, auto& context){return " "_tree_;}) > _ > expression) > _ > ~"]"_lit_ > ometa::action([](auto value, auto& context){return ")"_tree_;}) >= ometa::concat);
 
-	DECL_DEBUG_TAG(RULE_primary, "primary", true); const auto primary = ometa::rule<RULE_primary>(reference| macroCall| any| epsilon| literal| range| capture| predicate| action| parenthesized);
+	DECL_DEBUG_TAG(RULE_primary, "primary", true); const auto primary = ometa::rule<RULE_primary>(macroCall| any| epsilon| literal| range| capture| predicate| action| parenthesized);
 
 	DECL_DEBUG_TAG(RULE_optional, "optional", true); const auto optional = ometa::rule<RULE_optional>("?"_lit_ >= ometa::action([](auto value, auto& context){return "-"_tree_;}));
 	DECL_DEBUG_TAG(RULE_zeroOrMore, "zeroOrMore", true); const auto zeroOrMore = ometa::rule<RULE_zeroOrMore>("*"_lit_ >= ometa::action([](auto value, auto& context){return "*"_tree_;}));

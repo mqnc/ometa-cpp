@@ -81,9 +81,9 @@ myPick := ~ignoreMe useJustMe ~ignoreMe -> {$};
 myCapture := <A B C>;
 
 // recursion:
-myExpression^ : {std::string} -> {int}; // forward declaration
-bracedExpression := "(" myExpression^ ")"; // reference
-myExpression^ => primary | bracedExpression; // definition
+myExpression : {std::string} => {int}; // forward declaration
+bracedExpression := "(" myExpression ")"; // reference
+myExpression => primary | bracedExpression; // definition
 
 // bindings:
 myBinding := firstThing:x secondThing:y -> {$x + $y};
