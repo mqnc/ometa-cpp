@@ -26,13 +26,13 @@ sh scripts/verify_self_transpilation.sh
 
 I recommend that you use [cpp-peglib](https://github.com/yhirose/cpp-peglib), [PEGTL](https://github.com/taocpp/PEGTL), [lexy](https://lexy.foonathan.net/), [PackCC](https://github.com/arithy/packcc) or [Boost Spirit](https://github.com/boostorg/spirit) instead. Those are all way more battle-tested. They also served a lot as inspiration, kudos to them.
 
-Main focus in the development was for this to be a fun hobby project and for things to be done in a simple and proper-feeling way. In most other projects, the parse functions return a bool, values are computed separately and the functions get read/write access to some global context. Here, parse functions return `std::optional<Match>`, where `Match` contains the semantic value and a source pointer to the end of the match. Context can be extended and passed on to nested parse calls as readonly, so backtracking is automatically solved. Also, everything is templated and typesafe. Your source doesn't have to be a string, it can be any kind of sequence of things (that is a [`std::forward_range`](https://en.cppreference.com/w/cpp/ranges/forward_range)).
+Main focus in the development was for this to be a fun hobby project and for things to be done in a simple and proper-feeling way. In most other projects, the parse functions return a bool, values are computed separately and the functions get read/write access to some global context. Here, parse functions return `std::optional<Match>`, where `Match` contains the semantic value and a source pointer to the end of the match. Context is a mutable parameter that can be passed on to nested parse calls, it is automatically restored when backtracking. Also, everything is templated and typesafe. Your source doesn't have to be a string, it can be any kind of sequence of things (that is a [`std::forward_range`](https://en.cppreference.com/w/cpp/ranges/forward_range)).
 
 ## Limitations
 
 * no left recursion
 * Proper-feelingness probably comes at the cost of performance.
-* Development in this template jungle is a hell of torture and despair, error messages by the compiler span pages and are mostly not helpful.
+* Development in this nesting jungle is a hell of torture and despair, error messages by the compiler span pages.
 * Judging from experience, I will probably lose interest in this project soon and then it's no longer maintained. But at that point, it is probably complete and free of bugs 😌.
 
 ## Usage
@@ -55,7 +55,8 @@ myPoke := !thisMustNotFollow;
 myRepetition := optional? zeroOrMore* oneOrMore+;
 
 // string literals:
-myString := "abc \"quoted\" \\backslash \nnew line \ttab";
+myPreservedString := "abc \"quoted\" \\backslash \nnew line \ttab";
+myIgnoredString := 'abc'
 
 // ranges:
 myRange := {'A'}..{'Z'};
@@ -99,6 +100,13 @@ myContext@constants.insert({`awa`, 5});
 identifier := {'a'}..{'z'};
 number := {'0'}..{'9'};
 definition := identifier:i "=" number:n -> {@constants.insert({$i, $n});};
+
+// debug logging:
+0 logThisRule := 'abc'
+00 logThisRuleAndItsChildRules := 'abc'
+000 logThisRuleAndEveryChildParser := 'abc'
+myRule := a | 0 logThisRuleOnlyHere | c
+// the digit indicates the log level threshold
 
 // parsing:
 auto myTopSemanticValue = myStartRule.parse(myInput, myContext);
