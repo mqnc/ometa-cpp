@@ -128,7 +128,7 @@ int main() {
 	};
 	EXPECT(predicateWithoutInput.parse("abc"));
 
-	predicateWithInput := abc {?
+	predicateWithInput := abc -> {?
 		EXPECT($ == "abc");
 		return true;
 	};
@@ -144,7 +144,7 @@ int main() {
 	EXPECT(predicateFirstWithoutInput.parse("abc"));
 	EXPECT(wasIgnore == true);
 
-	predicateThenWithInput := "abc" predicateFirstWithoutInput;
+	predicateThenWithInput := "abc" -> predicateFirstWithoutInput;
 	EXPECT(predicateThenWithInput.parse("abc"));
 	EXPECT(wasIgnore == false);
 
@@ -155,11 +155,11 @@ int main() {
 	EXPECT(loggingPredicateFirstWithoutInput.parse("abc"));
 	EXPECT(wasIgnore == true);
 
-	loggingPredicateThenWithInput := "abc" loggingPredicateFirstWithoutInput;
+	loggingPredicateThenWithInput := "abc" -> loggingPredicateFirstWithoutInput;
 	EXPECT(loggingPredicateThenWithInput.parse("abc"));
 	EXPECT(wasIgnore == false);
 
-	rejectingPredicate := abc {?
+	rejectingPredicate := abc -> {?
 		EXPECT(false); // should not run because predicate child failed
 		return false;
 	};

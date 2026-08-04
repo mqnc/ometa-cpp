@@ -56,7 +56,7 @@ auto action(A fn) {
 }
 
 template <DerivedFromParser T, typename A, typename F>
-auto parameterizedAction(T child, Action<A, F> act) {
+auto parametricAction(T child, Action<A, F> act) {
 
 	auto parseFn = [child, act]<forward_range TSource>
 		(
@@ -87,34 +87,7 @@ auto parameterizedAction(T child, Action<A, F> act) {
 // abc >= action -> parametricAction(abc)
 template <DerivedFromParser T, typename A, typename F>
 auto operator>=(T parser, Action<A, F> act) {
-	return parameterizedAction(parser, act);
-}
-
-// uglily, we also need to support
-// abc >= rule(action) -> rule(parametricAction(abc))
-template <DerivedFromParser T, typename Tag, typename A, typename F>
-auto operator>=(T parser, RuleWrapper<Tag, WrapperFn<Action<A, F>>> actRule) {
-	return rule<Tag>(
-		parameterizedAction(
-			parser,
-			actRule.getChild()
-		)
-	);
-}
-
-// atrociously, we also need to support
-// abc >= logger(rule(action)) -> logger(rule(parametricAction(abc)))
-template <DerivedFromParser T, typename Tag, typename A, typename F>
-auto operator>=(T parser, LoggerWrapper<LoggerFn<RuleWrapper<Tag, WrapperFn<Action<A, F>>>>> logActRule) {
-	return logger(
-		logActRule.getLevel(),
-		rule<Tag>(
-			parameterizedAction(
-				parser,
-				logActRule.getChild().getChild()
-			)
-		)
-	);
+	return parametricAction(parser, act);
 }
 
 }

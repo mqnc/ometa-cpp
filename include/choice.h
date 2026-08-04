@@ -19,7 +19,7 @@ auto choice(T1 child1, T2 child2) {
 			using Result1Type = decltype(child1.parseOn(src, ctx));
 			using Result2Type = decltype(child2.parseOn(src, ctx));
 
-			static_assert(std::is_same_v<Result1Type, Result2Type>);
+			static_assert(std::is_same_v<Result1Type, Result2Type>, "both children of a Choice must return same semantic value type");
 
 			auto result1 = child1.parseOn(src, ctx);
 			return result1.has_value() ?

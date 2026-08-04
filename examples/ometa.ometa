@@ -86,7 +86,7 @@ int main(int argc, char* argv[]) {
 	outsideContextReference := identifier '@' identifier -> {`ometa::pick<\"` + $1 + `\">(` + $0 + `)`};
 
 	cppExpression => (
-		identifier {? $ != "return"}
+		identifier -> {? $ != "return"}
 		| contextReference
 		| viewTreeLiteral
 		| cppLiteral
@@ -161,7 +161,7 @@ int main(int argc, char* argv[]) {
 		| predicateCppExpression -> {`ometa::predicate([](auto value, auto& context){return ` + $ + `;})`}
 		| predicateCppCode -> {`ometa::predicate([](auto value, auto& context){` + $ + `})`};
 
-	parameterizedAction := '->' {` >= `} _ action -> ometa::concat;
+	parametricPredicateOrAction := '->' {` >= `} _ (predicate | action) -> ometa::concat;
 
 	macroCall := identifier _ '[' {`(`} _
 		expression _ ("," {` `} _ expression)*
@@ -206,7 +206,7 @@ int main(int argc, char* argv[]) {
 
 	sequence := prefixed ( _ (
 			{` > `} prefixed -> ometa::concat
-			| parameterizedAction
+			| parametricPredicateOrAction
 	))* -> ometa::concat;
 
 	choice := sequence (

@@ -45,7 +45,7 @@ auto predicate(P fn) {
 }
 
 template <DerivedFromParser T, typename P, typename F>
-auto parameterizedPredicate(T child, Predicate<P, F> pred) {
+auto parametricPredicate(T child, Predicate<P, F> pred) {
 
 	auto parseFn = [child, pred]<forward_range TSource>
 		(
@@ -63,35 +63,8 @@ auto parameterizedPredicate(T child, Predicate<P, F> pred) {
 
 // abc > predicate -> parametricPredicate(abc)
 template <DerivedFromParser T, typename P, typename F>
-auto operator>(T parser, Predicate<P, F> pred) {
-	return parameterizedPredicate(parser, pred);
-}
-
-// uglily, we also need to support
-// abc > rule(predicate) -> rule(parametricPredicate(abc))
-template <DerivedFromParser T, typename Tag, typename P, typename F>
-auto operator>(T parser, RuleWrapper<Tag, WrapperFn<Predicate<P, F>>> predRule) {
-	return rule<Tag>(
-		parameterizedPredicate(
-			parser,
-			predRule.getChild()
-		)
-	);
-}
-
-// atrociously, we also need to support
-// abc > logger(rule(predicate)) -> logger(rule(parametricPredicate(abc)))
-template <DerivedFromParser T, typename Tag, typename P, typename F>
-auto operator>(T parser, LoggerWrapper<LoggerFn<RuleWrapper<Tag, WrapperFn<Predicate<P, F>>>>> logPredRule) {
-	return logger(
-		logPredRule.getLevel(),
-		rule<Tag>(
-			parameterizedPredicate(
-				parser,
-				logPredRule.getChild().getChild()
-			)
-		)
-	);
+auto operator>=(T parser, Predicate<P, F> pred) {
+	return parametricPredicate(parser, pred);
 }
 
 }

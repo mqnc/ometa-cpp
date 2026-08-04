@@ -6,3 +6,4 @@ cp -f build/new_parser_from_new_syntax.ometa.cpp ometa.cpp
 cp -f build/new_parser_from_new_syntax build/ometa-cpp
 rm -rf include
 cp -r update/include include
+echo "\e[31mNOW DELETE THE UPDATE FOLDER, DON'T REUSE IT!!!\e[0m"

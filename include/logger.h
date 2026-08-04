@@ -6,11 +6,17 @@ namespace ometa {
 
 DECL_DEBUG_TAG(LOGGER, "(logger)", false);
 
+template <DerivedFromParser T>
+auto logger(std::string level, T child);
+
 template <typename F>
 class LoggerWrapper: public ParserWrapper<LOGGER, F>{
 public:
-	std::string getLevel() const {return this->parseFn.lvl;}
 	using ParserWrapper<LOGGER, F>::ParserWrapper;
+
+	auto withChild(auto child) const{
+		return logger(this->parseFn.lvl, child);
+	}
 };
 
 template <DerivedFromParser T>

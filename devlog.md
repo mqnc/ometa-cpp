@@ -8,12 +8,15 @@ I'm gonna write down my trains of thought here so once this project is super fam
 ### Most Pressing
 
 * the rewrapping of logging rules of predicates and actions is unacceptably ugly
+* I can also have some Meta class on each Parser instead of just a tag containing log thresholds and rule name
 * needs error handling and line+column tracking
 
 ### Misc
 
 Next steps would be to rewrite all the examples using all the new features (mainly bindings and context) and also implement some famous parsers, mainly json, json5, lua5.3, g++ or clang ast output, write a minimal C++ formatter.
 
+* maybe for simplifying Action and Predicate and their parametric versions, we can make the nonparametric version into the parametricVersion with a child that returns empty
+* I think the non-parametric Action and Predicate fn should run on empty, not ignore
 * the return and semicolon distinction in semantic values sucks
 * accept whitespace in () for epslion
 * global log threshold state is not thread-safe; should maybe become part of context; context should maybe have a standard part and a custom part inheriting from it
@@ -48,6 +51,26 @@ bit ugly that we dont have a syntactically sugary way to use pick on something o
 sucks that we have to return something here; just `{@column.set(@column.get()+1)}` will be interpreted as needing to be returned
 
 we cant have manual line and column management...
+
+## To Capture or not to Capture
+
+'' and "" are very similar and have identical meaning in Python and PEG. Currently "abc" captures and 'abc' does not, which works against intuition and might be hard to remember. A solution would be that all capture needs to use <> explicitly (including or excluding ranges and any).
+
+Only <> captures:
+- very consistent and clear divide between parsing and producing
+- any and range are very rare, I often enclose them in <> already anyway
+- literals are mostly control keywords whose value should be ignored anyway
+- no tilde clutter
+
+Literals ignore but ranges and any capture:
+- each of them return what they are probably most used for
+- we have a way to capture individual characters, not just spans
+
+"" for captured literals and '' for ignored literals:
+- most compact syntax
+
+Everything captures:
+- probably most expected
 
 ## Putting Things into Context
 
@@ -259,6 +282,26 @@ This doesn't work if checkA can't handle `ignore` as input argument. The first l
 I already tried making the `Predicate` class not inheriting from `Parser` but implicitly casting to one but this cast doesn't always happen. We can't call a `parse` method on it for instance.
 
 `defer` to the rescue! I already only saw syntactically hideous solutions to this misery, when I clutched to the last straw: When we call the predicate lambda in the predicate parser, we run its argument (`ignore`) through a template that also requires the type of the source code as a template argument. This way, the thing doesn't get instantiated if the source type is not known, which only becomes known when the whole predicate parser is actually put into action without arguments.
+
+In order to simplify the horrible wrapper overloads for predicates and actions and make them reusable for further wrappers instead of causing combinatoric explosion, I've now given wrappers >= and > operators that unwrap and forward. This means:
+
+```d
+0 myAction := {...}
+myAction = Logger<0>(Rule<myAction>({...}))
+
+"abc" -> myAction
+"abc"__lit__ >= Logger<0>(Rule<myAction>({...}))
+
+calls operator>=(parser, Logger<0>(Rule<myAction>({...})))
+
+calls log<0>(operator>=(parser, Rule<myAction>({...})))
+
+calls rule<myAction>(parser, {...})
+
+which then calls operator>=(parser, {...}) which returns a parametricAction
+```
+
+So this unwraps, parametrizes the action and rewraps. Problem is that before I had operator>= for actions (-> in ometa) and operator> for both sequences and predicates (whitespace in ometa). However, we dont want unwrapping and rewrapping with sequences, only for parametrization of actions and predicates, but the wrapper operator> doesn't know and just operates on all of them. So predicates now also get >= (-> in ometa) for parametrization. This also means that we can have predicates in sequences that operate on empty input. It also means we only have to deal with one operator for unwrapping and the whole situation is more consistent. Today is a good day.
 
 ## Snippets
 
