@@ -52,65 +52,65 @@ int main(int argc, char* argv[]) {
 	>;
 	
 	viewTreeLiteral := '`' {`\"`}(
-		'"' -> {`\\\"`}
+		'"' => {`\\\"`}
 		| !'`' cppChar
-	)* '`' {`\"_tree_`} -> ometa::concat;
+	)* '`' {`\"_tree_`} => ometa::concat;
 
-	valueReference := '$' -> {`value`};
-	indexedValueReference := '$' <{'0'}..{'9'}+> -> {`ometa::pick<` + $ + `>(value)`};
-	taggedValueReference := '$' identifier -> {`ometa::pick<\"` + $ + `\">(value)`};
+	valueReference := '$' => {`value`};
+	indexedValueReference := '$' <{'0'}..{'9'}+> => {`ometa::pick<` + $ + `>(value)`};
+	taggedValueReference := '$' identifier => {`ometa::pick<\"` + $ + `\">(value)`};
 
-	cppExpression : {std::string_view} => {ViewTree};
+	%cppExpression : {std::string_view} -> {ViewTree};
 	parenthesizedCppExpression := '(' cppExpression ')';
 	bracketedCppExpression := '[' cppExpression ']';
 	bracedCppExpression := '{' cppExpression '}';
 	predicateCppExpression := '{' _ '?' cppExpression '}';
 
-	contextTableDeclaration := identifier _ ':' _ bracedCppExpression _ '->' _ bracedCppExpression
-		-> {
+	contextTableDeclaration := identifier _ ':' _ bracedCppExpression _ '=>' _ bracedCppExpression
+		=> {
 			`\tometa::makeTagged<\"` + $0 + `\">`
 			+ `(ometa::ContextTable<` + $1 + `, ` + $2 + `>{})`
 		};
 	contextValueDeclaration := identifier _ ':' _ bracedCppExpression (_ '=' _ bracedCppExpression)?
-		-> {
+		=> {
 			`\tometa::makeTagged<\"` + $0 + `\">`
 			+ `(ometa::ContextValue<` + $1 + `>{`
 			+ ($2.size() > 0 ? $2[0] : ``) + `})`
 		};
 	contextItemDeclaration := contextTableDeclaration | contextValueDeclaration;
-	contextItemDeclarationList := contextItemDeclaration _ ("," {`\n`} _ contextItemDeclaration)* -> ometa::concat;
+	contextItemDeclarationList := contextItemDeclaration _ ("," {`\n`} _ contextItemDeclaration)* => ometa::concat;
 	contextDeclaration := identifier '@' _ ':' _ contextItemDeclarationList _ ';'
-		-> {`auto ` + $0 + ` = ometa::Context(\n` + $1 + `\n);`};
+		=> {`auto ` + $0 + ` = ometa::Context(\n` + $1 + `\n);`};
 
-	contextReference := '@' identifier -> {`ometa::pick<\"` + $ + `\">(context)`};
-	outsideContextReference := identifier '@' identifier -> {`ometa::pick<\"` + $1 + `\">(` + $0 + `)`};
+	contextReference := '@' identifier => {`ometa::pick<\"` + $ + `\">(context)`};
+	outsideContextReference := identifier '@' identifier => {`ometa::pick<\"` + $1 + `\">(` + $0 + `)`};
 
-	cppExpression => (
-		identifier -> {? $ != "return"}
+	%cppExpression := (
+		identifier => {? $ != "return"}
 		| contextReference
 		| viewTreeLiteral
 		| cppLiteral
-		| parenthesizedCppExpression -> {`(` + $ + `)`}
-		| bracketedCppExpression -> {`[` + $ + `]`}
-		| bracedCppExpression -> {`{` + $ + `}`}
+		| parenthesizedCppExpression => {`(` + $ + `)`}
+		| bracketedCppExpression => {`[` + $ + `]`}
+		| bracedCppExpression => {`{` + $ + `}`}
 		| indexedValueReference
 		| taggedValueReference
 		| valueReference
 		| !")" !"]" !"}" !";" .
-	)* -> ometa::concat;
+	)* => ometa::concat;
 
-	cppCode : {std::string_view} => {ViewTree};
+	%cppCode : {std::string_view} -> {ViewTree};
 	parenthesizedCppCode := '(' cppCode ')';
 	bracketedCppCode := '[' cppCode ']';
 	bracedCppCode := '{' cppCode '}';
 	predicateCppCode := '{' _ '?' cppCode '}';
 
-	ruleForwardDecl : {std::string_view} => {ViewTree};
-	ruleDefinition : {std::string_view} => {ViewTree};
-	ruleAssignment : {std::string_view} => {ViewTree};
-	macroDefinition : {std::string_view} => {ViewTree};
+	%ruleForwardDecl : {std::string_view} -> {ViewTree};
+	%ruleDefinition : {std::string_view} -> {ViewTree};
+	%ruleAssignment : {std::string_view} -> {ViewTree};
+	%macroDefinition : {std::string_view} -> {ViewTree};
 
-	cppCode => (
+	%cppCode := (
 		ruleForwardDecl
 		| ruleDefinition
 		| ruleAssignment
@@ -121,51 +121,51 @@ int main(int argc, char* argv[]) {
 		| identifier
 		| viewTreeLiteral
 		| cppLiteral
-		| parenthesizedCppCode -> {`(` + $ + `)`}
-		| bracketedCppCode -> {`[` + $ + `]`}
-		| bracedCppCode -> {`{` + $ + `}`}
+		| parenthesizedCppCode => {`(` + $ + `)`}
+		| bracketedCppCode => {`[` + $ + `]`}
+		| bracedCppCode => {`{` + $ + `}`}
 		| indexedValueReference
 		| taggedValueReference
 		| valueReference
 		| !")" !"]" !"}" .
-	)* -> ometa::concat;
+	)* => ometa::concat;
 
-	any := '.' -> {`ometa::any()`};
-	epsilon := '(' _ ')' -> {`ometa::epsilon()`};
+	any := '.' => {`ometa::any()`};
+	epsilon := '(' _ ')' => {`ometa::epsilon()`};
 
 	literalCharacter :=
 		<"\\" ("n" | "r" | "t" | "'" | "\"" | "\\")>
-		| "\"" -> {`\\\"`}
+		| "\"" => {`\\\"`}
 		| <!"\\" .>;
 
-	ignoredLiteral := '\'' {`~\"`} (!"'" literalCharacter)* '\'' {`\"_lit_`} -> ometa::concat;
-	capturedLiteral := <"\"" (!"\"" literalCharacter)* "\""> {`_lit_`} -> ometa::concat;
+	ignoredLiteral := '\'' {`~\"`} (!"'" literalCharacter)* '\'' {`\"_lit_`} => ometa::concat;
+	capturedLiteral := <"\"" (!"\"" literalCharacter)* "\""> {`_lit_`} => ometa::concat;
 	literal := ignoredLiteral | capturedLiteral;
 
-	range := bracedCppCode _ '..' _ bracedCppCode -> {
+	range := bracedCppCode _ '..' _ bracedCppCode => {
 		`ometa::range((` + $0 + `), (` + $1 + `))`
 	};
 
-	expression : {std::string_view} => {ViewTree};
-	parenthesized := '(' _ expression _ ')' ->
+	%expression : {std::string_view} -> {ViewTree};
+	parenthesized := '(' _ expression _ ')' =>
 		{`(` + $ + `)`};
-	capture := '<' _ expression _ '>' ->
+	capture := '<' _ expression _ '>' =>
 		{`ometa::capture(` + $ + `)`};
 
 	action :=
 		identifier
-		| bracedCppExpression -> {`ometa::action([](auto value, auto& context){return ` + $ + `;})`}
-		| bracedCppCode -> {`ometa::action([](auto value, auto& context){` + $ + `})`};
+		| bracedCppExpression => {`ometa::action([](auto value, auto& context){return ` + $ + `;})`}
+		| bracedCppCode => {`ometa::action([](auto value, auto& context){` + $ + `})`};
 	predicate :=
 		identifier
-		| predicateCppExpression -> {`ometa::predicate([](auto value, auto& context){return ` + $ + `;})`}
-		| predicateCppCode -> {`ometa::predicate([](auto value, auto& context){` + $ + `})`};
+		| predicateCppExpression => {`ometa::predicate([](auto value, auto& context){return ` + $ + `;})`}
+		| predicateCppCode => {`ometa::predicate([](auto value, auto& context){` + $ + `})`};
 
-	parametricPredicateOrAction := '->' {` >= `} _ (predicate | action) -> ometa::concat;
+	parametricPredicateOrAction := '=>' {` >= `} _ (predicate | action) => ometa::concat;
 
 	macroCall := identifier _ '[' {`(`} _
 		expression _ ("," {` `} _ expression)*
-		_ ']' {`)`} -> ometa::concat;
+		_ ']' {`)`} => ometa::concat;
 
 	primary :=
 		macroCall
@@ -178,9 +178,9 @@ int main(int argc, char* argv[]) {
 		| action
 		| parenthesized;
 
-	optional := "?" -> {`-`};
-	zeroOrMore := "*" -> {`*`};
-	oneOrMore := "+" -> {`+`};
+	optional := "?" => {`-`};
+	zeroOrMore := "*" => {`*`};
+	oneOrMore := "+" => {`+`};
 	repetition := optional | zeroOrMore | oneOrMore;
 	tag := ':' _ identifier;
 
@@ -188,13 +188,13 @@ int main(int argc, char* argv[]) {
 	debugMark := <digit digit? digit?>;
 
 	debugMarkedParser := (debugMark _)? primary
-		-> {
+		=> {
 			if ($0.size() == 0){return $1;}
 			else {return `ometa::logger("` + $0[0] + `", ` + $1 + `)`;}
 		};
 
 	postfixed := debugMarkedParser _ tag? _ repetition? _ tag?
-		-> { 
+		=> { 
 			auto result = $0;
 			if ($1.size() == 1) {result = `ometa::tagResult<"` + $1[0] + `">(` + result + `)`;}
 			if ($2.size() == 1) {result = $2[0] + result;}
@@ -202,46 +202,46 @@ int main(int argc, char* argv[]) {
 			return result;
 		};
 
-	prefixed := <("&" | "!" | "~")?> _ postfixed -> ometa::concat;
+	prefixed := <("&" | "!" | "~")?> _ postfixed => ometa::concat;
 
 	sequence := prefixed ( _ (
-			{` > `} prefixed -> ometa::concat
+			{` > `} prefixed => ometa::concat
 			| parametricPredicateOrAction
-	))* -> ometa::concat;
+	))* => ometa::concat;
 
 	choice := sequence (
 		<whitespace "|" whitespace> sequence
-	)* -> ometa::concat;
+	)* => ometa::concat;
 
-	expression => choice;
+	%expression := choice;
 
-	ruleForwardDecl => identifier _ ':' _
-		bracedCppExpression _ '=>' _ bracedCppExpression _ ';'
-		-> {
+	%ruleForwardDecl := '%' _ identifier _ ':' _
+		bracedCppExpression _ '->' _ bracedCppExpression _ ';'
+		=> {
 			`DECL_DEBUG_TAG(RULE_` + $0 + `, "` + $0 + `", true); auto ` + $0 + ` = ometa::recursive<`
 				+ $1 + `, ` + $2 + `>();`
 		};
 
-	ruleDefinition => (debugMark _)? identifier _ ':=' _ expression _ ';'
-		-> {
+	%ruleDefinition := (debugMark _)? identifier _ ':=' _ expression _ ';'
+		=> {
 			auto assignee = `DECL_DEBUG_TAG(RULE_` + $1 + `, "` + $1 + `", true); const auto ` + $1;
 			auto body = `ometa::rule<RULE_` + $1 + `>(` + $2 + `)`;
 			if ($0.size() == 0){ return assignee + ` = ` + body + `;`; }
 			else { return assignee + ` = ometa::logger("` + $0[0] + `", ` + body + `);`; }
 		};
 
-	ruleAssignment => (debugMark _)? identifier _ '=>' _ expression _ ';'
-		-> {
+	%ruleAssignment := (debugMark _)? '%' _ identifier _ ':=' _ expression _ ';'
+		=> {
 			auto body = `ometa::rule<RULE_` + $1 + `>(` + $2 + `)`;
 			if ($0.size() == 0){ return $1 + `.define(` + body + `);`; }
 			else{ return $1 + `.define(ometa::logger("` + $0[0] + `", ` + body + `));`; }
 		};
 
 	macroParameterList := '[' _ {`auto `} identifier _
-		(',' _ identifier -> {`, auto ` + $})* _ ']'
-		-> ometa::concat;
-	macroDefinition => identifier _ macroParameterList _ ':=' _ expression _ ';'
-		-> {
+		(',' _ identifier => {`, auto ` + $})* _ ']'
+		=> ometa::concat;
+	%macroDefinition := identifier _ macroParameterList _ ':=' _ expression _ ';'
+		=> {
 			`const auto ` + $0 + ` = [=](` + $1 + `){return ` + $2 + `;};`
 		};
 

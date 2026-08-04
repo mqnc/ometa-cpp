@@ -7,7 +7,6 @@ I'm gonna write down my trains of thought here so once this project is super fam
 
 ### Most Pressing
 
-* the rewrapping of logging rules of predicates and actions is unacceptably ugly -> done, still rewrapping but no longer as ugly
 * I can also have some Meta class on each Parser instead of just a tag containing log thresholds and rule name
 * needs error handling and line+column tracking
 
@@ -146,6 +145,17 @@ expression' => primary | bracedExpression; // definition
 I like how the `prime'` thing is subtle but visible. I dislike how it messes up C++ syntax highlighting tho and I don't want to implement a proper custom one (which is impossible for github). Maybe I will switch to `@expression` or `expression@`...
 
 Switched to `expression^` now that `^` is no longer used for actions (see below).
+
+Working on the syntax again: https://chatgpt.com/share/6a724bfc-fd14-83eb-8824-322ead15e985
+
+New syntax:
+```d
+%expression : {std::string} -> {int}; // forward declaration
+bracedExpression := "(" expression ")"; // reference
+%expression := primary | bracedExpression; // definition
+myBoundAction := a b => {...};
+myBoundPredicate := a b => {?...};
+```
 
 ## Whitespace, the Final Frontier
 
@@ -660,3 +670,7 @@ I think this should be the highest operator precedence.
 Inner overrides outer.
 
 recursion, actions and predicates also need to be able to deal with rule(log(standalone)) :/ maybe I find a better way -> done, works for now, ugly
+
+### Misc
+
+* the rewrapping of logging rules of predicates and actions is unacceptably ugly -> done, still rewrapping but no longer as ugly

@@ -70,36 +70,36 @@ myEpsilon := ();
 // generating semantic values:
 myValue := {std::string("awa")};
 myComplicatedValue := {if(true){return 1;} else{return 0;}};
-myParametricValue := A B C -> {$0 + $1 + $2}
+myParametricValue := A B C => {$0 + $1 + $2}
 
 // semantic predicates:
-myPredicate := A B C -> {? $0 + $1 + $2 > 10};
+myPredicate := A B C => {? $0 + $1 + $2 > 10};
 
 // ignore values:
-myPick := ~ignoreMe useJustMe ~ignoreMe -> {$};
+myPick := ~ignoreMe useJustMe ~ignoreMe => {$};
 
 // capture source:
 myCapture := <A B C>;
 
 // recursion:
-myExpression : {std::string} => {int}; // forward declaration
+%myExpression : {std::string} -> {int}; // forward declaration
 bracedExpression := "(" myExpression ")"; // reference
-myExpression => primary | bracedExpression; // definition
+%myExpression := primary | bracedExpression; // definition
 
 // bindings:
-myBinding := firstThing:x secondThing:y -> {$x + $y};
+myBinding := firstThing:x secondThing:y => {$x + $y};
 
 // macros:
 myList[thing, sep] := thing (sep thing)*;
 myAddition := myList[number, plus];
 
 // context:
-myContext@ : constants: {ViewTree} -> {ViewTree}, line: {int} = {1}, column: {int} = {1};
+myContext@ : constants: {ViewTree} => {ViewTree}, line: {int} = {1}, column: {int} = {1};
 myContext@constants.insert({`awa`, 5});
 
 identifier := {'a'}..{'z'};
 number := {'0'}..{'9'};
-definition := identifier:i "=" number:n -> {@constants.insert({$i, $n});};
+definition := identifier:i "=" number:n => {@constants.insert({$i, $n});};
 
 // debug logging:
 0 logThisRule := 'abc'
