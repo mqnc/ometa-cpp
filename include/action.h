@@ -1,7 +1,6 @@
 #pragma once
 
 #include "parser.h"
-#include "defer.h"
 #include "rule.h"
 #include "logger.h"
 #include "binding.h"
