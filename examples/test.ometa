@@ -99,7 +99,7 @@ int main() {
 	EXPECT(capture.parse("abcabcdef---") == "abcabcdef");
 
 	actionWithoutInput := {
-		EXPECT(ometa::isIgnore($));
+		EXPECT(ometa::isEmpty($));
 		return 123;
 	};
 	EXPECT(actionWithoutInput.parse("abc") == 123);
@@ -111,19 +111,19 @@ int main() {
 	EXPECT(actionWithInput.parse("abc") == 456);
 
 	actionFirstWithoutInput := {$};
-	EXPECT(ometa::isIgnore(actionFirstWithoutInput.parse("abc").value()));
+	EXPECT(ometa::isEmpty(actionFirstWithoutInput.parse("abc").value()));
 
 	actionThenWithInput := "abc" -> actionFirstWithoutInput;
 	EXPECT(actionThenWithInput.parse("abc") == "abc");
 
 	0 loggingActionFirstWithoutInput := {$};
-	EXPECT(ometa::isIgnore(loggingActionFirstWithoutInput.parse("abc").value()));
+	EXPECT(ometa::isEmpty(loggingActionFirstWithoutInput.parse("abc").value()));
 
 	loggingActionThenWithInput := "abc" -> loggingActionFirstWithoutInput;
 	EXPECT(loggingActionThenWithInput.parse("abc") == "abc");
 
 	predicateWithoutInput := {?
-		EXPECT(ometa::isIgnore($));
+		EXPECT(ometa::isEmpty($));
 		return true;
 	};
 	EXPECT(predicateWithoutInput.parse("abc"));
@@ -138,7 +138,7 @@ int main() {
 	static bool wasIgnore = false;
 
 	predicateFirstWithoutInput := {?
-		wasIgnore = ometa::isIgnore($);
+		wasIgnore = ometa::isEmpty($);
 		return true;
 	};
 	EXPECT(predicateFirstWithoutInput.parse("abc"));
@@ -149,7 +149,7 @@ int main() {
 	EXPECT(wasIgnore == false);
 
 	0 loggingPredicateFirstWithoutInput := {?
-		wasIgnore = ometa::isIgnore($);
+		wasIgnore = ometa::isEmpty($);
 		return true;
 	};
 	EXPECT(loggingPredicateFirstWithoutInput.parse("abc"));

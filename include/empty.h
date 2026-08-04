@@ -6,12 +6,9 @@ namespace ometa {
 
 struct Empty {};
 
-constexpr bool operator==(const Empty, const Empty) {
-	return true;
-}
-
-constexpr bool operator==(const auto, const Empty) {
-	return false;
+template <typename T>
+constexpr bool isEmpty(const T&) {
+	return std::same_as<std::remove_cvref_t<T>, Empty>;
 }
 
 inline Empty empty;

@@ -4,59 +4,31 @@
 #include "defer.h"
 #include "rule.h"
 #include "logger.h"
+#include "binding.h"
 
 // An action must be a working Parser on its own
 // but we must also be able to pipe things into it:
 //
-// act := {...}; // used standalone, we feed Ignore into it
-// paramAct := a act; // now a's value is piped into it
+// act := {...}; // unbound use - we feed an empty into it
+// paramAct := a act; // now bound - a's value is piped into it
 
 namespace ometa {
 
+DECL_DEBUG_TAG(UNBOUND_ACTION, "(unbound action)", false);
 DECL_DEBUG_TAG(ACTION, "(action)", false);
-DECL_DEBUG_TAG(PARAMETRIC_ACTION, "(parametricAction)", false);
 
 template <typename A, typename F>
-struct Action: public Parser<ACTION, F> {
+struct UnboundAction: public Parser<UNBOUND_ACTION, F> {
 	A fn;
 
-	Action(A fn, F parseFn):
+	UnboundAction(A fn, F parseFn):
 		fn {fn},
-		Parser<ACTION, F> {parseFn}
+		Parser<UNBOUND_ACTION, F> {parseFn}
 	{}
 };
 
-template <typename A>
-auto action(A fn) {
-
-	auto parseFn = [fn]<forward_range TSource>
-		(
-			View<TSource> src,
-			auto& ctx
-		) {
-			// We defer the instantiation of this call until TSource is known
-			// so the compiler doesn't complain if fn() cannot handle ignore
-			// but we actually never call it with ignore.
-
-			auto noValue = defer<TSource, ignore>;
-
-			constexpr bool actionHasReturn = !std::is_same_v<
-				decltype(fn(noValue, ctx)), void>;
-
-			if constexpr(actionHasReturn){
-				return makeMaybeMatch(fn(noValue, ctx), src);
-			}
-			else{
-				fn(noValue, ctx);
-				return makeMaybeMatch(ignore, src);
-			}
-		};
-
-	return Action(fn, parseFn);
-}
-
-template <DerivedFromParser T, typename A, typename F>
-auto parametricAction(T child, Action<A, F> act) {
+template <Binding bind, DerivedFromParser T, typename A, typename FDiscarded>
+auto action(T child, UnboundAction<A, FDiscarded> act) {
 
 	auto parseFn = [child, act]<forward_range TSource>
 		(
@@ -81,13 +53,22 @@ auto parametricAction(T child, Action<A, F> act) {
 			}
 		};
 
-	return parser<PARAMETRIC_ACTION>(parseFn);
+	if constexpr(bind == Binding::bound){
+		return parser<ACTION>(parseFn);
+	}
+	else{
+		return UnboundAction(act.fn, parseFn);
+	}
 }
 
-// abc >= action -> parametricAction(abc)
+template <typename A>
+auto action(A fn) {
+	return action<Binding::unbound>(stub(), UnboundAction{fn, empty});
+}
+
 template <DerivedFromParser T, typename A, typename F>
-auto operator>=(T parser, Action<A, F> act) {
-	return parametricAction(parser, act);
+auto operator>=(T parser, UnboundAction<A, F> act) {
+	return action<Binding::bound>(parser, act);
 }
 
 }
