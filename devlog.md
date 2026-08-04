@@ -7,7 +7,7 @@ I'm gonna write down my trains of thought here so once this project is super fam
 
 ### Most Pressing
 
-* the rewrapping of logging rules of predicates and actions is unacceptably ugly
+* the rewrapping of logging rules of predicates and actions is unacceptably ugly -> done, still rewrapping but no longer as ugly
 * I can also have some Meta class on each Parser instead of just a tag containing log thresholds and rule name
 * needs error handling and line+column tracking
 
@@ -15,17 +15,12 @@ I'm gonna write down my trains of thought here so once this project is super fam
 
 Next steps would be to rewrite all the examples using all the new features (mainly bindings and context) and also implement some famous parsers, mainly json, json5, lua5.3, g++ or clang ast output, write a minimal C++ formatter.
 
-* maybe for simplifying Action and Predicate and their parametric versions, we can make the nonparametric version into the parametricVersion with a child that returns empty
-* I think the non-parametric Action and Predicate fn should run on empty, not ignore
 * the return and semicolon distinction in semantic values sucks
-* accept whitespace in () for epslion
 * global log threshold state is not thread-safe; should maybe become part of context; context should maybe have a standard part and a custom part inheriting from it
-* maybe get rid of make_pair, std often bloated
 * consistent naming with log vs debug vs verbose
 * see if recursion is properly log-wrapped
 * dislike: postfixed := primary _ tag? _ repetition? _ tag?
 * cant declare context type for recursive parsers yet
-* update readme
 * preserve whitespaces
 * selective debug log: we can use numbers as a breakpoint marker, identifiers must not start with them
 * prettify debug log

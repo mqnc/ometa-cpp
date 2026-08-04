@@ -130,8 +130,8 @@ int main(int argc, char* argv[]) {
 		| !")" !"]" !"}" .
 	)* -> ometa::concat;
 
-	any := "." -> {`ometa::any()`};
-	epsilon := "()" -> {`ometa::epsilon()`};
+	any := '.' -> {`ometa::any()`};
+	epsilon := '(' _ ')' -> {`ometa::epsilon()`};
 
 	literalCharacter :=
 		<"\\" ("n" | "r" | "t" | "'" | "\"" | "\\")>

@@ -98,8 +98,8 @@ int main(int argc, char* argv[]) {
 		| bracedCppCode >= ometa::action([](auto value, auto& context){return "{"_tree_ + value + "}"_tree_;})
 		| indexedValueReference| taggedValueReference| valueReference| !")"_lit_ > !"]"_lit_ > !"}"_lit_ > ometa::any()) >= ometa::concat));
 
-	DECL_DEBUG_TAG(RULE_any, "any", true); const auto any = ometa::rule<RULE_any>("."_lit_ >= ometa::action([](auto value, auto& context){return "ometa::any()"_tree_;}));
-	DECL_DEBUG_TAG(RULE_epsilon, "epsilon", true); const auto epsilon = ometa::rule<RULE_epsilon>("()"_lit_ >= ometa::action([](auto value, auto& context){return "ometa::epsilon()"_tree_;}));
+	DECL_DEBUG_TAG(RULE_any, "any", true); const auto any = ometa::rule<RULE_any>(~"."_lit_ >= ometa::action([](auto value, auto& context){return "ometa::any()"_tree_;}));
+	DECL_DEBUG_TAG(RULE_epsilon, "epsilon", true); const auto epsilon = ometa::rule<RULE_epsilon>(~"("_lit_ > _ > ~")"_lit_ >= ometa::action([](auto value, auto& context){return "ometa::epsilon()"_tree_;}));
 
 	DECL_DEBUG_TAG(RULE_literalCharacter, "literalCharacter", true); const auto literalCharacter = ometa::rule<RULE_literalCharacter>(ometa::capture("\\"_lit_ > ("n"_lit_| "r"_lit_| "t"_lit_| "'"_lit_| "\""_lit_| "\\"_lit_))| "\""_lit_ >= ometa::action([](auto value, auto& context){return "\\\""_tree_;})
 		| ometa::capture(!"\\"_lit_ > ometa::any()));

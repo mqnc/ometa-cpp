@@ -5,8 +5,10 @@
 
 namespace ometa{
 
-// wrapper around another parser with access to said parser
+template<typename>
+inline constexpr bool always_false_v = false;
 
+// wrapper around another parser with access to said parser
 template <typename Tag, typename F>
 class ParserWrapper: public Parser<Tag, F>{
 public:
@@ -17,7 +19,7 @@ public:
 	}
 
 	auto withChild(auto child) const {
-		static_assert(defer<F, false>, "withChild() must be overwritten by deriving wrapper classes");
+		static_assert(always_false_v<Tag>, "withChild() must be overwritten by deriving wrapper classes");
 		return false;
 	}
 };
