@@ -94,7 +94,10 @@ myList[thing, sep] := thing (sep thing)*;
 myAddition := myList[number, plus];
 
 // context:
-myContext@ : constants: {ViewTree} => {ViewTree}, line: {int} = {1}, column: {int} = {1};
+myContext@ :
+	constants: {ViewTree} -> {ViewTree},
+	line: {int} = {1},
+	column: {int} = {1};
 myContext@constants.insert({`awa`, 5});
 
 identifier := {'a'}..{'z'};

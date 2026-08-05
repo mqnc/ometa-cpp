@@ -21,12 +21,10 @@ Next steps would be to rewrite all the examples using all the new features (main
 * dislike: postfixed := primary _ tag? _ repetition? _ tag?
 * cant declare context type for recursive parsers yet
 * preserve whitespaces
-* selective debug log: we can use numbers as a breakpoint marker, identifiers must not start with them
 * prettify debug log
 * handle context
 * error handling
 * UTF8
-* cpp comments
 * maybe propagate an ignore_value flag (or maybe not, we might want the side effects)
 * do some projects like a lua, clang and json5 parser, note errors and catch them with awesome eigen error reports
 * memoize (aka packrat parsing); however, need to be aware that context can change parsing result

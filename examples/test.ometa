@@ -197,7 +197,7 @@ int main() {
 	EXPECT(lit_123_567.parse(intSrc) == expected_result);
 
 	using ViewTree = ometa::ViewTree<std::string_view>;
-	myContext@ : variables: {ViewTree} => {ViewTree},
+	myContext@ : variables: {ViewTree} -> {ViewTree},
 		digits : {int} = {0};
 	identifier := {'a'}..{'z'};
 	number := {'0'}..{'9'} => {@digits.set(@digits.get()+1); return $0;};

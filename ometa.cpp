@@ -60,7 +60,7 @@ int main(int argc, char* argv[]) {
 	DECL_DEBUG_TAG(RULE_bracedCppExpression, "bracedCppExpression", true); const auto bracedCppExpression = ometa::rule<RULE_bracedCppExpression>(~"{"_lit_ > cppExpression > ~"}"_lit_);
 	DECL_DEBUG_TAG(RULE_predicateCppExpression, "predicateCppExpression", true); const auto predicateCppExpression = ometa::rule<RULE_predicateCppExpression>(~"{"_lit_ > _ > ~"?"_lit_ > cppExpression > ~"}"_lit_);
 
-	DECL_DEBUG_TAG(RULE_contextTableDeclaration, "contextTableDeclaration", true); const auto contextTableDeclaration = ometa::rule<RULE_contextTableDeclaration>(identifier > _ > ~":"_lit_ > _ > bracedCppExpression > _ > ~"=>"_lit_ > _ > bracedCppExpression >= ometa::action([](auto value, auto& context){return 
+	DECL_DEBUG_TAG(RULE_contextTableDeclaration, "contextTableDeclaration", true); const auto contextTableDeclaration = ometa::rule<RULE_contextTableDeclaration>(identifier > _ > ~":"_lit_ > _ > bracedCppExpression > _ > ~"->"_lit_ > _ > bracedCppExpression >= ometa::action([](auto value, auto& context){return 
 			"\tometa::makeTagged<\""_tree_ + ometa::pick<0>(value) + "\">"_tree_
 			+ "(ometa::ContextTable<"_tree_ + ometa::pick<1>(value) + ", "_tree_ + ometa::pick<2>(value) + ">{})"_tree_
 		;}));
@@ -185,18 +185,6 @@ int main(int argc, char* argv[]) {
 
 	auto result = cppCode.parse(code);
 	if (result) {
-		// make a backup copy if transpiled file already exists
-
-		// try {
-		// 	auto backup = ometa::readFile(outputPath);
-		// 	std::time_t time = std::time({});
-		// 	char timeString[std::size("yyyy_mm_dd__hh_mm_ssZ")];
-		// 	std::strftime(std::data(timeString), std::size(timeString),
-		// 		"%Y_%m_%d__%H_%M_%S", std::gmtime(&time));
-		// 	ometa::writeFile(std::string(outputPath) + "." + timeString + ".backup", backup);
-		// }
-		// catch (...) {}
-
 		ometa::writeFile(outputPath, *result);
 	}
 	else {
