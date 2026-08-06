@@ -81,7 +81,7 @@ public:
 			}
 		
 			if (!result) {
-				ctx.backtrack(backup);
+				ctx.restore(backup);
 			}
 
 			return result;

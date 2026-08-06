@@ -94,12 +94,12 @@ myList[thing, sep] := thing (sep thing)*;
 myAddition := myList[number, plus];
 
 // context:
-myContext@ :
-	constants: {ViewTree} -> {ViewTree},
-	line: {int} = {1},
-	column: {int} = {1};
-myContext@constants.insert({`awa`, 5});
-
+struct MyContext{
+	ometa::ContextValue<int> line{1};
+	ometa::ContextValue<int> column{1};
+	ometa::ContextTable<ViewTree, ViewTree> constants;
+	OMETA_BACKTRACKING_FIELDS(digits, variables)
+};
 identifier := {'a'}..{'z'};
 number := {'0'}..{'9'};
 definition := identifier:i "=" number:n => {@constants.insert({$i, $n});};

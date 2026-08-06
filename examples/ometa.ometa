@@ -66,24 +66,7 @@ int main(int argc, char* argv[]) {
 	bracedCppExpression := '{' cppExpression '}';
 	predicateCppExpression := '{' _ '?' cppExpression '}';
 
-	contextTableDeclaration := identifier _ ':' _ bracedCppExpression _ '->' _ bracedCppExpression
-		=> {
-			`\tometa::makeTagged<\"` + $0 + `\">`
-			+ `(ometa::ContextTable<` + $1 + `, ` + $2 + `>{})`
-		};
-	contextValueDeclaration := identifier _ ':' _ bracedCppExpression (_ '=' _ bracedCppExpression)?
-		=> {
-			`\tometa::makeTagged<\"` + $0 + `\">`
-			+ `(ometa::ContextValue<` + $1 + `>{`
-			+ ($2.size() > 0 ? $2[0] : ``) + `})`
-		};
-	contextItemDeclaration := contextTableDeclaration | contextValueDeclaration;
-	contextItemDeclarationList := contextItemDeclaration _ ("," {`\n`} _ contextItemDeclaration)* => ometa::concat;
-	contextDeclaration := identifier '@' _ ':' _ contextItemDeclarationList _ ';'
-		=> {`auto ` + $0 + ` = ometa::Context(\n` + $1 + `\n);`};
-
-	contextReference := '@' identifier => {`ometa::pick<\"` + $ + `\">(context)`};
-	outsideContextReference := identifier '@' identifier => {`ometa::pick<\"` + $1 + `\">(` + $0 + `)`};
+	contextReference := '@' identifier => {`context.` + $};
 
 	%cppExpression := (
 		identifier => {? $ != "return"}
@@ -115,9 +98,7 @@ int main(int argc, char* argv[]) {
 		| ruleDefinition
 		| ruleAssignment
 		| macroDefinition
-		| contextDeclaration
 		| contextReference
-		| outsideContextReference
 		| identifier
 		| viewTreeLiteral
 		| cppLiteral

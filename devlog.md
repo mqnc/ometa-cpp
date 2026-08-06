@@ -64,34 +64,6 @@ Literals ignore but ranges and any capture:
 Everything captures:
 - probably most expected
 
-## Putting Things into Context
-
-Contexts are like global storage for a parser. It gets handed down to subparsers and everyone can make changes to it. If the parser backtracks, so will the context. This is implemented via a `snapshot = backup()` and a `backtrack(snapshot)` method on the context classes.
-
-Contexts worked in the end but the syntax is still a bit ugly and maybe it's better if it was like this:
-
-@ := {
-	variables: string->string;
-	line: int;
-};
-
-context: @{
-    variables: string->string;
-    line: int;
-}
-
-or something.
-updated this, see tests.
-
-I now have the current options for context:
-* PersistentContextValue: a singular value that gets permanently overwritten with every successful parse and does not backtrack
-* ContextValue: a singular value that returns itself upon call to backup() and that resets itself upon call to backtrack()
-* LoggingContextValue: a singular value that contains a stack, pushing new values onto it and popping when backtracking
-* ContextTable: a map of stacks
-* Context: a tuple of other context types
-
-Thing is, why would I ever need a stack embedded inside the context when the parser can store the actual value via snapshot on the actual program stack? Uuuuh, because the table would be much more expensive in terms of storage and copying if I always copied the whole table.
-
 ## The Agony of Choice
 
 First I implemented the prioritized choice so that `A | B | C` returns a `std::variant<TypeA, TypeB, TypeC>`. The choice factory became huge and ugly, mainly but not only because it should return `std::variant<TypeA, TypeB, TypeC>` instead of `std::variant<std::variant<TypeA, TypeB>, TypeC>`. However, the idiomatic way to deal with variants is to dispatch on them with `std::visit`, then you might as well handle each option right away before merging them with `|`:
@@ -502,6 +474,37 @@ Here's the new idea after a night of "sleep": A context is a kind of multimap wh
 All children of this node may only add new entries to the context (although an entry can also instruct to regard this symbol as deleted). When reading in the context, only the latest entry of a symbol is considered.
 
 What is the best way to implement this? `multimap` or `unordered_multimap` are not really usable since `find()` returns a random element with a key, not the last one and also `erase()` erases all elements with a key. We can use `unordered_map<Key, stack<Entry>>` and store the insertion order in an extra `stack<Key>`. Now, if we want to backtrack, we keep popping keys from the order stack and from the corresponding symbol stack. This is it! This feels good! Assuming that entries are usually not overwritten and backtracking will usually not remove more than one element, this should be very efficient.
+
+I wrote the stuff below much later, having forgotten that I wrote the above section about contexts. I even named it "Putting Things into Context" as well. Now just joining them.
+
+Contexts are like global storage for a parser. It gets handed down to subparsers and everyone can make changes to it. If the parser backtracks, so will the context. This is implemented via a `snapshot = backup()` and a `backtrack(snapshot)` method on the context classes. (backtrack renamed to restore)
+
+Contexts worked in the end but the syntax is still a bit ugly and maybe it's better if it was like this:
+
+@ := {
+	variables: string->string;
+	line: int;
+};
+
+context: @{
+    variables: string->string;
+    line: int;
+}
+
+or something.
+updated this, see tests.
+
+I now have the current options for context:
+* PersistentContextValue: a singular value that gets permanently overwritten with every successful parse and does not backtrack
+* ContextValue: a singular value that returns itself upon call to backup() and that resets itself upon call to backtrack()
+* LoggingContextValue: a singular value that contains a stack, pushing new values onto it and popping when backtracking
+* ContextTable: a map of stacks
+* Context: a tuple of other context types
+
+Thing is, why would I ever need a stack embedded inside the context when the parser can store the actual value via snapshot on the actual program stack? Uuuuh, because the table would be much more expensive in terms of storage and copying if I always copied the whole table.
+
+
+I have just refactored contexts to be purely C++ apart from context references inside actions/predicates. Much nicer now. https://chatgpt.com/share/6a744f21-924c-83eb-abca-7165aae49bf9
 
 # Done
 

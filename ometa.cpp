@@ -60,21 +60,7 @@ int main(int argc, char* argv[]) {
 	DECL_DEBUG_TAG(RULE_bracedCppExpression, "bracedCppExpression", true); const auto bracedCppExpression = ometa::rule<RULE_bracedCppExpression>(~"{"_lit_ > cppExpression > ~"}"_lit_);
 	DECL_DEBUG_TAG(RULE_predicateCppExpression, "predicateCppExpression", true); const auto predicateCppExpression = ometa::rule<RULE_predicateCppExpression>(~"{"_lit_ > _ > ~"?"_lit_ > cppExpression > ~"}"_lit_);
 
-	DECL_DEBUG_TAG(RULE_contextTableDeclaration, "contextTableDeclaration", true); const auto contextTableDeclaration = ometa::rule<RULE_contextTableDeclaration>(identifier > _ > ~":"_lit_ > _ > bracedCppExpression > _ > ~"->"_lit_ > _ > bracedCppExpression >= ometa::action([](auto value, auto& context){return 
-			"\tometa::makeTagged<\""_tree_ + ometa::pick<0>(value) + "\">"_tree_
-			+ "(ometa::ContextTable<"_tree_ + ometa::pick<1>(value) + ", "_tree_ + ometa::pick<2>(value) + ">{})"_tree_
-		;}));
-	DECL_DEBUG_TAG(RULE_contextValueDeclaration, "contextValueDeclaration", true); const auto contextValueDeclaration = ometa::rule<RULE_contextValueDeclaration>(identifier > _ > ~":"_lit_ > _ > bracedCppExpression > -(_ > ~"="_lit_ > _ > bracedCppExpression) >= ometa::action([](auto value, auto& context){return 
-			"\tometa::makeTagged<\""_tree_ + ometa::pick<0>(value) + "\">"_tree_
-			+ "(ometa::ContextValue<"_tree_ + ometa::pick<1>(value) + ">{"_tree_
-			+ (ometa::pick<2>(value).size() > 0 ? ometa::pick<2>(value)[0] : ""_tree_) + "})"_tree_
-		;}));
-	DECL_DEBUG_TAG(RULE_contextItemDeclaration, "contextItemDeclaration", true); const auto contextItemDeclaration = ometa::rule<RULE_contextItemDeclaration>(contextTableDeclaration| contextValueDeclaration);
-	DECL_DEBUG_TAG(RULE_contextItemDeclarationList, "contextItemDeclarationList", true); const auto contextItemDeclarationList = ometa::rule<RULE_contextItemDeclarationList>(contextItemDeclaration > _ > *(","_lit_ > ometa::action([](auto value, auto& context){return "\n"_tree_;}) > _ > contextItemDeclaration) >= ometa::concat);
-	DECL_DEBUG_TAG(RULE_contextDeclaration, "contextDeclaration", true); const auto contextDeclaration = ometa::rule<RULE_contextDeclaration>(identifier > ~"@"_lit_ > _ > ~":"_lit_ > _ > contextItemDeclarationList > _ > ~";"_lit_ >= ometa::action([](auto value, auto& context){return "auto "_tree_ + ometa::pick<0>(value) + " = ometa::Context(\n"_tree_ + ometa::pick<1>(value) + "\n);"_tree_;}));
-
-	DECL_DEBUG_TAG(RULE_contextReference, "contextReference", true); const auto contextReference = ometa::rule<RULE_contextReference>(~"@"_lit_ > identifier >= ometa::action([](auto value, auto& context){return "ometa::pick<\""_tree_ + value + "\">(context)"_tree_;}));
-	DECL_DEBUG_TAG(RULE_outsideContextReference, "outsideContextReference", true); const auto outsideContextReference = ometa::rule<RULE_outsideContextReference>(identifier > ~"@"_lit_ > identifier >= ometa::action([](auto value, auto& context){return "ometa::pick<\""_tree_ + ometa::pick<1>(value) + "\">("_tree_ + ometa::pick<0>(value) + ")"_tree_;}));
+	DECL_DEBUG_TAG(RULE_contextReference, "contextReference", true); const auto contextReference = ometa::rule<RULE_contextReference>(~"@"_lit_ > identifier >= ometa::action([](auto value, auto& context){return "context."_tree_ + value;}));
 
 	cppExpression.define(ometa::rule<RULE_cppExpression>(*(identifier >= ometa::predicate([](auto value, auto& context){return  value != "return";})
 		| contextReference| viewTreeLiteral| cppLiteral| parenthesizedCppExpression >= ometa::action([](auto value, auto& context){return "("_tree_ + value + ")"_tree_;})
@@ -93,7 +79,7 @@ int main(int argc, char* argv[]) {
 	DECL_DEBUG_TAG(RULE_ruleAssignment, "ruleAssignment", true); auto ruleAssignment = ometa::recursive<std::string_view, ViewTree>();
 	DECL_DEBUG_TAG(RULE_macroDefinition, "macroDefinition", true); auto macroDefinition = ometa::recursive<std::string_view, ViewTree>();
 
-	cppCode.define(ometa::rule<RULE_cppCode>(*(ruleForwardDecl| ruleDefinition| ruleAssignment| macroDefinition| contextDeclaration| contextReference| outsideContextReference| identifier| viewTreeLiteral| cppLiteral| parenthesizedCppCode >= ometa::action([](auto value, auto& context){return "("_tree_ + value + ")"_tree_;})
+	cppCode.define(ometa::rule<RULE_cppCode>(*(ruleForwardDecl| ruleDefinition| ruleAssignment| macroDefinition| contextReference| identifier| viewTreeLiteral| cppLiteral| parenthesizedCppCode >= ometa::action([](auto value, auto& context){return "("_tree_ + value + ")"_tree_;})
 		| bracketedCppCode >= ometa::action([](auto value, auto& context){return "["_tree_ + value + "]"_tree_;})
 		| bracedCppCode >= ometa::action([](auto value, auto& context){return "{"_tree_ + value + "}"_tree_;})
 		| indexedValueReference| taggedValueReference| valueReference| !")"_lit_ > !"]"_lit_ > !"}"_lit_ > ometa::any()) >= ometa::concat));

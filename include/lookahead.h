@@ -21,7 +21,7 @@ auto lookAhead(T child) {
 			if constexpr (has_backup_method<decltype(ctx)>()) {
 				auto backup = ctx.backup();
 				auto result = child.parseOn(src, ctx);
-				ctx.backtrack(backup);
+				ctx.restore(backup);
 				return result.has_value() == (polarity == positive) ?
 					makeMaybeMatch(ignore, src) : fail;
 			}
