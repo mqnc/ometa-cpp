@@ -3,6 +3,7 @@
 #include <deque>
 
 #include "parser.h"
+#include "ignore.h"
 
 namespace ometa {
 
@@ -24,28 +25,34 @@ auto repetition(T child, size_t min, size_t max) {
 			auto& ctx
 		) {
 
-			using return_element_type = decltype(child.parseOn(src, ctx)->value);
-			RepetitionValue<return_element_type> matches {};
+			using ResultElementType = decltype(child.parseOn(src, ctx)->value);
+			constexpr bool ignoreValues =
+				std::same_as<std::remove_cvref_t<ResultElementType>, Ignore>;
+
+			using ResultType = std::conditional_t<
+				ignoreValues,
+				Ignore,
+				RepetitionValue<ResultElementType>
+			>;
+
+			ResultType result{};
 
 			auto next = src;
-
+			bool success = true;
 			for (size_t i = 0; i < max; i++) {
-				auto result = child.parseOn(next, ctx);
-
-				if (result.has_value()) {
-					matches.push_back(result->value);
-					next = result->next;
-				}
-				else if (i < min) {
-					return fail_as<decltype(makeMaybeMatch(matches, next))>;
+				auto childResult = child.parseOn(next, ctx);
+				if (childResult.has_value()) {
+					if constexpr(!ignoreValues){
+						result.push_back(childResult->value);
+					}
+					next = childResult->next;
 				}
 				else {
+					success = i >= min;
 					break;
 				}
 			}
-
-			return makeMaybeMatch(matches, next);
-
+			return success? makeMaybeMatch(result, next) : fail;
 		};
 
 	return parser<REPETITION>(parseFn);

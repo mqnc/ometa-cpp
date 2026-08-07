@@ -21,7 +21,7 @@ int main(int argc, char* argv[]) {
 	number := <("+" | "-")? {'0'}..{'9'}+> => parseInt;
 
 	%expression : {std::string_view} -> {int};
-	atom := number | ~"(" expression ~")";
+	atom := number | "(" expression ")";
 
 	auto rfoldPower = ometa::rfold([](auto prev, auto op, auto temp) {
 		auto result = pow(prev, temp);
@@ -29,7 +29,7 @@ int main(int argc, char* argv[]) {
 		return result;
 	});
 
-	power := atom ("^" atom)* => rfoldPower;
+	power := atom (<"^"> atom)* => rfoldPower;
 
 	auto lfoldProduct = ometa::lfold([](auto temp, auto op, auto next) {
 		auto result = op == "*" ? temp * next : temp / next;
@@ -37,7 +37,7 @@ int main(int argc, char* argv[]) {
 		return result;
 	});
 
-	product := power (("*" | "/") power)* => lfoldProduct;
+	product := power (<"*" | "/"> power)* => lfoldProduct;
 
 	auto lfoldSum = ometa::lfold([](auto temp, auto op, auto next) {
 		auto result = op == "+" ? temp + next : temp - next;
@@ -45,7 +45,7 @@ int main(int argc, char* argv[]) {
 		return result;
 	});
 
-	sum := product (("+" | "-") product)* => lfoldSum;
+	sum := product (<"+" | "-"> product)* => lfoldSum;
 
 	%expression := sum;
 

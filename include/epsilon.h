@@ -1,7 +1,7 @@
 #pragma once
 
 #include "parser.h"
-#include "empty.h"
+#include "ignore.h"
 
 namespace ometa {
 
@@ -15,7 +15,7 @@ auto epsilon() {
 			auto& ctx
 		) {
 			(void) ctx;
-			return makeMaybeMatch(empty, src);
+			return makeMaybeMatch(ignore, src);
 		};
 
 	return parser<EPSILON>(parseFn);

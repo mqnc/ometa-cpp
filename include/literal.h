@@ -6,6 +6,7 @@
 
 #include "parser.h"
 #include "viewtree.h"
+#include "ignore.h"
 
 namespace ometa {
 
@@ -22,11 +23,12 @@ auto literal(auto compare) {
 
 			auto equalUntil = std::ranges::mismatch(src, compare);
 
-			return equalUntil.in2 == compare.end() ? [&] {
-					auto next = View<TSource>(equalUntil.in1, src.end());
-					auto matched = ViewTree{View<TSource>(src.begin(), equalUntil.in1)};
-					return makeMaybeMatch(matched, next);
-				}() : fail;
+			return equalUntil.in2 == compare.end() ? 
+				makeMaybeMatch(
+					ignore,
+					View<TSource>(equalUntil.in1, src.end())
+				)
+				: fail;
 		};
 
 	return parser<LITERAL>(parseFn);

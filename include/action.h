@@ -4,6 +4,7 @@
 #include "rule.h"
 #include "logger.h"
 #include "binding.h"
+#include "ignore.h"
 
 // An action must be a working Parser on its own
 // but we must also be able to pipe things into it:

@@ -55,8 +55,7 @@ myPoke := !thisMustNotFollow;
 myRepetition := optional? zeroOrMore* oneOrMore+;
 
 // string literals:
-myPreservedString := "abc \"quoted\" \\backslash \nnew line \ttab";
-myIgnoredString := 'abc'
+myString := "abc \"quoted\" \\backslash \nnew line \ttab";
 
 // ranges:
 myRange := {'A'}..{'Z'};
@@ -105,9 +104,9 @@ number := {'0'}..{'9'};
 definition := identifier:i "=" number:n => {@constants.insert({$i, $n});};
 
 // debug logging:
-0 logThisRule := 'abc'
-00 logThisRuleAndItsChildRules := 'abc'
-000 logThisRuleAndEveryChildParser := 'abc'
+0 logThisRule := "abc"
+00 logThisRuleAndItsChildRules := "abc"
+000 logThisRuleAndEveryChildParser := "abc"
 myRule := a | 0 logThisRuleOnlyHere | c
 // the digit indicates the log level threshold
 

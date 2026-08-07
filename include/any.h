@@ -2,6 +2,7 @@
 
 #include "parser.h"
 #include "viewtree.h"
+#include "ignore.h"
 
 namespace ometa {
 
@@ -17,11 +18,7 @@ auto any() {
 			(void) ctx;
 			auto it = src.begin();
 			return it != src.end()
-				? makeMaybeMatch(
-					ViewTree{View<TSource>(it, std::next(it))},
-					src.next()
-				)
-				: fail;
+				? makeMaybeMatch(ignore, src.next()) : fail;
 		};
 
 	return parser<ANY>(parseFn);

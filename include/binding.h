@@ -1,7 +1,7 @@
 #pragma once
 
 #include "parser.h"
-#include "empty.h"
+#include "ignore.h"
 
 namespace ometa{
 
@@ -18,7 +18,7 @@ auto stub() {
 			auto& ctx
 		) {
 			(void) ctx;
-			return makeMaybeMatch(empty, src);
+			return makeMaybeMatch(ignore, src);
 		};
 
 	return parser<STUB>(parseFn);

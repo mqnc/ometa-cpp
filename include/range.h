@@ -2,6 +2,7 @@
 
 #include "parser.h"
 #include "viewtree.h"
+#include "ignore.h"
 
 namespace ometa {
 
@@ -18,11 +19,7 @@ auto range(T1 a, T2 b) {
 			(void) ctx;
 			auto it = src.begin();
 			return (it != src.end() && a <= *it && *it <= b)
-				? makeMaybeMatch(
-					ViewTree{View<TSource>(it, std::next(it))},
-					src.next()
-				)
-				: fail;
+				? makeMaybeMatch(ignore, src.next()) : fail;
 		};
 
 	return parser<RANGE>(parseFn);
